@@ -1,3 +1,5 @@
 .venv
-
 rag_security_plan.md
+.env
+data/raw/
+data/processed/
