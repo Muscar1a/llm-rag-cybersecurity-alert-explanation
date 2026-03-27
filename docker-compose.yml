@@ -22,3 +22,16 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      mc mb myminio/dvc-storage;
+      mc policy set public myminio/dvc-storage;
+      exit 0;
+      "
