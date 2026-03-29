@@ -1,4 +1,4 @@
 [core]
     remote = minio
 ['remote "minio"']
-    url = s3://dvc-storage
+    url = s3://security-data
