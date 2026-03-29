@@ -55,7 +55,7 @@ df_sampled = pd.concat([
 print(f"\nClass distribution in evaluation sample ({len(df_sampled)} flows):")
 print(df_sampled['label'].value_counts())
 
-out_dir = os.path.join("data", "processed", "CICIDS2017")
+out_dir = os.path.join("../../data", "processed", "CICIDS2017")
 os.makedirs(out_dir, exist_ok=True)
 out_file = os.path.join(out_dir, "cicids_rag_evaluation.csv")
 

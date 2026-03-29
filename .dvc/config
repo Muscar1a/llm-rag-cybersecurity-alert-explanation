@@ -2,3 +2,5 @@
     remote = minio
 ['remote "minio"']
     url = s3://security-data
+    use_ssl = false
+    endpointurl = http://localhost:9000

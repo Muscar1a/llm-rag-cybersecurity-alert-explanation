@@ -1,0 +1,24 @@
+stages:
+  clean_data:
+    cmd: python src/data_process/clean_data.py
+    deps:
+      - src/data_process/clean_data.py
+      - data/raw/CICIDS2017/
+      - data/raw/CVE/
+      - data/raw/MITRE/
+    outs:
+      - data/processed/CVE/cve_cleaned.parquet
+      - data/processed/MITRE/mitre_cleaned.parquet
+      - data/processed/CICIDS2017/cicids_cleaned.parquet
+
+  chunk_data:
+    cmd: python src/data_process/chunk_data.py
+    deps:
+      - src/data_process/chunk_data.py
+      - data/processed/CVE/cve_cleaned.parquet
+      - data/processed/MITRE/mitre_cleaned.parquet
+      # - data/processed/CICIDS2017/cicids_cleaned.parquet
+    outs:
+      - data/processed/CVE/chunks.parquet
+      - data/processed/MITRE/chunks.parquet
+      # - data/processed/CICIDS2017/chunks.parquet

@@ -58,6 +58,12 @@ def process_mitre():
                 }
 
     techniques = list(techniques_dict.values())
+    return techniques
+
+   
+
+if __name__ == "__main__":
+    techniques = process_mitre()
     
     os.makedirs(os.path.join("data", "processed", "MITRE"), exist_ok=True)
     output_path = os.path.join("data", "processed", "MITRE", "techniques.json")
@@ -68,7 +74,3 @@ def process_mitre():
         json.dump(techniques, f, indent=4)
 
     print(f"Cleaned file saved at: {output_path}")
-
-
-if __name__ == "__main__":
-    process_mitre()

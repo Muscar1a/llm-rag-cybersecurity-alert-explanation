@@ -1,0 +1,61 @@
+schema: '2.0'
+stages:
+  clean_data:
+    cmd: python src/data_process/clean_data.py
+    deps:
+    - path: data/raw/CICIDS2017/
+      hash: md5
+      md5: acf928b43f089e74039fc8dba08e4dd7.dir
+      size: 884645759
+      nfiles: 8
+    - path: data/raw/CVE/
+      hash: md5
+      md5: c09ccf903ff33cd1e685741c7d3e0d5a.dir
+      size: 257376444
+      nfiles: 16
+    - path: data/raw/MITRE/
+      hash: md5
+      md5: e48002c9a1bf602552f3b26f038ccbb5.dir
+      size: 1144350358
+      nfiles: 39
+    - path: src/data_process/clean_data.py
+      hash: md5
+      md5: d56eb044202ad8d3ad2fd7148a8110f7
+      size: 3801
+    outs:
+    - path: data/processed/CICIDS2017/cicids_cleaned.parquet
+      hash: md5
+      md5: 9c8dabb0c55e5b5b38d06f9956746ee9
+      size: 13675498
+    - path: data/processed/CVE/cve_cleaned.parquet
+      hash: md5
+      md5: 5602bbc03dbbcd2503dce8e972b3b627
+      size: 56440116
+    - path: data/processed/MITRE/mitre_cleaned.parquet
+      hash: md5
+      md5: 9e24ea4e4807abec646c439b27a10b7a
+      size: 554887
+  chunk_data:
+    cmd: python src/data_process/chunk_data.py
+    deps:
+    - path: data/processed/CVE/cve_cleaned.parquet
+      hash: md5
+      md5: 5602bbc03dbbcd2503dce8e972b3b627
+      size: 56440116
+    - path: data/processed/MITRE/mitre_cleaned.parquet
+      hash: md5
+      md5: 9e24ea4e4807abec646c439b27a10b7a
+      size: 554887
+    - path: src/data_process/chunk_data.py
+      hash: md5
+      md5: 964f8a82075f2add6659038ec20c0e3e
+      size: 4205
+    outs:
+    - path: data/processed/CVE/chunks.parquet
+      hash: md5
+      md5: b6d550a9a2864af28bb7504a258367e2
+      size: 62850765
+    - path: data/processed/MITRE/chunks.parquet
+      hash: md5
+      md5: da3a978e20e658ca3b0a01cf74dbe60d
+      size: 596719
