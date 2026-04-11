@@ -29,8 +29,8 @@ stages:
       size: 13675498
     - path: data/processed/CVE/cve_cleaned.parquet
       hash: md5
-      md5: 5602bbc03dbbcd2503dce8e972b3b627
-      size: 56440116
+      md5: ea179b17323f547edb3132f8c72199a2
+      size: 56570453
     - path: data/processed/MITRE/mitre_cleaned.parquet
       hash: md5
       md5: 9e24ea4e4807abec646c439b27a10b7a
@@ -40,8 +40,8 @@ stages:
     deps:
     - path: data/processed/CVE/cve_cleaned.parquet
       hash: md5
-      md5: 5602bbc03dbbcd2503dce8e972b3b627
-      size: 56440116
+      md5: ea179b17323f547edb3132f8c72199a2
+      size: 56570453
     - path: data/processed/MITRE/mitre_cleaned.parquet
       hash: md5
       md5: 9e24ea4e4807abec646c439b27a10b7a
@@ -53,8 +53,8 @@ stages:
     outs:
     - path: data/processed/CVE/chunks.parquet
       hash: md5
-      md5: b6d550a9a2864af28bb7504a258367e2
-      size: 62850765
+      md5: 95da64ac9000c576726e1c92b39ca9a9
+      size: 62986833
     - path: data/processed/MITRE/chunks.parquet
       hash: md5
       md5: da3a978e20e658ca3b0a01cf74dbe60d
