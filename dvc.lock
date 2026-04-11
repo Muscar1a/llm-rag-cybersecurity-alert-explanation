@@ -10,8 +10,8 @@ stages:
       nfiles: 8
     - path: data/raw/CVE/
       hash: md5
-      md5: c09ccf903ff33cd1e685741c7d3e0d5a.dir
-      size: 257376444
+      md5: 97b4849f9e3ffbabc7a0b676a7c8f87d.dir
+      size: 257383380
       nfiles: 16
     - path: data/raw/MITRE/
       hash: md5
