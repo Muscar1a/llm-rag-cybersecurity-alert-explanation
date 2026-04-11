@@ -8,3 +8,4 @@ fastparquet
 bs4
 huggingface_hub
 pytorch
+dvc[s3]

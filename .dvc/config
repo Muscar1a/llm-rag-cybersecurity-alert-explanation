@@ -1,0 +1,8 @@
+[core]
+    remote = minio-processed
+['remote "minio-raw"']
+    url = s3://dvc-store-raw/
+    endpointurl = http://localhost:9000
+['remote "minio-processed"']
+    url = s3://dvc-store-processed/
+    endpointurl = http://localhost:9000
