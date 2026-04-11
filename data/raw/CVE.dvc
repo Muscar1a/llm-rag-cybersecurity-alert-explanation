@@ -1,0 +1,6 @@
+outs:
+- md5: 97b4849f9e3ffbabc7a0b676a7c8f87d.dir
+  size: 257383380
+  nfiles: 16
+  hash: md5
+  path: CVE
