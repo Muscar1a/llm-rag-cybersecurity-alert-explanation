@@ -59,3 +59,43 @@ stages:
       hash: md5
       md5: da3a978e20e658ca3b0a01cf74dbe60d
       size: 596719
+  embed_cve:
+    cmd: python src/embed_chunks.py --source cve
+    deps:
+    - path: data/processed/CVE/chunks.parquet
+      hash: md5
+      md5: 95da64ac9000c576726e1c92b39ca9a9
+      size: 62986833
+    - path: src/embed_chunks.py
+      hash: md5
+      md5: f728546587d424210ff90d4cbe8c42f8
+      size: 3424
+    outs:
+    - path: data/embeddings/cve/chunk_ids.csv
+      hash: md5
+      md5: cc77139ccc126312c060fb1549d0fc6a
+      size: 5507010
+    - path: data/embeddings/cve/embeddings.npy
+      hash: md5
+      md5: d0115fa3cf9085ff2ef9df1f46b1be8a
+      size: 227264384
+  embed_mitre:
+    cmd: python src/embed_chunks.py --source mitre
+    deps:
+    - path: data/processed/MITRE/chunks.parquet
+      hash: md5
+      md5: da3a978e20e658ca3b0a01cf74dbe60d
+      size: 596719
+    - path: src/embed_chunks.py
+      hash: md5
+      md5: f728546587d424210ff90d4cbe8c42f8
+      size: 3424
+    outs:
+    - path: data/embeddings/mitre/chunk_ids.csv
+      hash: md5
+      md5: b8e693f46db5b40eb46f62286a7e55c9
+      size: 13448
+    - path: data/embeddings/mitre/embeddings.npy
+      hash: md5
+      md5: 3c22098fba0a877e850448115b576f7e
+      size: 837248

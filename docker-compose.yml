@@ -22,3 +22,27 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+
+  qdrant:
+    image: qdrant/qdrant:v1-gpu-nvidia
+    container_name: qdrant
+    restart: unless-stopped
+    
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+
+    volumes:
+      - qdrant_storage:/qdrant/storage
+
+    environment:
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-qdrant_api_key}
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+volumes:
+  qdrant_storage:

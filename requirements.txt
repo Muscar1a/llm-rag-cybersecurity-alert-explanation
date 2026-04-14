@@ -1,3 +1,4 @@
+--extra-index-url https://download.pytorch.org/whl/cu126
 requests
 python-dotenv
 pandas
@@ -7,5 +8,22 @@ pyarrow
 fastparquet
 bs4
 huggingface_hub
-pytorch
 dvc[s3]
+tqdm
+torch
+torchvision
+sentence_transformers
+
+
+# Vector DB & RAG
+qdrant-client
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# LLM Inference
+ollama==0.3.12
+
+# Utils
+pydantic==2.5.0
+pydantic-settings==2.1.0

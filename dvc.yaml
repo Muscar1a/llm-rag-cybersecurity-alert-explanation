@@ -28,3 +28,25 @@ stages:
           remote: minio-processed
       # - data/processed/CICIDS2017/chunks.parquet:
       #     remote: minio-processed
+
+  embed_cve:
+    cmd: python src/embed_chunks.py --source cve
+    deps:
+      - src/embed_chunks.py
+      - data/processed/CVE/chunks.parquet
+    outs:
+      - data/embeddings/cve/embeddings.npy:
+          remote: minio-processed
+      - data/embeddings/cve/chunk_ids.csv:
+          remote: minio-processed
+
+  embed_mitre:
+    cmd: python src/embed_chunks.py --source mitre
+    deps:
+      - src/embed_chunks.py
+      - data/processed/MITRE/chunks.parquet
+    outs:
+      - data/embeddings/mitre/embeddings.npy:
+          remote: minio-processed
+      - data/embeddings/mitre/chunk_ids.csv:
+          remote: minio-processed
