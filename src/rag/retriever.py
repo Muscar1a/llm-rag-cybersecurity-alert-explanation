@@ -1,7 +1,7 @@
 from qdrant_client import models
-from src.rag.qdrant_store import build_client
-from src.rag.settings import settings
-from src.rag.embeddings import QueryEmbedder
+from .qdrant_store import build_client
+from .settings import settings
+from .embeddings import QueryEmbedder
 
 
 class Retriever:
@@ -23,13 +23,24 @@ class Retriever:
                 ]
             )
             
-        hits = self.client.search(
-            collection_name=settings.qdrandt_collection,
-            query_vector=vector,
-            query_filter=query_filter,
-            limit=k,
-            with_payload=True
-        )
+        # qdrant-client API differs by version: some expose `search`, others `query_points`.
+        if hasattr(self.client, "search"):
+            hits = self.client.search(
+                collection_name=settings.qdrant_collection,
+                query_vector=vector,
+                query_filter=query_filter,
+                limit=k,
+                with_payload=True,
+            )
+        else:
+            response = self.client.query_points(
+                collection_name=settings.qdrant_collection,
+                query=vector,
+                query_filter=query_filter,
+                limit=k,
+                with_payload=True,
+            )
+            hits = response.points
         
         out = []
         for h in hits:

@@ -1,5 +1,11 @@
 .venv
+__pycache__/
+**/__pycache__/
 rag_security_plan.md
 .env
 data_minio/*
 data_minio/.minio.sys/*
+note.txt
+
+GUIDE_NEXT_STEPS.md
+PROGRESS_QDRANT.md

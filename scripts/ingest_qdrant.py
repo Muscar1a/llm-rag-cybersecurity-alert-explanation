@@ -1,10 +1,13 @@
 import argparse
 import json
+import uuid
 import numpy as np
-from pathlib import Path 
-from qdrant_client import models
 import pandas as pd
+from qdrant_client import models
+import sys
+from pathlib import Path
 
+sys.path.append(str(Path(__file__).parent.parent))
 
 from src.rag.qdrant_store import build_client, ensure_collection
 from src.rag.settings import settings
@@ -56,7 +59,7 @@ def build_points(ids, vecs, payload_df: pd.DataFrame):
         
         points.append(
             models.PointStruct(
-                id=chunk_id,
+                id=str(uuid.uuid5(uuid.NAMESPACE_URL, chunk_id)),
                 vector=vecs[i].astype(np.float32).tolist(),
                 payload=payload
             )

@@ -1,91 +1,81 @@
-# Guide: What To Do After Embedding (Without Coding For You)
+# Guide: From Stable Retrieval to RAG with Reranking and Experiment Readiness
+
+> **Updated:** 2026-04-29  
+> **Current state:** Qdrant retrieval is working, prompt/parser are stabilised, `service.py` is locked to the `basic` template, and step 14 is currently blocked by a missing local Ollama model.  
+> **Next step:** install a local Ollama model, finish the no-rerank E2E smoke test, then compare prompt templates.
+
+---
 
 ## Goal
-Move from "embeddings are ready" to "RAG retrieval works reliably".
+Move from "retrieval works" to a stable local RAG pipeline that can support later reranking and experiment runs.
 
-## 1) Infrastructure Validation
-Before any application code:
-- Ensure Docker Compose file is valid (no typo on top-level `volumes`).
-- Bring up Qdrant and confirm it is healthy.
-- Decide API key usage policy for local/dev.
+## Code Reality Check
+- Qdrant collection `cyber_chunks` exists and retrieval step 13 is considered complete on the current machine.
+- `src/rag/settings.py` is the shared config source for retriever, embeddings, service, and Ollama.
+- `src/rag/service.py` is intentionally locked to `template_name="basic"` so later errors are easier to isolate.
+- `src/rag/llm_ollama.py` can parse plain JSON, `<answer>{...}</answer>`, and fenced JSON.
+- `src/data_process/alert_builder.py` is now used by `scripts/test_e2e.py` to generate realistic CICIDS2017-based alert text.
+- `/health` and `/analyze` are already wired in FastAPI.
+- `src/rag/reranker.py` does not exist yet and should stay deferred until the no-rerank pipeline is stable.
 
-Done when:
-- Qdrant responds healthy on REST.
-- Storage persists after container restart.
+## Current Blocker
+- Step 14 fails because Ollama has no local model installed.
+- On 2026-04-29, `ollama list` returned no models.
+- The earlier `gemma4:e4b` failure was therefore an environment/runtime issue, not a parser or prompt-builder issue.
 
-## 2) Data Contract Design (Most Important)
-Decide point schema first, then implement.
+## Recommended Local Model
+For the current hardware:
+- RAM: `40 GB`
+- GPU: `RTX 3060 6 GB`
 
-Recommended fields:
-- id: stable unique id per chunk.
-- vector: embedding array.
-- payload.source: cve or mitre.
-- payload.doc_id: source document id.
-- payload.chunk_index: position in document.
-- payload.text: chunk content.
-- payload.metadata: optional extra fields.
+Recommended starting model:
+- `qwen2.5:3b-instruct`
 
-Decisions to make now:
-- Single collection with `payload.source` filter, or separate collections.
-- Distance metric (cosine usually matches sentence embeddings).
-- Vector size (must match your embedding model output).
+Suggested `.env` entries:
+```env
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_MODEL=qwen2.5:3b-instruct
+```
 
-## 3) Ingest Workflow Design
-Implement as 3 internal steps:
-1. Load ids and vectors.
-2. Build payload mapping.
-3. Upsert in batches and log progress.
+Pull command:
+```powershell
+ollama pull qwen2.5:3b-instruct
+```
 
-Good practice:
-- Start with 100-500 points smoke test.
-- Verify count in collection after upsert.
-- Re-run ingest safely (idempotent behavior).
+## Pipeline Order
+1. Keep `service.py` fixed on `basic`.
+2. Verify prompt builder output.
+3. Verify Ollama JSON parser.
+4. Verify retriever.
+5. Run `RagService.analyze()` without FastAPI.
+6. Run `/analyze` through FastAPI.
+7. Run 5 realistic alerts for the no-rerank baseline.
+8. Only then compare `basic`, `few_shot`, and `cot`.
+9. Only after that add reranking.
 
-## 4) Retrieval Validation (Before LLM)
-Test retrieval quality independently:
-- Prepare 10-20 manual test queries.
-- Check top-k relevance by reading returned chunks.
-- Tune `k` and optional score threshold.
-- Add source filter tests (CVE only, MITRE only).
+## Step 14 Note
+`scripts/test_e2e.py` now uses `alert_builder.py` instead of a hand-written alert string.
 
-Acceptance criteria:
-- Most queries return context that is clearly related.
-- No frequent empty/irrelevant top-k.
+Current flow:
+1. Load one non-benign row from `data/processed/CICIDS2017/cicids_rag_evaluation.csv`
+2. Prefer labels such as `SSH-Patator`, `FTP-Patator`, `PortScan`, `DoS Hulk`, `DDoS`, or `Bot`
+3. Convert that row into natural-language alert text with `build_alert_text()`
+4. Send the alert into `RagService.analyze()`
 
-## 5) API Integration Plan
-After retrieval is reliable:
-- Build retriever module as a separate component.
-- Build prompt builder module with 2-3 templates.
-- Keep LLM client isolated so you can swap models.
-- Add one endpoint for end-to-end test.
+This makes step 14 a better rehearsal for step 16.
 
-Return structure should include:
-- retrieved context ids
-- model answer
-- severity + rationale
-- suggested mitigation
+## Priority Checklist
+1. [x] Qdrant health and ingest verification.
+2. [x] Retrieval step 13 completed on the current machine.
+3. [ ] Step 14 E2E without reranker.
+   Blocker: no local Ollama model installed.
+4. [ ] `/analyze` API smoke test.
+5. [ ] Run 5 realistic alerts and record outputs.
+6. [ ] Compare prompt templates.
+7. [ ] Add reranker.
 
-## 6) Experiment/Evaluation Preparation
-To support thesis quality:
-- Save each run config (model, k, prompt template).
-- Log retrieval inputs/outputs for auditability.
-- Keep baseline (LLM-only) path for comparison.
-
-Core metrics:
-- Retrieval recall (manual or automated subset)
-- Faithfulness
-- Answer relevance
-- Latency
-
-## Common Pitfalls To Avoid
-- Mismatch vector size vs collection schema.
-- Using random/non-stable ids causing duplicate points.
-- Mixing CVE/MITRE without source metadata.
-- Evaluating LLM before retrieval is stable.
-
-## Your Next 3 Concrete Actions
-1. Fix Compose typo and confirm Qdrant healthy.
-2. Freeze point schema and collection strategy.
-3. Run a small ingest + manual top-k quality check.
-
-If you want, next I can review your design decisions (collection layout + payload schema + test cases) and give feedback only, still without writing implementation code.
+## Common Pitfalls
+- Pulling reranker work forward before the no-rerank pipeline is green.
+- Debugging prompt logic when the real failure is missing local runtime dependencies.
+- Testing only with hand-written alerts and not with CICIDS-derived alert text.
+- Expanding context too early before the JSON output path is stable.

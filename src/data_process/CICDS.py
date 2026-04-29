@@ -10,6 +10,7 @@ all_files = glob.glob(os.path.join(path, "*.csv"))
 
 df_list = []
 for file in all_files:
+    print( f"Reading file: {file}")
     df_temp = pd.read_csv(file, skipinitialspace=True)
     df_list.append(df_temp)
 
@@ -44,6 +45,9 @@ if len(cols_with_missing) > 0:
 else:
     print("\nNo missing values detected in the dataset!")
 
+# Remove benign records
+df = df[df['label'] != 'BENIGN']
+print(f"\nAfter removing benign records: {len(df)} rows")
 
 SAMPLE_SIZE = 10000
 

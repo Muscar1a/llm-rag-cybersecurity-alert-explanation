@@ -1,10 +1,10 @@
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from src.rag.settings import settings
+from .settings import settings
 
 class QueryEmbedder:
     def __init__(self):
-        self.model = SentenceTransformer(settings.embedding)
+        self.model = SentenceTransformer(settings.embedding_model)
     
     def encode_query(self, text: str) -> list[float]:
         v = self.model.encode(

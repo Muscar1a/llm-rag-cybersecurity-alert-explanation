@@ -17,8 +17,9 @@ class RetrievedChunk(BaseModel):
     metadata: dict
     
 class AnalyzeResponse(BaseModel):
-    answer: str
+    threat_description: str
     severity: str
     rationale: str
+    mitigation_steps: list[str]
     retrieved_context_ids: list[str]
     contexts: list[RetrievedChunk]

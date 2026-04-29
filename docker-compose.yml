@@ -36,7 +36,7 @@ services:
       - qdrant_storage:/qdrant/storage
 
     environment:
-      QDRANT_API_KEY: ${QDRANT_API_KEY:-qdrant_api_key}
+      QDRANT_API_KEY: ${QDRANT_API_KEY}
     
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
