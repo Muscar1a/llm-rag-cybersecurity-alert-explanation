@@ -1,6 +1,6 @@
 # Progress Tracker: RAG Experiment Readiness
 
-Updated: 2026-04-29  
+Updated: 2026-04-30  
 Based on: `rag_security_plan_v2.md` and `GUIDE_NEXT_STEPS.md`
 
 ## Goal
@@ -19,10 +19,11 @@ Stabilise the local no-rerank RAG pipeline first, then add reranking and benchma
 - FastAPI `/health` and `/analyze` endpoints are wired.
 - Reranker is not implemented yet.
 
-## Current Blocker
-- Step 14 is blocked because Ollama has no local model installed.
-- `ollama list` was empty on 2026-04-29.
-- The old `gemma4:e4b` failure should be treated as an environment issue, not a pipeline-logic issue.
+## Current State Change
+- Step 14 is no longer blocked.
+- `scripts/test_e2e.py` has produced a valid end-to-end response.
+- This should be recorded as a technical pass for the no-rerank pipeline.
+- However, the first output also showed quality issues in retrieval focus, rationale fit, and mitigation specificity.
 
 ## Recommended Ollama Setup
 Recommended model for current hardware:
@@ -52,11 +53,12 @@ ollama pull qwen2.5:3b-instruct
 - [ ] Produce `eval_retrieval_manual.csv`.
 
 ### 3) End-to-End Without Reranker
-- [ ] Run `scripts/test_e2e.py` successfully.
-  Blocker: install local Ollama model first.
+- [x] Run `scripts/test_e2e.py` successfully.
+  Result: technical pass with valid JSON output.
 - [ ] Start FastAPI and test `POST /analyze`.
-- [ ] Validate JSON structure and output quality.
+- [ ] Validate output quality across multiple alerts.
 - [ ] Run 5 realistic alerts.
+- [ ] Score the first 5 alerts with a manual rubric.
 - [ ] Compare `basic`, `few_shot`, and `cot` on a smaller subset.
 
 ### 4) Reranker
@@ -70,11 +72,11 @@ ollama pull qwen2.5:3b-instruct
 - [ ] Add structured logging for alert ID, model, template, retrieved IDs, output JSON, and latency.
 
 ## Immediate Next 3 Actions
-1. Pull `qwen2.5:3b-instruct` into Ollama.
-2. Set `OLLAMA_MODEL` in `.env`.
-3. Re-run `scripts/test_e2e.py`, then move to `/analyze` smoke testing.
+1. Run `/analyze` through FastAPI and confirm the API path is stable.
+2. Collect 5 realistic alerts and record retrieved chunks, rationale quality, mitigation quality, and latency.
+3. Build a manual scoring table before changing prompts or adding reranking.
 
 ## Notes and Risks
-- A missing local Ollama model can look like an app bug; right now it is the main runtime blocker.
+- The main blocker has shifted from runtime setup to output quality validation.
 - `alert_builder.py` is now part of the practical test path and should be kept stable before step 16.
 - Do not start reranking until step 14 and API smoke tests are both green.

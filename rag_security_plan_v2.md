@@ -14,13 +14,13 @@
 | Retriever -> prompt builder -> Ollama path in `service.py` | Done | Locked to `basic` template for now |
 | Shared settings cleanup | Done | Main RAG modules use `src/rag/settings.py` |
 | Retrieval step 13 | Done | Verified on the current machine |
-| Step 14 end-to-end without FastAPI | Blocked | Ollama has no local model installed |
+| Step 14 end-to-end without FastAPI | Technical pass | `scripts/test_e2e.py` returned valid JSON, but quality evaluation is still pending |
 | Reranker | Not started | Must stay blocked until no-rerank path is stable |
 
 Immediate action:
-- Pull a local Ollama model
-- Set `OLLAMA_MODEL` in `.env`
-- Re-run `scripts/test_e2e.py`
+- Treat step 14 as a technical pass
+- Run `/analyze` API smoke test
+- Build a 5-alert no-rerank quality baseline
 
 ## 1. Research Direction
 
@@ -86,11 +86,16 @@ Alert text
 
 This is useful because it makes step 14 and later step 16 closer to the real evaluation scenario.
 
-## 4. Current Runtime Blocker
+## 4. Step 14 Outcome and Current Focus
 
-Current blocker for step 14:
-- `ollama list` is empty
-- no local model is installed
+Step 14 outcome:
+- `scripts/test_e2e.py` has run end-to-end successfully
+- the output is valid JSON
+- the pipeline can retrieve context, build prompts, call Ollama, and parse the response
+
+Current focus:
+- verify that the API path behaves the same way
+- evaluate output quality before changing architecture
 
 Recommended model for current hardware:
 - `qwen2.5:3b-instruct`
@@ -108,12 +113,13 @@ ollama pull qwen2.5:3b-instruct
 
 ## 5. Experiment Order
 
-1. Finish no-rerank E2E with `basic`
+1. Record step 14 as a no-rerank technical pass with `basic`
 2. Test `/analyze`
 3. Run 5 realistic alerts and log outputs
-4. Compare `basic`, `few_shot`, and `cot`
-5. Add reranker
-6. Run the experiment matrix
+4. Score retrieval relevance, rationale fit, and mitigation fit
+5. Compare `basic`, `few_shot`, and `cot`
+6. Add reranker
+7. Run the experiment matrix
 
 ## 6. Target Experiment Matrix
 
@@ -130,9 +136,22 @@ ollama pull qwen2.5:3b-instruct
 - [x] Lock `service.py` to `basic`
 - [x] Finish retrieval step 13
 - [x] Move `alert_builder.py` into the E2E test path
-- [ ] Install local Ollama model
-- [ ] Pass step 14
+- [x] Install local Ollama model
+- [x] Pass step 14 technically
 - [ ] Pass `/analyze` API smoke test
 - [ ] Run 5-alert no-rerank baseline
+- [ ] Create manual quality scoring rubric and first results table
 - [ ] Compare prompt templates
 - [ ] Implement reranker
+
+## 8. Interpretation of the First Successful E2E Output
+
+The first successful output indicates:
+- the RAG pipeline is operational
+- retrieval is partially relevant, but still noisy
+- the rationale can drift to a broader ATT&CK narrative such as command-and-control
+- the mitigation advice is still too generic for a SOC-style response
+
+Therefore:
+- step 14 should be reported as a technical milestone
+- output quality should be evaluated before further architecture changes

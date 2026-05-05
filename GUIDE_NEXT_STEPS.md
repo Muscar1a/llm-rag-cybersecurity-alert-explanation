@@ -1,8 +1,8 @@
 # Guide: From Stable Retrieval to RAG with Reranking and Experiment Readiness
 
-> **Updated:** 2026-04-29  
-> **Current state:** Qdrant retrieval is working, prompt/parser are stabilised, `service.py` is locked to the `basic` template, and step 14 is currently blocked by a missing local Ollama model.  
-> **Next step:** install a local Ollama model, finish the no-rerank E2E smoke test, then compare prompt templates.
+> **Updated:** 2026-04-30  
+> **Current state:** Qdrant retrieval is working, prompt/parser are stabilised, `service.py` is locked to the `basic` template, and step 14 has now passed as a technical E2E run with no reranker.  
+> **Next step:** treat step 14 as a technical pass, then run API smoke tests and collect a 5-alert no-rerank quality baseline.
 
 ---
 
@@ -18,10 +18,11 @@ Move from "retrieval works" to a stable local RAG pipeline that can support late
 - `/health` and `/analyze` are already wired in FastAPI.
 - `src/rag/reranker.py` does not exist yet and should stay deferred until the no-rerank pipeline is stable.
 
-## Current Blocker
-- Step 14 fails because Ollama has no local model installed.
-- On 2026-04-29, `ollama list` returned no models.
-- The earlier `gemma4:e4b` failure was therefore an environment/runtime issue, not a parser or prompt-builder issue.
+## Step 14 Status Update
+- The earlier blocker was a missing local Ollama model.
+- That environment issue has now been resolved enough for `scripts/test_e2e.py` to run end-to-end.
+- Step 14 should now be treated as a technical pass, not a quality pass.
+- The current problem is no longer "cannot run"; it is "how good is the analysis output?"
 
 ## Recommended Local Model
 For the current hardware:
@@ -64,18 +65,29 @@ Current flow:
 
 This makes step 14 a better rehearsal for step 16.
 
+## Quality Note From First E2E Output
+The first successful `test_e2e` run showed:
+- valid JSON output
+- at least one relevant retrieved chunk for SSH / credential-related reasoning
+- some retrieval noise
+- rationale drift toward command-and-control
+- mitigation steps that are still too generic
+
+This means the pipeline is operational, but the no-rerank baseline still needs structured quality evaluation.
+
 ## Priority Checklist
 1. [x] Qdrant health and ingest verification.
 2. [x] Retrieval step 13 completed on the current machine.
-3. [ ] Step 14 E2E without reranker.
-   Blocker: no local Ollama model installed.
+3. [x] Step 14 E2E without reranker.
+   Note: technical pass only; output quality still needs evaluation.
 4. [ ] `/analyze` API smoke test.
 5. [ ] Run 5 realistic alerts and record outputs.
-6. [ ] Compare prompt templates.
-7. [ ] Add reranker.
+6. [ ] Create a manual scoring table for retrieval relevance, rationale fit, and mitigation fit.
+7. [ ] Compare prompt templates.
+8. [ ] Add reranker.
 
 ## Common Pitfalls
+- Treating a technical pass as if quality validation is already complete.
 - Pulling reranker work forward before the no-rerank pipeline is green.
-- Debugging prompt logic when the real failure is missing local runtime dependencies.
 - Testing only with hand-written alerts and not with CICIDS-derived alert text.
 - Expanding context too early before the JSON output path is stable.
