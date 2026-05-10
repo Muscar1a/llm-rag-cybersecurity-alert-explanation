@@ -38,7 +38,7 @@ Supporting questions:
 ### Knowledge Sources
 - CVE / NVD
 - MITRE ATT&CK
-- CICIDS2017 for realistic alert-style evaluation inputs
+- cse-cic-ids2018
 
 ### Base RAG Flow
 ```text
