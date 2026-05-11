@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from src.rag.qdrant_store import build_client, ensure_collection
+from rag.vector_store import build_client, ensure_collection
 from src.rag.settings import settings
 
 def load_vectors(source: str):

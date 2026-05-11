@@ -11,5 +11,5 @@ python src\data_process\chunk_data.py
 
 Step 3
 ```
-python src\embed_chunks.py
+python src\data_process\embed_chunks.py
 ```

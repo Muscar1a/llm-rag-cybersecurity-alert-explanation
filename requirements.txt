@@ -27,3 +27,11 @@ ollama
 # Utils
 pydantic==2.5.0
 pydantic-settings==2.1.0
+
+# Langchain
+langchain 
+langchain-community 
+langchain-qdrant 
+langchain-ollama
+langchain-core
+langchain-huggingface

@@ -4,7 +4,7 @@ from typing import Literal
 
 class AnalyzeRequest(BaseModel):
     alert_text: str = Field(min_length=5)
-    source: Literal["cve", "mitre"] | None = None
+    source: Literal["cve", "mitre", "sigma"] | None = None
     k: int = Field(default=5, ge=1, le=20)
     
 

@@ -1,5 +1,5 @@
 from qdrant_client import models
-from .qdrant_store import build_client
+from .vector_store import build_client
 from .settings import settings
 from .embeddings import QueryEmbedder
 

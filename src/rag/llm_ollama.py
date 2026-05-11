@@ -94,7 +94,7 @@ class OllamaLLM:
             prompt=prompt,
             options={"temperature": 0.1},
         )
-        text = resp.get("response", "").strip()
+        text = (getattr(resp, "response", None) or resp.get("response", "")).strip()
 
         try:
             json_text = self._extract_json_text(text)
