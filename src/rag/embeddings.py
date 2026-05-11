@@ -1,15 +1,18 @@
-import numpy as np
-from sentence_transformers import SentenceTransformer
+from functools import lru_cache
+from langchain_huggingface import HuggingFaceEmbeddings
 from .settings import settings
 
-class QueryEmbedder:
-    def __init__(self):
-        self.model = SentenceTransformer(settings.embedding_model)
+@lru_cache(maxsize=1)
+def get_embeddings() -> HuggingFaceEmbeddings:
+    return HuggingFaceEmbeddings(
+        model_name=settings.embedding_model,
+        model_kwargs={"device": "cuda" if _cuda_available() else "cpu"},
+        encode_kwargs={"normalize_embeddings": True}
+    )
     
-    def encode_query(self, text: str) -> list[float]:
-        v = self.model.encode(
-            [text],
-            convert_to_numpy=True,
-            normalize_embeddings=True,
-        )[0]
-        return v.astype(np.float32).tolist()
+def _cuda_available() -> bool:
+    try:
+        import torch
+        return torch.cuda.is_available()
+    except ImportError:
+        return False
