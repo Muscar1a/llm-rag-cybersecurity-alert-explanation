@@ -1,22 +1,36 @@
 --extra-index-url https://download.pytorch.org/whl/cu126
-requests
-python-dotenv
+
+# Core
+requests==2.33.1
+python-dotenv==1.2.2
 pandas
 numpy
-transformers
+scipy
+tqdm==4.67.3
+
+# Data Processing
 pyarrow
 fastparquet
-bs4
+bs4==0.0.2
+beautifulsoup4==4.14.3
+
+# HuggingFace & Embedding
+transformers
 huggingface_hub
-dvc[s3]
-tqdm
-torch
-torchvision
 sentence_transformers
 
+# PyTorch
+torch
+torchvision
 
 # Vector DB & RAG
 qdrant-client
+ragas
+
+# DVC
+dvc[s3]==3.67.1
+dvc-s3==3.3.0
+
 # Web Framework
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
@@ -24,16 +38,19 @@ uvicorn[standard]==0.24.0
 # LLM Inference
 ollama
 
-# Utils
-pydantic==2.5.0
-pydantic-settings==2.1.0
+# Validation & Settings
+pydantic==2.13.4
+pydantic-settings==2.14.1
 
-# Langchain
-langchain 
-langchain-community 
-langchain-qdrant 
+# LangChain
+langchain
+langchain-community
+langchain-qdrant
 langchain-ollama
 langchain-core
 langchain-huggingface
+langchain-google-genai
 
-scipy
+# Compatibility Fixes
+typing_extensions==4.15.0
+fsspec==2026.2.0

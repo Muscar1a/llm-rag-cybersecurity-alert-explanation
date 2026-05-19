@@ -60,6 +60,10 @@ class ChatService:
                 doc.metadata.get("chunk_id") or doc.metadata.get("_id", "")
                 for doc in result.get("context", [])
             ],
+            "retrieved_contexts_text": [
+                doc.page_content
+                for doc in result.get("context", [])
+            ]
         }
         
     def get_history(self, session_id: str) -> list[dict]:

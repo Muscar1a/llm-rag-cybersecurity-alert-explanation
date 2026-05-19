@@ -96,3 +96,99 @@ Weighted average vì mỗi file có số Benign rows khác nhau — file nhiều
 ### Tích hợp vào alert_builder
 
 `build_alert_text(row, baseline=None)` — khi `baseline` được truyền vào, annotation được thêm vào phần `Analysis hints` của alert text. Khi `baseline=None` (default), hàm hoạt động như cũ.
+
+---
+
+## Evaluation Architecture (`tests/evaluate_rag.py`)
+
+Đánh giá chất lượng RAG pipeline trên `data/raw/cse-cic-ids2018/combined_shorten.csv` (chỉ gồm attack records, đã loại Benign).
+
+### Luồng dữ liệu
+
+```
+combined_shorten.csv
+        │
+        ▼
+build_alert_text(row, baseline)
+        │ alert_text
+        ▼
+RagService.analyze()
+        │ {answer, context_ids, context_texts}  ← context_texts cần thêm vào lc_service.py
+        ▼
+┌─────────────────────────────────────────┐
+│            evaluate_rag.py              │
+│                                         │
+│  Layer 1 — RAGAs (Gemini 1.5 Flash)    │
+│    faithfulness, answer_relevancy       │
+│                                         │
+│  Layer 2 — Rule-based (no LLM judge)   │
+│    severity_correct                     │
+│    attack_type_hit                      │
+│    hallucination_flag                   │
+│    context_source_diversity             │
+│    sigma_2514_hit                       │
+└─────────────────────────────────────────┘
+        │
+        ▼
+tests/evaluation_report.csv
+```
+
+### Layer 1 — RAGAs metrics
+
+Dùng **Gemini Flash** làm judge LLM (free tier đủ cho 36 records).
+
+| Metric | Cần ground truth? | Đo gì |
+|---|---|---|
+| `faithfulness` | Không | Answer có được support bởi retrieved context không, hay LLM tự bịa? |
+| `answer_relevancy` | Không | Answer có trả lời đúng câu hỏi (alert) không? |
+
+Input cho RAGAs mỗi record:
+```
+user_input         = alert_text
+response           = threat_description + "\n" + rationale
+retrieved_contexts = [page_content của mỗi chunk retrieved]
+```
+
+### Layer 2 — Rule-based metrics
+
+**`severity_verdict`** — thay vì binary đúng/sai, dùng 3 giá trị dựa trên ordering `Low < Medium < High`:
+
+| Verdict | Ý nghĩa | Rủi ro |
+|---|---|---|
+| `correct` | Output nằm đúng expected minimum | — |
+| `underestimated` | Output thấp hơn expected minimum | **Nguy hiểm** — analyst có thể bỏ qua |
+| `overestimated` | Output cao hơn expected minimum | Chấp nhận được — thà bắt nhầm hơn bỏ sót |
+
+Expected minimum severity per attack type:
+
+| Expected minimum | Labels |
+|---|---|
+| `High` | DDOS attack-HOIC, DoS attacks-GoldenEye, DoS attacks-Hulk, SQL Injection, Infilteration |
+| `Medium` | DoS attacks-Slowloris, DoS attacks-SlowHTTPTest, FTP-BruteForce, SSH-Bruteforce, Brute Force -Web, Brute Force -XSS, Bot |
+
+Aggregate thành 2 con số báo cáo: **underestimation rate** (quan trọng nhất) và **overestimation rate**.
+
+**`attack_type_hit`** — kiểm tra `threat_description + rationale` có chứa keyword đúng của label không (case-insensitive). Ví dụ: `SQL Injection` → keywords `["sql", "injection", "database"]`.
+
+**`hallucination_flag`** — phát hiện mâu thuẫn giữa alert text và output:
+
+| Điều kiện trong alert_text | Output vi phạm nếu chứa |
+|---|---|
+| `"SYN flood: NOT possible"` | `"syn flood"` |
+| `"Zero-byte flow"` | `"exfiltrat"` |
+| `"server did not respond"` | `"established connection"` |
+
+**`context_source_diversity`** — từ `retrieved_context_ids`, check có đủ ≥1 CVE + ≥1 MITRE + ≥1 Sigma không.
+
+**`sigma_2514_hit`** — boolean, theo dõi tỷ lệ `sigma_2514_c0` xuất hiện trước/sau khi fix sigma enrichment.
+
+### Output schema (`evaluation_report.csv`)
+
+Mỗi record = 1 row:
+
+```
+label, severity_output, severity_verdict, attack_type_hit, hallucination_flag,
+sigma_2514_hit, context_diversity, faithfulness, answer_relevancy
+```
+
+Cuối file: aggregate summary per label + overall averages, bao gồm underestimation rate và overestimation rate.
