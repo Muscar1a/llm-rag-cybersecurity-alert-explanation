@@ -1,6 +1,8 @@
 import os
 import sys
 import zipfile
+import pandas as pd
+import glob
 
 target_days = [
     "Friday-02-03-2018",
@@ -74,8 +76,83 @@ def extract_logs(output_base="data/raw/cse-cic-ids2018"):
     print("Extraction complete.")
 
 
+def extract_non_benign_records(output_base="data/raw/cse-cic-ids2018", num_records=40):
+    """Extract non-BENIGN records from *_TrafficForML_CICFlowMeter.csv files.
+    
+    For each file matching the pattern, extracts the first 'num_records' 
+    non-BENIGN records and saves to *_TrafficShorten.csv.
+    Then combines all shortened files into combined_shorten.csv.
+    """
+    if not os.path.isdir(output_base):
+        print(f"Output base not found: {output_base}")
+        return
+    
+    # Find all *_TrafficForML_CICFlowMeter.csv files
+    pattern = os.path.join(output_base, "*_TrafficForML_CICFlowMeter.csv")
+    traffic_files = glob.glob(pattern)
+    
+    if not traffic_files:
+        print(f"No files matching pattern {pattern} found.")
+        return
+    
+    print(f"Found {len(traffic_files)} traffic files.")
+    all_dfs = []
+    
+    for traffic_file in traffic_files:
+        print(f"\nProcessing: {traffic_file}")
+        
+        # Read the CSV file
+        try:
+            df = pd.read_csv(traffic_file)
+        except Exception as e:
+            print(f"Error reading {traffic_file}: {e}")
+            continue
+        
+        # Filter out BENIGN records (assuming 'Label' column exists)
+        label_col = None
+        for col in df.columns:
+            if col.strip().lower() == 'label':
+                label_col = col
+                break
+        
+        if label_col is None:
+            print(f"Warning: 'Label' column not found in {traffic_file}. Skipping.")
+            continue
+        
+        # Normalize label values (strip spaces, uppercase) and filter out 'BENIGN'
+        labels = df[label_col].astype(str).str.strip().str.upper()
+        non_benign = df[labels != 'BENIGN']
+
+        if len(non_benign) == 0:
+            print(f"No non-BENIGN records found in {traffic_file}.")
+            continue
+
+        # If there are at least num_records, take a random sample, otherwise take all
+        if len(non_benign) >= num_records:
+            shortened = non_benign.sample(n=num_records, random_state=42)
+        else:
+            shortened = non_benign.copy()
+        
+        # Save to *_TrafficShorten.csv
+        shorten_file = traffic_file.replace("_TrafficForML_CICFlowMeter.csv", "_TrafficShorten.csv")
+        shortened.to_csv(shorten_file, index=False)
+        print(f"Saved {len(shortened)} records to {shorten_file}")
+        
+        all_dfs.append(shortened)
+    
+    # Combine all shortened files into combined_shorten.csv
+    if all_dfs:
+        combined = pd.concat(all_dfs, ignore_index=True)
+        combined_file = os.path.join(output_base, "combined_shorten.csv")
+        combined.to_csv(combined_file, index=False)
+        print(f"\nCombined {len(all_dfs)} files into {combined_file}")
+        print(f"Total records in combined file: {len(combined)}")
+    else:
+        print("No data to combine.")
+
+
 if __name__ == "__main__":
-    # Simple CLI: python cse-cic-ids2018.py [download|extract]
+    # Simple CLI: python cse-cic-ids2018.py [download|extract|shorten]
     if len(sys.argv) > 1:
         cmd = sys.argv[1].lower()
         if cmd == 'download':
@@ -84,7 +161,9 @@ if __name__ == "__main__":
             extract_logs()
         elif cmd == 'download_ground_truth':
             download_ground_truth()
+        elif cmd == 'shorten':
+            extract_non_benign_records()
         else:
-            print("Usage: python cse-cic-ids2018.py [download|extract]")
+            print("Usage: python cse-cic-ids2018.py [download|extract|download_ground_truth|shorten]")
     else:
-        print("Usage: python cse-cic-ids2018.py [download|extract]")
+        print("Usage: python cse-cic-ids2018.py [download|extract|download_ground_truth|shorten]")

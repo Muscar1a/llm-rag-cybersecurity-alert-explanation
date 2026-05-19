@@ -1,8 +1,8 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
 
 DOCUMENT_PROMPT = PromptTemplate(
-    input_variables=["page_content", "source", "doc_id"],
-    template="source={source} doc_id={doc_id}\n{page_content}",
+    input_variables=["page_content", "source"],
+    template="[source={source}]\n{page_content}",
 )
 
 DOCUMENT_SEPARATOR = "\n\n"
@@ -16,12 +16,28 @@ CONTEXTUALIZE_SYSTEM = (
 _OUTPUT_SCHEMA = """\
 Output ONLY a valid JSON object. No markdown, no explanations, no extra text
 
-{
-    "threat_description": "Semeantic explanation of what attack/behavior this alert indicates - not a restatement of the raw alert text.",
+{{
+    "threat_description": "Semantic explanation of what attack/behavior this alert indicates - not a restatement of the raw alert text.",
     "severity": "Low | Medium | High | Unknown - Based on the threat description, how severe is this alert? If you can't determine, say Unknown.",
     "rationale": "Evidence from the alert and retrieved knowledge that justifies the severity.",
-    "mitigation_steps":["actionable step 1", "actionable step 2", "..."] - List of actionable steps to mitigate the threat.
-}    
+    "mitigation_steps": ["actionable step 1", "actionable step 2", "..."]
+}}
+"""
+
+_BASELINE_RULES = """\
+Baseline knowledge — do NOT escalate these patterns alone:
+- Port 443/HTTPS: server-to-client byte ratio up to 20:1 is NORMAL for content delivery.
+- Short flows (<500ms, <30 packets): likely TCP handshake or keepalive. Rate Low unless other
+indicators present.
+- Ephemeral ports (>49152): dynamic client-side ports. Never recommend blocking them.
+"""
+
+_GROUNDING_RULES = """\
+Before naming any specific attack type, verify the required conditions are present:
+- SYN flood → SYN Flag Cnt must be > 0 AND ACK Flag Cnt near 0
+- DoS/DDoS   → requires abnormally high packet rate or very long duration
+- Port scan  → requires many distinct destination ports (not visible in a single-flow alert)
+If the required conditions are NOT in the alert, do NOT name that attack.
 """
 
 # == contextualize_prompt ======================================================
@@ -39,6 +55,8 @@ You are a senior SOC analyst. An IDS has fired an alert and your job is to \
 explain its security significance to a Tier-1 analyst who need to decide \
 whether to escalate.
 
+{_BASELINE_RULES}
+{_GROUNDING_RULES}
 Rules:
 - threat_description must explain WHAT the alert means, not repeat its raw text.
 - Use retrieved knowledge (CVE, MITRE ATT&CK, Sigma) to support your analysis.
@@ -66,6 +84,8 @@ basic_prompt = ChatPromptTemplate.from_messages([
 
 _COT_SYSTEM = f"""\
 You are a senior SOC analyst explaining an IDS alert.
+{_BASELINE_RULES}
+{_GROUNDING_RULES}
 
 Think step by step:
 1. What network behavior or attack pattern this alert indicate?
@@ -106,23 +126,23 @@ Detects Nmap usage via its default user-agent string. Commonly used for reconnai
 Network Service Discovery: Adversaries may attempt to get a listing of services \
 running on remote hosts to identify attack surface."""
 _EXAMPLE_OUTPUT = """\
-{
-"threat_description": "The alert indicates active network reconnaissance using Nmap. The source host
-is scanning the target to enumerate open ports and services — a typical pre-exploitation step.",
+{{
+"threat_description": "The alert indicates active network reconnaissance using Nmap. The source host is scanning the target to enumerate open ports and services — a typical pre-exploitation step.",
 "severity": "Medium",
-"rationale": "Nmap scanning maps to T1046 (Network Service Discovery). The Sigma rule confirms the
-user-agent fingerprint. Scanning alone is not an exploit but signals intent and warrants
-investigation.",
+"rationale": "Nmap scanning maps to T1046 (Network Service Discovery). The Sigma rule confirms the user-agent fingerprint. Scanning alone is not an exploit but signals intent and warrants investigation.",
 "mitigation_steps": [
     "Block or isolate source IP 10.0.0.42 pending investigation.",
     "Verify whether 10.0.0.42 is an authorized scanner.",
     "Review firewall rules to limit unnecessary port exposure.",
     "Monitor for follow-on exploitation attempts from the same source."
 ]
-}"""
+}}"""
 
 FEW_SHOT_SYSTEM = f"""\
 You are a senior SOC analyst explaining an IDS alert.
+{_BASELINE_RULES}
+{_GROUNDING_RULES}
+
 Follow the example format exactly. Output only the JSON object, no markdown or explanations.
 Do not invent unsupported facts.
 

@@ -57,7 +57,7 @@ class ChatService:
             **_parse_output(result["answer"]),
             "session_id":            session_id,
             "retrieved_context_ids": [
-                doc.metadata.get("chunk_id", "")
+                doc.metadata.get("chunk_id") or doc.metadata.get("_id", "")
                 for doc in result.get("context", [])
             ],
         }

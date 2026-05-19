@@ -31,7 +31,7 @@ def get_int(row, col, default=0):
 
 
 
-def build_alert_text(row: dict) -> str:
+def build_alert_text(row: dict, baseline=None) -> str:
     parts = []
     
     dst_port = get_int(row, "Dst Port")
@@ -133,7 +133,9 @@ def build_alert_text(row: dict) -> str:
     if init_fwd_win > 0:
         os_guess = WIN_OS.get(init_fwd_win, "unknown OS")
         win_parts.append(f"client init window {init_fwd_win} B ({os_guess})")
-    if init_bwd_win > 0:
+    if init_bwd_win == -1:
+        win_parts.append("server init window: none (server did not respond)")
+    elif init_bwd_win > 0:
         win_parts.append(f"server init window {init_bwd_win} B")
     if win_parts:
         parts.append(f"TCP window: {'; '.join(win_parts)}.")
@@ -141,6 +143,18 @@ def build_alert_text(row: dict) -> str:
     if seg_min > 0:
         parts.append(f"Minimum forward segment size: {seg_min} B.")
  
+    hints = []
+    if get_int(row, "SYN Flag Cnt") == 0:
+        hints.append("SYN flood: NOT possible (SYN count = 0)")
+    if fwd_bytes == 0 and bwd_bytes == 0:
+        hints.append("Zero-byte flow: no data transferred")
+    if baseline is not None:
+        for feature in ["Flow Pkts/s", "Flow Byts/s", "Flow Duration", "Flow IAT Mean"]:
+            ann = baseline.annotate(proto_num, dst_port, feature, get_float(row, feature))
+            if ann:
+                hints.append(f"{feature}: {ann}")
+    if hints:
+        parts.append(f"Analysis hints: {'; '.join(hints)}.")
     return " ".join(parts)
 
 

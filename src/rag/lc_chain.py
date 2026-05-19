@@ -27,7 +27,7 @@ def build_chat_chain(
     template_name: str = "basic",
 ) -> RunnableWithMessageHistory:
     llm = ChatOllama(
-        model=settings.ollama_model or "qwen2.5:3b-instruct",
+        model=settings.ollama_model or "mistral:7b-instruct-q4_K_M",
         base_url=settings.ollama_host,
         temperature=0.1,
     )

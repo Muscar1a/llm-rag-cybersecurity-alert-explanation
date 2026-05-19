@@ -63,7 +63,12 @@ def _build_points(df: pd.DataFrame, embeddings: np.ndarray) -> list[PointStruct]
             "doc_id":   row["doc_id"],
             "source":   row["source"],
             "text":     row["text"],
-            "metadata": meta,
+            "metadata": {
+                "chunk_id": row["chunk_id"],
+                "doc_id":   row["doc_id"],
+                "source":   row["source"],
+                **meta,
+            },
         }
 
         source = row["source"]
@@ -102,8 +107,9 @@ def embed_and_upsert(source: str, chunks_path: Path, model: SentenceTransformer,
     print(f"[{source.upper()}] {len(df)} chunks loaded.")
 
     print(f"[{source.upper()}] Encoding...")
+    texts = [f"passage: {t}" for t in df["text"].tolist()]
     embeddings = model.encode(
-        df["text"].tolist(),
+        texts,
         batch_size=batch,
         show_progress_bar=True,
         convert_to_numpy=True,
@@ -125,6 +131,8 @@ def main():
     parser.add_argument("--source", choices=list(SOURCES), default=None,
                         help="Source to embed. Omit to run all sources.")
     parser.add_argument("--batch", type=int, default=64)
+    parser.add_argument("--recreate", action="store_true",
+                        help="Drop and recreate the collection (removes old incompatible vectors).")
     args = parser.parse_args()
 
     sources_to_run = {args.source: SOURCES[args.source]} if args.source else SOURCES
@@ -134,6 +142,13 @@ def main():
     model = SentenceTransformer(EMBED_MODEL, device=device, model_kwargs=get_model_kwargs())
 
     client = QdrantClient(host="localhost", port=6333)
+
+    if args.recreate:
+        existing = [c.name for c in client.get_collections().collections]
+        if COLLECTION in existing:
+            client.delete_collection(COLLECTION)
+            print(f"[!] Deleted old collection '{COLLECTION}'")
+
     ensure_collection(client)
 
     for source, chunks_path in sources_to_run.items():
