@@ -1,0 +1,527 @@
+[
+  {
+    "label": "Bot",
+    "alert_text": "TCP flow on port 8080/HTTP-Proxy Volume: 7 packets total (3 forward / 4 backward), 455 bytes total (326 B sent, 129 B received). Byte ratio received/sent: 0.4x (client-dominant). Duration: 9.3 ms. Inter-arrival time (IAT): mean 1.6 ms, std 3.3 ms, max 8.3 ms. Forward IAT: mean 0.3 ms, max 0.6 ms. Forward packet sizes: min 0 B, max 326 B, std 188.2 B. Backward packet sizes: min 0 B, max 112 B, std 53.8 B. TCP flags: PSHx1, RSTx1, ECEx1. TCP window: client init window 8192 B (non-standard/custom stack); server init window 219 B. Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Flow Duration: 9309.0 (unusually low, z=-9.9); Flow IAT Mean: 1551.5 (unusually low, z=-9.9).",
+    "output": {
+      "threat_description": "Short-lived TCP session to an HTTP-Proxy on port 8080 from a client using a non-standard TCP stack (init window 8192 B), terminated by RST after only 7 packets. The client-dominant byte ratio with a single PSH followed by an abrupt reset is characteristic of botnet C2 beaconing or proxy-tunneling attempts where the bot posts a small payload and tears the connection down to evade flow-based detection.",
+      "severity": "High",
+      "rationale": "Behavioral fingerprint (custom stack, micro-burst, abnormal teardown, proxy port) is consistent with malware check-in traffic; if confirmed, the host is already compromised and under remote control.",
+      "mitigation_steps": [
+        "Isolate the source host from the network and trigger a forensic acquisition of memory and persistence artifacts.",
+        "Block egress traffic to the destination IP and port 8080 at the perimeter and add the proxy endpoint to your threat-intel feed.",
+        "Hunt for additional internal hosts contacting the same destination to identify the full botnet footprint."
+      ],
+      "session_id": "1dd87918-004c-4d8a-8eaa-3cfb4fa4f605"
+    }
+  },
+  {
+    "label": "Bot",
+    "alert_text": "TCP flow on port 8080/HTTP-Proxy Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.6 ms. Inter-arrival time (IAT): mean 0.6 ms, std 0.0 ms, max 0.6 ms. Forward IAT: mean 0.6 ms, max 0.6 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 2052 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Duration: 578.0 (unusually low, z=-9.9); Flow IAT Mean: 578.0 (unusually low, z=-9.9).",
+    "output": {
+      "threat_description": "Two-packet ACK-only probe to an HTTP-Proxy port with no server response and a zero-byte payload. The non-standard initial window (2052 B) and the lone ACK without SYN handshake indicate a mid-flow capture of a bot probing whether its proxy/C2 channel is reachable, a typical liveness-check pattern used by botnet implants.",
+      "severity": "Medium",
+      "rationale": "No payload was exchanged and the server did not respond, limiting immediate impact, but the fingerprint matches automated bot reconnaissance rather than legitimate user activity.",
+      "mitigation_steps": [
+        "Correlate the source IP with other 8080 probes over time to detect a beacon cadence.",
+        "Enrich the destination IP against threat intelligence and block at the egress firewall if attributed to known C2 infrastructure.",
+        "Run an EDR scan on the source host to look for unauthorized network clients or scheduled callbacks."
+      ],
+      "session_id": "2585f09d-811a-44df-a2a9-b0705f0afee9"
+    }
+  },
+  {
+    "label": "Bot",
+    "alert_text": "TCP flow on port 8080/HTTP-Proxy Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.6 ms. Inter-arrival time (IAT): mean 0.6 ms, std 0.0 ms, max 0.6 ms. Forward IAT: mean 0.6 ms, max 0.6 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 256 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Duration: 553.0 (unusually low, z=-9.9); Flow IAT Mean: 553.0 (unusually low, z=-9.9).",
+    "output": {
+      "threat_description": "Identical bot-probe pattern: an ACK-only two-packet flow to port 8080 with zero payload and no server reply. The unusually small initial window (256 B) is consistent with an embedded or stripped-down malware TCP stack rather than a real browser, suggesting another instance of botnet C2 reachability testing.",
+      "severity": "Medium",
+      "rationale": "Probe-only behavior with no data exchanged keeps impact low, but the recurring fingerprint across multiple flows points to persistent compromise on the source host.",
+      "mitigation_steps": [
+        "Quarantine the source endpoint pending malware sweep and uninstall of unauthorized software.",
+        "Add an IDS signature for ACK-only HTTP-Proxy probes from internal subnets toward external IPs.",
+        "Block the destination IP at the egress firewall until benign attribution is confirmed."
+      ],
+      "session_id": "16ab6814-510e-4866-83ac-d5af7f1987bc"
+    }
+  },
+  {
+    "label": "DoS attacks-Hulk",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 18.6 ms. Inter-arrival time (IAT): mean 18.6 ms, std 0.0 ms, max 18.6 ms. Forward IAT: mean 18.6 ms, max 18.6 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 225 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 32 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred.",
+    "output": {
+      "threat_description": "Two-packet ACK-only flow to HTTP/80 with no SYN handshake and no payload, captured mid-stream during an HTTP Unbearable Load King (HULK) flood. HULK generates large volumes of randomized GETs to bypass server-side caching; this flow is the connection-teardown fragment of one such request among many being sprayed at the web server.",
+      "severity": "High",
+      "rationale": "A single flow looks benign, but in HULK the damage comes from thousands of these per second exhausting worker threads and connection pools; aggregate impact on the web tier is significant.",
+      "mitigation_steps": [
+        "Enable rate-limiting and connection-per-IP caps at the reverse proxy or WAF in front of the web server.",
+        "Block the offending source IP/ASN and apply geo-fencing if attacker geography is narrow.",
+        "Tune the web server (worker timeouts, keep-alive limits) and front it with a CDN or scrubbing service to absorb L7 floods."
+      ],
+      "session_id": "5f9a7739-876c-4dfb-9c65-8ac20e00bcfb"
+    }
+  },
+  {
+    "label": "DoS attacks-Hulk",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 17.6 ms. Inter-arrival time (IAT): mean 17.6 ms, std 0.0 ms, max 17.6 ms. Forward IAT: mean 17.6 ms, max 17.6 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 225 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 32 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred.",
+    "output": {
+      "threat_description": "Another fragment of a HULK-style application-layer DoS: an ACK-only HTTP/80 micro-flow from the same fingerprint (init window 225 B, min segment 32 B) with no payload. Repetition of this exact signature confirms an automated flood generator rather than legitimate browsing.",
+      "severity": "High",
+      "rationale": "Volumetric L7 DoS impacts service availability and degrades legitimate user experience; persistence of the same fingerprint indicates an ongoing attack campaign.",
+      "mitigation_steps": [
+        "Drop traffic matching the attacker fingerprint (TCP window 225, ACK-only HTTP flows) at the edge.",
+        "Activate upstream DDoS mitigation/scrubbing and switch the site behind a CDN with anti-bot challenges.",
+        "Scale out web workers and shorten idle-connection timeouts to free resources held by the flood."
+      ],
+      "session_id": "cf3d80f9-0e51-4eaf-bb40-59fea8170698"
+    }
+  },
+  {
+    "label": "DoS attacks-Hulk",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 31.0 ms. Inter-arrival time (IAT): mean 31.0 ms, std 0.0 ms, max 31.0 ms. Forward IAT: mean 31.0 ms, max 31.0 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 225 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 32 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred.",
+    "output": {
+      "threat_description": "Third recurrence of the same HULK fingerprint against HTTP/80, again a two-packet ACK-only zero-byte flow. The consistent custom TCP-stack fingerprint across flows points to a single attack tool generating massive request volume against the web application.",
+      "severity": "High",
+      "rationale": "Confirmed sustained L7 flood from a consistent source profile; cumulative load threatens web service availability.",
+      "mitigation_steps": [
+        "Apply WAF rules to challenge or block requests lacking valid HTTP semantics or matching the HULK URL/header pattern.",
+        "Rate-limit per source IP at the load balancer and null-route the attacker subnet upstream if it persists.",
+        "Notify your upstream provider and engage DDoS mitigation services if the attack scales beyond local capacity."
+      ],
+      "session_id": "2c1b4a37-15ee-4f66-85bf-9df602a278dc"
+    }
+  },
+  {
+    "label": "DoS attacks-SlowHTTPTest",
+    "alert_text": "TCP flow on port 21/FTP Volume: 2 packets total (1 forward / 1 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.0 ms. Inter-arrival time (IAT): mean 0.0 ms, std 0.0 ms, max 0.0 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: PSHx1. TCP window: client init window 26883 B (unknown OS). Minimum forward segment size: 40 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Pkts/s: 666666.6667 (>p99, z=6431730.6); Flow IAT Mean: 3.0 (unusually low, z=-3.8).",
+    "output": {
+      "threat_description": "A burst on TCP/21 (FTP) showing a single PSH packet with zero payload and an extraordinary packet rate (~666k pkts/s) calculated from a sub-millisecond duration. The pattern matches slowhttptest-style connection-holding behavior misdirected at FTP, where the attacker opens many concurrent sockets and dribbles minimal data to exhaust the daemon's connection pool.",
+      "severity": "High",
+      "rationale": "FTP daemons typically have low concurrent-connection ceilings; slow-resource exhaustion against port 21 can knock the service offline quickly and may also mask credential brute force underneath.",
+      "mitigation_steps": [
+        "Enforce per-source concurrent-connection limits on the FTP service and reduce idle/header read timeouts.",
+        "Block the source IP at the perimeter and inspect the FTP server logs for accompanying brute-force attempts.",
+        "Migrate to SFTP/FTPS behind a reverse proxy or VPN, removing direct public exposure of port 21."
+      ],
+      "session_id": "fa0b2fb7-eabf-4fd4-88a1-09beb3ada66f"
+    }
+  },
+  {
+    "label": "DoS attacks-SlowHTTPTest",
+    "alert_text": "TCP flow on port 21/FTP Volume: 2 packets total (1 forward / 1 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.0 ms. Inter-arrival time (IAT): mean 0.0 ms, std 0.0 ms, max 0.0 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: PSHx1. TCP window: client init window 26883 B (unknown OS). Minimum forward segment size: 40 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Pkts/s: 666666.6667 (>p99, z=6431730.6); Flow IAT Mean: 3.0 (unusually low, z=-3.8).",
+    "output": {
+      "threat_description": "Repeat slowhttptest-style fragment on FTP/21: a sub-millisecond PSH-only flow with no payload and a packet rate over 600k/s, again pointing to a connection-exhaustion tool aimed at the FTP daemon.",
+      "severity": "High",
+      "rationale": "Recurring identical fingerprint confirms an automated slow-resource attack campaign; FTP services are particularly fragile under this pressure.",
+      "mitigation_steps": [
+        "Throttle new connections per source on TCP/21 at the firewall and enforce strict timeout limits in the FTP server config.",
+        "Blacklist the originating IP/ASN and review FTP logs for related authentication abuse.",
+        "Front the FTP service with a bastion or remove public exposure entirely."
+      ],
+      "session_id": "1cd735d1-f169-4bd3-9b22-a50ec1ee0658"
+    }
+  },
+  {
+    "label": "DoS attacks-SlowHTTPTest",
+    "alert_text": "TCP flow on port 21/FTP Volume: 2 packets total (1 forward / 1 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.0 ms. Inter-arrival time (IAT): mean 0.0 ms, std 0.0 ms, max 0.0 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: PSHx1. TCP window: client init window 26883 B (unknown OS). Minimum forward segment size: 40 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Pkts/s: 90909.09091 (>p99, z=877051.2); Flow IAT Mean: 22.0 (unusually low, z=-3.8).",
+    "output": {
+      "threat_description": "Same slowhttptest connection-holding signature against FTP/21 with packet rate ~90k/s. The PSH-only zero-byte payload combined with a custom client TCP stack (init window 26883 B) is the hallmark of the slowhttptest tool emitting micro-requests to keep sockets pinned.",
+      "severity": "High",
+      "rationale": "Persistent slow-resource attack against an FTP service that has limited slot capacity; sustained activity will exhaust available worker connections.",
+      "mitigation_steps": [
+        "Apply IP-based rate limits and slot quotas at the FTP server and at the edge firewall.",
+        "Block the originating subnet and harden the daemon (e.g., MaxClients, MaxClientsPerIP) against partial-request abuse.",
+        "Reduce attack surface by restricting port 21 to authenticated VPN clients only."
+      ],
+      "session_id": "5a4b692c-9e93-46fc-9ff7-b147d2cfcaed"
+    }
+  },
+  {
+    "label": "SQL Injection",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 8 packets total (4 forward / 4 backward), 1055 bytes total (660 B sent, 395 B received). Byte ratio received/sent: 0.6x (balanced). Duration: 5.01 s. Inter-arrival time (IAT): mean 715.8 ms, std 1867.6 ms, max 4950.8 ms. Forward IAT: mean 19.8 ms, max 56.2 ms. Forward packet sizes: min 0 B, max 660 B, std 330.0 B. Backward packet sizes: min 0 B, max 395 B, std 197.5 B. TCP flags: PSHx1, RSTx1, ECEx1. TCP window: client init window 8192 B (non-standard/custom stack); server init window 221 B. Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0).",
+    "output": {
+      "threat_description": "A balanced HTTP/80 conversation lasting ~5 seconds with a small payload (660 B sent, 395 B returned) and final RST teardown, originating from a client with a non-standard TCP stack (init window 8192 B, custom tool). The sub-second forward IATs followed by a multi-second idle and reset are consistent with a time-based blind SQL injection probe from sqlmap or similar, where the attacker injects sleep/benchmark payloads and waits for the server's delayed response to confirm exploitability.",
+      "severity": "Critical",
+      "rationale": "SQL injection enables direct database read/write and potential authentication bypass or RCE; the timing pattern indicates active exploitation testing, not generic scanning.",
+      "mitigation_steps": [
+        "Block the source IP at the WAF and enable signature/anomaly rules for SQLi payload patterns (UNION, SLEEP, BENCHMARK, time-based).",
+        "Review web and database logs for the targeted endpoint and verify parameterized queries are in use; patch any vulnerable parameter immediately.",
+        "Rotate any credentials that may have been exposed and audit the database for unauthorized reads or schema enumeration."
+      ],
+      "session_id": "8986421c-d44e-4dff-8469-f5a105c0de9e"
+    }
+  },
+  {
+    "label": "SQL Injection",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.0 ms. Inter-arrival time (IAT): mean 0.0 ms, std 0.0 ms, max 0.0 ms. Forward IAT: mean 0.0 ms, max 0.0 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 2053 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Pkts/s: 86956.5217391304 (>p99, z=366.5).",
+    "output": {
+      "threat_description": "Two-packet ACK-only probe to HTTP/80 with zero payload and very high computed packet rate. Likely the residual ACK/teardown segment of a scripted SQLi scanner that completed (or aborted) an injection attempt on another connection in the same campaign.",
+      "severity": "Medium",
+      "rationale": "On its own this flow carries no payload, but the SQLi-labeled context and scripted fingerprint indicate a broader injection campaign requiring response.",
+      "mitigation_steps": [
+        "Correlate the source IP with other HTTP/80 flows for full request reconstruction and WAF inspection.",
+        "Block the source IP and add WAF signatures for SQLi heuristics on the affected endpoints.",
+        "Audit web-app and DB logs for injection attempts against vulnerable parameters."
+      ],
+      "session_id": "76ec8b28-e72a-4349-b82c-c70705ac6967"
+    }
+  },
+  {
+    "label": "Brute Force -Web",
+    "alert_text": "UDP flow on port 500 Volume: 6 packets total (6 forward / 0 backward), 3000 bytes total (3000 B sent, 0 B received). Byte ratio received/sent: 0.0x (client-dominant). Duration: 1.5 min. Inter-arrival time (IAT): mean 17895.9 ms, std 15345.2 ms, max 41990.5 ms. Forward IAT: mean 17895.9 ms, max 41990.5 ms. Forward packet sizes: min 500 B, max 500 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: none set. TCP window: server init window: none (server did not respond). Minimum forward segment size: 8 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Flow IAT Mean: 17895933.8 (unusually low, z=-11.4).",
+    "output": {
+      "threat_description": "Six fixed-size 500-byte UDP packets to port 500 over ~90 seconds with no replies. Port 500 carries IKE (IPsec) and the periodic identical-size unsolicited datagrams are characteristic of IKE aggressive-mode brute force or PSK enumeration against a VPN gateway, where the attacker iterates identities/PSKs looking for a vulnerable responder.",
+      "severity": "High",
+      "rationale": "Successful VPN PSK compromise yields full network ingress; even unanswered IKE probes indicate active enumeration of the VPN concentrator.",
+      "mitigation_steps": [
+        "Disable IKE aggressive mode on the VPN gateway and require certificate-based auth or strong unique PSKs.",
+        "Rate-limit and geo-filter inbound UDP/500 and UDP/4500, and block the source IP at the edge.",
+        "Enable IKE logging and alert on repeated identity-mismatch or auth-failure events from any single source."
+      ],
+      "session_id": "11eb564b-49bd-4707-bbef-f1f034ed3572"
+    }
+  },
+  {
+    "label": "SQL Injection",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 8 packets total (4 forward / 4 backward), 923 bytes total (535 B sent, 388 B received). Byte ratio received/sent: 0.73x (balanced). Duration: 5.01 s. Inter-arrival time (IAT): mean 715.8 ms, std 1865.0 ms, max 4944.9 ms. Forward IAT: mean 21.8 ms, max 62.1 ms. Forward packet sizes: min 0 B, max 535 B, std 267.5 B. Backward packet sizes: min 0 B, max 388 B, std 194.0 B. TCP flags: PSHx1, RSTx1, ECEx1. TCP window: client init window 8192 B (non-standard/custom stack); server init window 219 B. Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0).",
+    "output": {
+      "threat_description": "HTTP/80 session of ~5 seconds with balanced bytes (535 B / 388 B), terminated by RST after a single PSH, from a non-standard TCP stack (init window 8192 B). The cadence — quick request bursts followed by multi-second waits — matches automated time-based blind SQL injection probing where the tool measures server response delay to infer injection success.",
+      "severity": "Critical",
+      "rationale": "Time-based SQLi reliably extracts data even with no visible error output; successful exploitation grants database-level access to the application.",
+      "mitigation_steps": [
+        "Block the source IP at the WAF and enable strict SQLi rule sets (timing, boolean, union, error-based).",
+        "Audit the targeted application endpoint and convert dynamic queries to parameterized statements; deploy emergency patches if vulnerable.",
+        "Review database query logs for SLEEP/BENCHMARK/WAITFOR patterns and rotate any credentials potentially exposed."
+      ],
+      "session_id": "a15968a6-94bb-489e-b39c-a3bfb2b6c14e"
+    }
+  },
+  {
+    "label": "Brute Force -XSS",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 3 packets total (3 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.4 ms. Inter-arrival time (IAT): mean 0.2 ms, std 0.3 ms, max 0.4 ms. Forward IAT: mean 0.2 ms, max 0.4 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 2053 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred.",
+    "output": {
+      "threat_description": "Three sub-millisecond ACK-only packets to HTTP/80 with no payload and no server response — a fingerprint of automated XSS-payload spraying tools where the scripted client opens many short-lived sockets to inject crafted strings into reflected parameters. This particular flow captures connection-teardown fragments of the wider scan.",
+      "severity": "Medium",
+      "rationale": "No payload visible in this flow, but the fingerprint and label indicate an automated XSS injection campaign in progress against the web application.",
+      "mitigation_steps": [
+        "Block the source IP at the WAF and enable reflected/stored XSS signature rules.",
+        "Verify output encoding and Content-Security-Policy headers on the targeted endpoints.",
+        "Hunt web logs for the source IP's full request set to confirm targeted parameters and payloads."
+      ],
+      "session_id": "37a80a68-e642-448a-bd12-236b8a4fe905"
+    }
+  },
+  {
+    "label": "Brute Force -Web",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 8 packets total (5 forward / 3 backward), 1010 bytes total (646 B sent, 364 B received). Byte ratio received/sent: 0.56x (balanced). Duration: 5.01 s. Inter-arrival time (IAT): mean 715.1 ms, std 1862.1 ms, max 4937.7 ms. Forward IAT: mean 1251.4 ms, max 4937.7 ms. Forward packet sizes: min 0 B, max 646 B, std 288.9 B. Backward packet sizes: min 0 B, max 364 B, std 210.2 B. TCP flags: PSHx1, RSTx1, ECEx1. TCP window: client init window 8192 B (non-standard/custom stack); server init window 221 B. Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0).",
+    "output": {
+      "threat_description": "Five-second HTTP/80 session of 8 packets with balanced traffic and RST teardown, originating from a non-standard TCP stack (init window 8192 B). The cadence — multi-second forward IATs between small request bursts — is characteristic of a credential brute-force tool (e.g., Hydra, Burp Intruder) submitting login form attempts with throttling to evade simple rate limits.",
+      "severity": "High",
+      "rationale": "Successful credential compromise grants direct application access; the pattern is consistent with active authentication abuse rather than reconnaissance.",
+      "mitigation_steps": [
+        "Enforce account lockout, CAPTCHA, and per-IP rate limiting on the login endpoint, and block the source IP at the WAF.",
+        "Enable MFA on all exposed accounts and review authentication logs for successful logins from the source IP.",
+        "Rotate credentials for any account that authenticated from the attacker IP during the attack window."
+      ],
+      "session_id": "1d798fb2-6787-4f98-ac13-08cc9f3f1a25"
+    }
+  },
+  {
+    "label": "Brute Force -Web",
+    "alert_text": "UDP flow on port 500 Volume: 6 packets total (6 forward / 0 backward), 3000 bytes total (3000 B sent, 0 B received). Byte ratio received/sent: 0.0x (client-dominant). Duration: 1.5 min. Inter-arrival time (IAT): mean 17895.9 ms, std 15345.2 ms, max 41990.4 ms. Forward IAT: mean 17895.9 ms, max 41990.4 ms. Forward packet sizes: min 500 B, max 500 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: none set. TCP window: server init window: none (server did not respond). Minimum forward segment size: 8 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Flow IAT Mean: 17895921.2 (unusually low, z=-11.7).",
+    "output": {
+      "threat_description": "Repeated IKE/IPsec enumeration pattern: six 500-byte UDP/500 packets over ~90 seconds with no response, consistent with PSK or identity brute force against the VPN gateway. The fixed-size payload and slow cadence are designed to look like normal IKE retries while iterating candidate secrets.",
+      "severity": "High",
+      "rationale": "Persistent IKE brute force is a path to full network ingress via VPN; unmitigated, weak PSKs can be cracked offline once a handshake is observed.",
+      "mitigation_steps": [
+        "Disable IKE aggressive mode and migrate to certificate or EAP-based authentication on the VPN.",
+        "Block the source IP and rate-limit UDP/500 and UDP/4500 at the perimeter.",
+        "Audit current PSKs for entropy and rotate any that are short or shared across users."
+      ],
+      "session_id": "ae6c2ba7-67d6-48b1-90ce-bf87ac303a44"
+    }
+  },
+  {
+    "label": "Brute Force -XSS",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 307 packets total (203 forward / 104 backward), 245986 bytes total (56083 B sent, 189903 B received). Byte ratio received/sent: 3.39x (server-dominant). Duration: 57.1 s. Inter-arrival time (IAT): mean 186.6 ms, std 363.1 ms, max 1019.5 ms. Forward IAT: mean 282.7 ms, max 1019.5 ms. Forward packet sizes: min 0 B, max 680 B, std 291.7 B. Backward packet sizes: min 0 B, max 1935 B, std 320.4 B. TCP flags: PSHx1, RSTx1, ECEx1. TCP window: client init window 8192 B (non-standard/custom stack); server init window 1281 B. Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0).",
+    "output": {
+      "threat_description": "A 57-second HTTP/80 conversation of 307 packets with strongly server-dominant byte ratio (3.39x, ~246 KB total) from a non-standard TCP stack (init window 8192 B). The volume of returned content combined with sustained forward POST/GET bursts is consistent with an active XSS fuzzing/brute-force campaign in which the attacker submits many crafted payloads and harvests reflected responses to identify exploitable injection points.",
+      "severity": "High",
+      "rationale": "Substantial back-and-forth at scale indicates the attacker is past reconnaissance and actively probing for working XSS payloads — high likelihood of finding a reflected or stored vector.",
+      "mitigation_steps": [
+        "Block the source IP at the WAF and enable XSS payload signatures plus anomaly scoring for input fuzzing.",
+        "Verify CSP, HttpOnly cookies, and output encoding on all user-input rendering paths.",
+        "Review web logs for the source IP, identify which parameters reflected payloads, and patch the inputs immediately."
+      ],
+      "session_id": "b3ef3ff7-96c2-485c-8299-c16242b9b3bf"
+    }
+  },
+  {
+    "label": "Brute Force -XSS",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 3 packets total (3 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.6 ms. Inter-arrival time (IAT): mean 0.3 ms, std 0.3 ms, max 0.5 ms. Forward IAT: mean 0.3 ms, max 0.5 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 2053 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred.",
+    "output": {
+      "threat_description": "Another short three-packet ACK-only fragment on HTTP/80 with no payload — the teardown remnant of an automated XSS-spray request among many issued by the attacker tool. The repeated short-flow pattern from a scripted client distinguishes it from normal browser behavior.",
+      "severity": "Medium",
+      "rationale": "Single fragment carries no payload, but is a piece of a broader XSS brute-force campaign captured in adjacent flows.",
+      "mitigation_steps": [
+        "Block the source IP at the WAF and aggregate its requests for full payload reconstruction.",
+        "Apply XSS signatures and input-validation rules to the targeted endpoints.",
+        "Audit logs to confirm whether any payload was reflected and remediate vulnerable parameters."
+      ],
+      "session_id": "19d97906-e39c-42f7-af8d-b3ed10d192bd"
+    }
+  },
+  {
+    "label": "Infilteration",
+    "alert_text": "UDP flow on port 53/DNS Volume: 2 packets total (1 forward / 1 backward), 80 bytes total (32 B sent, 48 B received). Byte ratio received/sent: 1.5x (balanced). Duration: 0.3 ms. Inter-arrival time (IAT): mean 0.3 ms, std 0.0 ms, max 0.3 ms. Forward packet sizes: min 32 B, max 32 B, std 0.0 B. Backward packet sizes: min 48 B, max 48 B, std 0.0 B. TCP flags: none set. TCP window: server init window: none (server did not respond). Minimum forward segment size: 8 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Flow Pkts/s: 7604.562738 (>p95, z=2.7).",
+    "output": {
+      "threat_description": "Single DNS query/response pair on UDP/53 with high packet rate when aggregated. While individually unremarkable, in an infiltration context this pattern is consistent with DNS-based C2 or low-and-slow DNS tunneling, where compromised hosts encode small command/exfil chunks inside frequent DNS lookups to attacker-controlled domains.",
+      "severity": "High",
+      "rationale": "DNS tunneling and DNS C2 commonly bypass perimeter controls; even minimal DNS volume can carry covert channels enabling persistent attacker access.",
+      "mitigation_steps": [
+        "Force all internal DNS through inspecting resolvers and block direct outbound UDP/53 from endpoints.",
+        "Enable DNS query analytics looking for high-entropy subdomains, long names, or unusual TXT/NULL record volume to the destination.",
+        "Block the queried domain/IP if not whitelisted and run EDR on the source host for known infostealer/RAT indicators."
+      ],
+      "session_id": "fb6ae74a-e62a-4158-8339-7683a31201bc"
+    }
+  },
+  {
+    "label": "Infilteration",
+    "alert_text": "TCP flow on port 53589 Volume: 2 packets total (1 forward / 1 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.1 ms. Inter-arrival time (IAT): mean 0.1 ms, std 0.0 ms, max 0.1 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1, URGx1. TCP window: client init window 946 B (unknown OS); server init window 256 B. Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred.",
+    "output": {
+      "threat_description": "Two-packet flow on the ephemeral TCP port 53589 carrying ACK with URG flag set and no payload. The URG flag is rarely used by modern applications and is a recognized covert-signaling and IDS-evasion technique, here suggesting a malware-issued out-of-band signal between an infected host and an attacker-controlled service.",
+      "severity": "High",
+      "rationale": "URG-flag abuse on a non-standard port between internal and external endpoints is a strong indicator of malware C2 signaling, not benign traffic.",
+      "mitigation_steps": [
+        "Isolate the source host and run a full EDR / memory acquisition for malware triage.",
+        "Block the destination IP and port at the firewall and add IDS rules flagging URG-flag-only segments on non-standard ports.",
+        "Hunt across the environment for other hosts contacting the same external endpoint."
+      ],
+      "session_id": "3f363c79-439c-4afb-a541-a899e718545d"
+    }
+  },
+  {
+    "label": "Infilteration",
+    "alert_text": "UDP flow on port 53/DNS Volume: 2 packets total (1 forward / 1 backward), 88 bytes total (36 B sent, 52 B received). Byte ratio received/sent: 1.44x (balanced). Duration: 1.1 ms. Inter-arrival time (IAT): mean 1.1 ms, std 0.0 ms, max 1.1 ms. Forward packet sizes: min 36 B, max 36 B, std 0.0 B. Backward packet sizes: min 52 B, max 52 B, std 0.0 B. TCP flags: none set. TCP window: server init window: none (server did not respond). Minimum forward segment size: 8 B. Analysis hints: SYN flood: NOT possible (SYN count = 0).",
+    "output": {
+      "threat_description": "Another small DNS query/response pair on UDP/53. In an infiltration context this fits beaconing or staged exfiltration where the implant uses periodic resolver lookups as a covert channel for command retrieval or data leakage.",
+      "severity": "Medium",
+      "rationale": "Low immediate volume keeps single-flow impact modest, but consistent low-rate DNS to suspicious destinations is a hallmark of stealthy C2 that should not be dismissed.",
+      "mitigation_steps": [
+        "Route all client DNS through inspecting resolvers and enable telemetry for entropy/volume anomalies.",
+        "Block traffic to the queried domain if not on an approved allow-list and add it to threat intel.",
+        "Investigate the source host with EDR for the implant generating the lookups."
+      ],
+      "session_id": "f3a0bdc4-7f86-4175-930a-0e7f17e10462"
+    }
+  },
+  {
+    "label": "DoS attacks-GoldenEye",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 8 packets total (5 forward / 3 backward), 1126 bytes total (464 B sent, 662 B received). Byte ratio received/sent: 1.43x (balanced). Duration: 6.81 s. Inter-arrival time (IAT): mean 972.7 ms, std 2545.3 ms, max 6744.7 ms. Forward IAT: mean 1702.3 ms, max 6745.1 ms. Forward packet sizes: min 0 B, max 464 B, std 207.5 B. Backward packet sizes: min 0 B, max 662 B, std 382.2 B. TCP flags: PSHx1. TCP window: client init window 26883 B (unknown OS); server init window 219 B. Minimum forward segment size: 32 B. Analysis hints: SYN flood: NOT possible (SYN count = 0).",
+    "output": {
+      "threat_description": "A nearly 7-second HTTP/80 exchange of 8 packets with balanced byte ratio and a single PSH, from a client using the custom TCP stack fingerprint (init window 26883 B) seen across GoldenEye attacks. GoldenEye is a layer-7 HTTP DoS that opens few connections, asks for no-cache content, and keeps sockets alive via Keep-Alive to exhaust server worker pools — exactly matching the long-duration low-packet shape here.",
+      "severity": "High",
+      "rationale": "GoldenEye-style L7 floods reliably exhaust Apache/nginx worker capacity; even small per-flow footprints aggregate into severe availability impact.",
+      "mitigation_steps": [
+        "Limit concurrent connections per source and shorten Keep-Alive timeouts at the web server / load balancer.",
+        "Block the source IP and add WAF rules for GoldenEye signatures (no-cache, randomized URI parameters, suspicious User-Agent).",
+        "Front the application with a CDN or DDoS scrubber capable of L7 challenge-response for suspect clients."
+      ],
+      "session_id": "58a87130-47b9-44f0-b962-b03b0db89904"
+    }
+  },
+  {
+    "label": "DoS attacks-GoldenEye",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 8 packets total (4 forward / 4 backward), 990 bytes total (328 B sent, 662 B received). Byte ratio received/sent: 2.02x (server-dominant). Duration: 11.46 s. Inter-arrival time (IAT): mean 1636.4 ms, std 2825.2 ms, max 6449.5 ms. Forward IAT: mean 2150.3 ms, max 6449.8 ms. Forward packet sizes: min 0 B, max 328 B, std 164.0 B. Backward packet sizes: min 0 B, max 662 B, std 331.0 B. TCP flags: PSHx1. TCP window: client init window 26883 B (unknown OS); server init window 219 B. Minimum forward segment size: 32 B. Analysis hints: SYN flood: NOT possible (SYN count = 0).",
+    "output": {
+      "threat_description": "Another GoldenEye L7 DoS flow: 8 packets over 11 seconds against HTTP/80, server-dominant bytes, single PSH, and the recurring init window 26883 B fingerprint. The long flow duration with sparse, evenly spaced packets is GoldenEye holding the connection open while issuing cache-busting requests.",
+      "severity": "High",
+      "rationale": "Sustained connection-holding behavior at scale degrades web service availability; consistent fingerprint confirms an automated attack tool.",
+      "mitigation_steps": [
+        "Block the offending source IP and apply per-IP concurrent-connection caps on the web tier.",
+        "Tune web server timeouts (KeepAliveTimeout, RequestReadTimeout) to reclaim resources from slow clients.",
+        "Engage upstream DDoS protection if the attack continues from multiple sources."
+      ],
+      "session_id": "0707134f-af8b-4644-a9fc-c7d4c7e2236c"
+    }
+  },
+  {
+    "label": "DoS attacks-GoldenEye",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 1.8 s. Inter-arrival time (IAT): mean 1803.9 ms, std 0.0 ms, max 1803.9 ms. Forward IAT: mean 1803.9 ms, max 1803.9 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 226 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 32 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred.",
+    "output": {
+      "threat_description": "Two-packet ACK-only fragment on HTTP/80 spanning 1.8 seconds with no payload, captured mid-stream from a GoldenEye flood. The long IAT for an ACK-only flow reflects the tool deliberately keeping idle connections open to occupy server worker slots.",
+      "severity": "Medium",
+      "rationale": "Single fragment has limited direct impact, but its long-idle shape confirms the connection-holding component of the layer-7 DoS campaign.",
+      "mitigation_steps": [
+        "Block the source IP and reduce server-side idle-connection timeouts.",
+        "Add WAF rate-limiting on /endpoint patterns targeted by GoldenEye.",
+        "Activate DDoS mitigation upstream if many such sources appear simultaneously."
+      ],
+      "session_id": "3a4023e7-39f3-49bb-b095-2e021ff4338e"
+    }
+  },
+  {
+    "label": "DoS attacks-Slowloris",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 18 packets total (15 forward / 3 backward), 2530 bytes total (2530 B sent, 0 B received). Byte ratio received/sent: 0.0x (client-dominant). Duration: 1.8 min. Inter-arrival time (IAT): mean 6375.4 ms, std 13533.5 ms, max 53247.3 ms. Forward IAT: mean 7741.6 ms, max 53247.3 ms. Forward packet sizes: min 0 B, max 230 B, std 105.3 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: PSHx1. TCP window: client init window 26883 B (unknown OS). Minimum forward segment size: 32 B. Analysis hints: SYN flood: NOT possible (SYN count = 0).",
+    "output": {
+      "threat_description": "Eighteen-packet HTTP/80 flow stretched over ~1.8 minutes with extreme inter-arrival gaps (mean 6.4 s, max 53 s) and zero backward bytes. This is the textbook Slowloris signature: the attacker dribbles partial HTTP headers very slowly so the server keeps the connection open waiting for the full request, eventually exhausting its worker pool.",
+      "severity": "High",
+      "rationale": "Slowloris reliably DoS's threaded web servers (Apache prefork) with minimal bandwidth; a successful campaign takes down public-facing HTTP services with very few attacking hosts.",
+      "mitigation_steps": [
+        "Enable mod_reqtimeout / RequestReadTimeout on Apache or migrate to an event-based server (nginx) less susceptible to slow headers.",
+        "Block the source IP and enforce minimum data-rate thresholds at the WAF / load balancer.",
+        "Cap concurrent connections per source IP and front the site with a reverse proxy that buffers full requests before passing them upstream."
+      ],
+      "session_id": "0ede383c-b601-4e51-8940-8bafb9c41f2b"
+    }
+  },
+  {
+    "label": "DoS attacks-Slowloris",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 4 packets total (2 forward / 2 backward), 16 bytes total (16 B sent, 0 B received). Byte ratio received/sent: 0.0x (client-dominant). Duration: 1.7 min. Inter-arrival time (IAT): mean 33337.1 ms, std 57741.6 ms, max 100011.4 ms. Forward IAT: mean 100011.4 ms, max 100011.4 ms. Forward packet sizes: min 8 B, max 8 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: SYNx1, ACKx1. TCP window: client init window 211 B (unknown OS); server init window 219 B. Minimum forward segment size: 32 B.",
+    "output": {
+      "threat_description": "Four-packet HTTP/80 flow over ~1.7 minutes with the SYN flag observed and only 16 bytes total sent, no data returned. The pattern — a fresh connection established and then held open with trickle data and ~100-second pauses — is consistent with Slowloris worker-hold behavior using minimum-viable activity to keep the socket alive.",
+      "severity": "High",
+      "rationale": "Long-held minimal-data sockets are the operative mechanism of Slowloris availability attacks; sustained across many connections this exhausts server capacity.",
+      "mitigation_steps": [
+        "Set strict header/body read timeouts on the web server and enforce minimum bytes-per-second per connection.",
+        "Block the source IP and add IDS rules for HTTP connections with extreme idle time and trivial payload.",
+        "Front the application with a buffering reverse proxy or CDN to absorb slow clients."
+      ],
+      "session_id": "d43b563d-928d-4fc9-bb39-1ed4ad041743"
+    }
+  },
+  {
+    "label": "FTP-BruteForce",
+    "alert_text": "TCP flow on port 21/FTP Volume: 2 packets total (1 forward / 1 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.0 ms. Inter-arrival time (IAT): mean 0.0 ms, std 0.0 ms, max 0.0 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: PSHx1. TCP window: client init window 26883 B (unknown OS). Minimum forward segment size: 40 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Pkts/s: 2000000.0 (>p99, z=19295198.9); Flow IAT Mean: 1.0 (unusually low, z=-3.8).",
+    "output": {
+      "threat_description": "Single-PSH zero-payload micro-flow on FTP/21 with an extreme computed packet rate (~2M pkts/s implied by sub-microsecond duration) — characteristic of a fragmented capture from an automated FTP credential brute-force tool (e.g., Hydra, Medusa, Ncrack) firing back-to-back authentication attempts using the same source TCP stack (window 26883 B).",
+      "severity": "High",
+      "rationale": "FTP commonly transmits credentials in cleartext and many deployments lack lockout; sustained brute force frequently succeeds against weak passwords, granting file access or upload capability.",
+      "mitigation_steps": [
+        "Block the source IP at the firewall and enable per-source connection rate limits on TCP/21.",
+        "Enable account lockout / fail2ban on the FTP service and require strong unique passwords or key-based auth.",
+        "Replace plain FTP with SFTP/FTPS and restrict access to known management IPs or VPN clients."
+      ],
+      "session_id": "3c30473c-1d7e-4c0f-8f74-5215bdaed1fa"
+    }
+  },
+  {
+    "label": "SSH-Bruteforce",
+    "alert_text": "TCP flow on port 22/SSH Volume: 2 packets total (1 forward / 1 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.0 ms. Inter-arrival time (IAT): mean 0.0 ms, std 0.0 ms, max 0.0 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1, URGx1. TCP window: client init window 241 B (unknown OS); server init window 230 B. Minimum forward segment size: 32 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Pkts/s: 400000.0 (>p99, z=259657.1).",
+    "output": {
+      "threat_description": "Two-packet ACK+URG zero-payload micro-flow on SSH/22 with a computed packet rate >400k/s, a fragment from automated SSH credential brute force against the server. The URG flag in conjunction with ACK and no payload is unusual for legitimate SSH and points to a scripted tool, while the high rate confirms automation.",
+      "severity": "High",
+      "rationale": "Successful SSH brute force yields shell access and typically full host compromise; even rate-limited attempts at scale can find weak passwords.",
+      "mitigation_steps": [
+        "Block the source IP at the firewall and enable fail2ban / sshd MaxAuthTries and LoginGraceTime hardening.",
+        "Disable password authentication on SSH in favor of public-key auth and require MFA where possible.",
+        "Restrict SSH exposure to a bastion host or VPN-only access and audit auth.log for any successful login from the source IP."
+      ],
+      "session_id": "e7acd2c9-c418-4578-905f-6c848069783f"
+    }
+  },
+  {
+    "label": "FTP-BruteForce",
+    "alert_text": "TCP flow on port 21/FTP Volume: 2 packets total (1 forward / 1 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.0 ms. Inter-arrival time (IAT): mean 0.0 ms, std 0.0 ms, max 0.0 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: PSHx1. TCP window: client init window 26883 B (unknown OS). Minimum forward segment size: 40 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Pkts/s: 1000000.0 (>p99, z=9647597.7); Flow IAT Mean: 2.0 (unusually low, z=-3.8).",
+    "output": {
+      "threat_description": "Repeat fragment of FTP credential brute force: single-PSH zero-payload micro-flow on TCP/21 with computed packet rate ~1M/s and the same custom client stack fingerprint (window 26883 B). Consistency across flows confirms an automated tool issuing back-to-back authentication attempts.",
+      "severity": "High",
+      "rationale": "Sustained automated FTP brute force commonly compromises weak accounts and exposes the filesystem; impact escalates quickly if writable directories exist.",
+      "mitigation_steps": [
+        "Block the source IP and enforce account lockout and per-source rate limits on TCP/21.",
+        "Require strong passwords or key-based auth and migrate to SFTP/FTPS.",
+        "Restrict FTP to internal networks or VPN-authenticated clients."
+      ],
+      "session_id": "a3ebd6d1-09ef-44f2-aa9d-98a8575bfc60"
+    }
+  },
+  {
+    "label": "FTP-BruteForce",
+    "alert_text": "TCP flow on port 21/FTP Volume: 2 packets total (1 forward / 1 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.0 ms. Inter-arrival time (IAT): mean 0.0 ms, std 0.0 ms, max 0.0 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: PSHx1. TCP window: client init window 26883 B (unknown OS). Minimum forward segment size: 40 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Pkts/s: 1000000.0 (>p99, z=9647597.7); Flow IAT Mean: 2.0 (unusually low, z=-3.8).",
+    "output": {
+      "threat_description": "Third instance of the FTP brute-force fingerprint on TCP/21: PSH-only zero-payload micro-flow at ~1M pkts/s. The repetition cements identification as a high-throughput credential-guessing campaign against the FTP server.",
+      "severity": "High",
+      "rationale": "Persistent brute force from a consistent source is a direct attempt at credential compromise; without protective controls, success is a matter of time.",
+      "mitigation_steps": [
+        "Block the source IP/subnet and deploy fail2ban-style automated banning based on auth failures.",
+        "Enforce strong passwords or keys; disable anonymous and unused accounts.",
+        "Remove FTP from public exposure where feasible and replace with SFTP behind VPN."
+      ],
+      "session_id": "c7e24410-3ecb-4fb8-99b1-afde7e9d5e4d"
+    }
+  },
+  {
+    "label": "SSH-Bruteforce",
+    "alert_text": "TCP flow on port 22/SSH Volume: 2 packets total (1 forward / 1 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.0 ms. Inter-arrival time (IAT): mean 0.0 ms, std 0.0 ms, max 0.0 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1, URGx1. TCP window: client init window 241 B (unknown OS); server init window 230 B. Minimum forward segment size: 32 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Pkts/s: 333333.333333333 (>p99, z=216380.8).",
+    "output": {
+      "threat_description": "Another SSH/22 ACK+URG zero-payload micro-flow with packet rate >300k/s from the same client fingerprint — a fragment of automated SSH credential guessing. The unusual flag combination on rapid micro-flows is inconsistent with interactive SSH usage and signals scripted brute force.",
+      "severity": "High",
+      "rationale": "Sustained SSH brute force at this rate is a direct attack on credentials; successful login yields shell access and lateral movement potential.",
+      "mitigation_steps": [
+        "Block the source IP and enforce fail2ban with low failure thresholds on SSH.",
+        "Disable password auth, enforce key-based auth and MFA, and restrict SSH to bastion or VPN.",
+        "Review sshd logs for any successful authentication from the source IP and investigate."
+      ],
+      "session_id": "a8680f7b-392a-4d02-b2e2-e41033ff690d"
+    }
+  },
+  {
+    "label": "SSH-Bruteforce",
+    "alert_text": "TCP flow on port 22/SSH Volume: 43 packets total (23 forward / 20 backward), 4593 bytes total (1928 B sent, 2665 B received). Byte ratio received/sent: 1.38x (balanced). Duration: 376.8 ms. Inter-arrival time (IAT): mean 9.0 ms, std 19.1 ms, max 93.8 ms. Forward IAT: mean 17.1 ms, max 93.8 ms. Forward packet sizes: min 0 B, max 640 B, std 135.8 B. Backward packet sizes: min 0 B, max 976 B, std 268.8 B. TCP flags: PSHx1. TCP window: client init window 26883 B (unknown OS); server init window 230 B. Minimum forward segment size: 32 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Flow Byts/s: 12189.3933965494 (>p95, z=115.7).",
+    "output": {
+      "threat_description": "A 43-packet SSH/22 session lasting ~377 ms with balanced bidirectional bytes (~4.6 KB) and high byte rate. This profile matches a full SSH protocol exchange — banner, key-exchange, and one or more authentication attempts — issued by an automated tool (init window 26883 B). The completed handshake distinguishes this from probe fragments and indicates the brute-force tool got far enough to attempt credentials.",
+      "severity": "Critical",
+      "rationale": "A completed SSH handshake plus credential submission is the highest-risk stage of brute force; if the password hits, the attacker gains shell access immediately.",
+      "mitigation_steps": [
+        "Immediately block the source IP, force-rotate any passwords for accounts targeted, and review sshd auth logs for successful logins.",
+        "Disable password auth on SSH, require keys + MFA, and restrict SSH to a bastion host.",
+        "Hunt the targeted user accounts on the host for unauthorized activity, new SSH keys, or persistence."
+      ],
+      "session_id": "8de81886-f135-43e0-b7da-4e13f9a56d23"
+    }
+  },
+  {
+    "label": "DDOS attack-HOIC",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 7 packets total (3 forward / 4 backward), 1246 bytes total (311 B sent, 935 B received). Byte ratio received/sent: 3.01x (server-dominant). Duration: 1.3 ms. Inter-arrival time (IAT): mean 0.2 ms, std 0.3 ms, max 0.7 ms. Forward IAT: mean 0.5 ms, max 0.7 ms. Forward packet sizes: min 0 B, max 311 B, std 179.6 B. Backward packet sizes: min 0 B, max 935 B, std 467.5 B. TCP flags: PSHx1, RSTx1, ECEx1. TCP window: client init window 65535 B (Windows); server init window 219 B. Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Flow Byts/s: 982649.8423 (>p95, z=55166.7).",
+    "output": {
+      "threat_description": "Sub-2-millisecond HTTP/80 burst of 7 packets from a Windows source (init window 65535 B) returning a server-dominant ~1.2 KB response, followed by RST. The very high byte rate, Windows client fingerprint, and rapid PSH-then-RST pattern are characteristic of HOIC (High Orbit Ion Cannon) — a Windows-based DDoS tool that fires concurrent HTTP requests as fast as possible against target URLs using booster scripts.",
+      "severity": "Critical",
+      "rationale": "HOIC traffic at this rate aggregated across the typical attack swarm rapidly saturates web server capacity and bandwidth; the campaign label and fingerprint indicate an active DDoS in progress.",
+      "mitigation_steps": [
+        "Engage upstream DDoS scrubbing and enable WAF rate-limiting, JavaScript challenges, and signature rules for HOIC user-agents and booster URL patterns.",
+        "Block the source IP/ASN at the edge and apply geo-fencing if attack geography is concentrated.",
+        "Scale web tier capacity and shift the application behind a CDN with anti-DDoS to absorb the flood."
+      ],
+      "session_id": "b28b7ae6-aff6-4696-a4a2-abe36c1d1525"
+    }
+  },
+  {
+    "label": "DDOS attack-HOIC",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 7 packets total (3 forward / 4 backward), 1219 bytes total (284 B sent, 935 B received). Byte ratio received/sent: 3.29x (server-dominant). Duration: 11.3 ms. Inter-arrival time (IAT): mean 1.9 ms, std 4.3 ms, max 10.7 ms. Forward IAT: mean 5.5 ms, max 10.7 ms. Forward packet sizes: min 0 B, max 284 B, std 164.0 B. Backward packet sizes: min 0 B, max 935 B, std 467.5 B. TCP flags: PSHx1, RSTx1, ECEx1. TCP window: client init window 65535 B (Windows); server init window 219 B. Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0).",
+    "output": {
+      "threat_description": "Another HOIC-pattern flow: 7-packet HTTP/80 burst from a Windows source (window 65535 B) with server-dominant byte ratio (3.29x), PSH+RST+ECE flags, completed in ~11 ms. Repeated identical fingerprint confirms HOIC booster-script activity hammering the web server with high-throughput HTTP requests.",
+      "severity": "Critical",
+      "rationale": "Confirmed HOIC DDoS activity with a recurring Windows-client signature; sustained traffic at scale will overwhelm the targeted web application.",
+      "mitigation_steps": [
+        "Drop traffic matching the attacker fingerprint at the edge and activate upstream DDoS scrubbing immediately.",
+        "Apply WAF L7 mitigations including JS challenges, captcha, and per-IP/AS rate limits.",
+        "Notify hosting/ISP and prepare incident communications if customer-facing services degrade."
+      ],
+      "session_id": "b1482b61-7005-4a0b-afab-819e217aeb43"
+    }
+  },
+  {
+    "label": "DDOS attack-HOIC",
+    "alert_text": "TCP flow on port 80/HTTP Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 1.4 ms. Inter-arrival time (IAT): mean 1.4 ms, std 0.0 ms, max 1.4 ms. Forward IAT: mean 1.4 ms, max 1.4 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 32738 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred.",
+    "output": {
+      "threat_description": "Two-packet ACK-only HTTP/80 fragment of ~1.4 ms from a custom client TCP stack (window 32738 B) with no payload — the teardown remnant of an HOIC flood request among many being sprayed at the web server.",
+      "severity": "High",
+      "rationale": "Single fragment has limited individual impact, but the broader HOIC campaign it belongs to drives serious availability degradation.",
+      "mitigation_steps": [
+        "Block the source IP and apply edge rate-limiting on HTTP/80.",
+        "Engage DDoS scrubbing services and enable WAF challenge pages to filter automated clients.",
+        "Monitor web server saturation and scale capacity dynamically while the attack persists."
+      ],
+      "session_id": "904ef712-a530-410a-9c3f-fdf0a678094b"
+    }
+  }
+]
