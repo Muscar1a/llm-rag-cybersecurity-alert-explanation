@@ -35,7 +35,7 @@ def download_logs():
     print("Done!")
 
 
-def download_ground_truth():
+def download_csv():
     base_s3_path = "s3://cse-cic-ids2018/Processed Traffic Data for ML Algorithms/"
     output_base = "data/raw/cse-cic-ids2018"
     
@@ -160,10 +160,10 @@ if __name__ == "__main__":
         elif cmd == 'extract':
             extract_logs()
         elif cmd == 'download_ground_truth':
-            download_ground_truth()
+            download_csv()
         elif cmd == 'shorten':
-            extract_non_benign_records()
+            extract_non_benign_records(num_records=15)
         else:
-            print("Usage: python cse-cic-ids2018.py [download|extract|download_ground_truth|shorten]")
+            print("Usage: python cse-cic-ids2018.py [download|extract|download_csv|shorten]")
     else:
-        print("Usage: python cse-cic-ids2018.py [download|extract|download_ground_truth|shorten]")
+        print("Usage: python cse-cic-ids2018.py [download|extract|download_csv|shorten]")

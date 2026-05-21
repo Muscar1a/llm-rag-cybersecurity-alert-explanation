@@ -17,6 +17,9 @@ def parse_sigma_rule(file_path: str) -> dict | None:
             rule = yaml.safe_load(f)
         if not rule or not isinstance(rule, dict):
             return None
+        detection = rule.get("detection", {})
+        detection_str = str(detection)
+        
         return {
             "title":          rule.get("title", ""),
             "description":    rule.get("description", ""),
@@ -25,6 +28,7 @@ def parse_sigma_rule(file_path: str) -> dict | None:
             "tags":           rule.get("tags", []),
             "logsource":      str(rule.get("logsource", {})),
             "falsepositives": rule.get("falsepositives", []),
+            "detection":      detection_str,
             "source":         "sigma",
         }
     except Exception:
@@ -57,6 +61,7 @@ def ingest_sigma():
                 f"Log Source: {rule['logsource']}\n"
                 f"Tags: {', '.join(rule['tags'])}\n"
                 f"Description: {rule['description'][:600]}\n"
+                f"Detection: {rule['detection']}\n"
                 f"False Positives: {', '.join(str(fp) for fp in rule['falsepositives'])}"
             )
 

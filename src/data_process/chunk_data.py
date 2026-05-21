@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import pandas as pd
 from transformers import AutoTokenizer
 
@@ -27,9 +28,18 @@ SOURCES = [
         "input":      "data/processed/sigma/sigma_cleaned.parquet",
         "output":     "data/processed/sigma/chunks.parquet",
         "id_col":     None,
-        "text_cols":  ["title", "description", "level", "tags"],
+        "text_cols":  ["title", "description", "level", "tags", "logsource", "falsepositives", "detection"],
     },
 ]
+
+
+def _is_junk(text: str) -> bool:
+    # Heuristic: too many hex addresses or stack trace patterns
+    if len(re.findall(r"0x[0-9a-fA-F]{4,}", text)) > 3:
+        return True
+    if len(re.findall(r"\+0x[0-9a-fA-F]+/[0-9a-fA-F]+", text)) > 2:
+        return True
+    return False
 
 
 def _chunk_records(
@@ -63,23 +73,26 @@ def _chunk_records(
         tokens = tokenizer.encode(text, add_special_tokens=False)
 
         if len(tokens) <= CHUNK_SIZE:
-            results.append({
-                "chunk_id": f"{doc_id}_c0",
-                "doc_id":   doc_id,
-                "source":   source_name,
-                "text":     text,
-                "metadata": json.dumps(metadata),
-            })
+            if not _is_junk(text):
+                results.append({
+                    "chunk_id": f"{doc_id}_c0",
+                    "doc_id":   doc_id,
+                    "source":   source_name,
+                    "text":     text,
+                    "metadata": json.dumps(metadata),
+                })
         else:
             for chunk_idx, start in enumerate(range(0, len(tokens), stride)):
                 end = min(start + CHUNK_SIZE, len(tokens))
-                results.append({
-                    "chunk_id": f"{doc_id}_c{chunk_idx}",
-                    "doc_id":   doc_id,
-                    "source":   source_name,
-                    "text":     tokenizer.decode(tokens[start:end]),
-                    "metadata": json.dumps(metadata),
-                })
+                chunk_text = tokenizer.decode(tokens[start:end])
+                if not _is_junk(chunk_text):
+                    results.append({
+                        "chunk_id": f"{doc_id}_c{chunk_idx}",
+                        "doc_id":   doc_id,
+                        "source":   source_name,
+                        "text":     chunk_text,
+                        "metadata": json.dumps(metadata),
+                    })
                 if end == len(tokens):
                     break
 
@@ -92,12 +105,12 @@ def chunk_source(source_cfg: dict, tokenizer) -> None:
     output = source_cfg["output"]
 
     if not os.path.isfile(input_):
-        print(f"[{name.upper()}] Input not found: {input_} — skipping.")
+        print(f"[{name.upper()}] Input not found: {input_} - skipping.")
         return
 
     print(f"[{name.upper()}] Loading {input_}...")
     df = pd.read_parquet(input_)
-    print(f"[{name.upper()}] {len(df)} records → chunking...")
+    print(f"[{name.upper()}] {len(df)} records -> chunking...")
 
     records = _chunk_records(
         df,
@@ -109,7 +122,7 @@ def chunk_source(source_cfg: dict, tokenizer) -> None:
 
     os.makedirs(os.path.dirname(output), exist_ok=True)
     pd.DataFrame(records).to_parquet(output, index=False)
-    print(f"[{name.upper()}] Saved {len(records)} chunks → {output}")
+    print(f"[{name.upper()}] Saved {len(records)} chunks -> {output}")
 
 
 if __name__ == "__main__":

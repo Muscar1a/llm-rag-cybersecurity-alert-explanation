@@ -99,7 +99,7 @@ def _build_points(df: pd.DataFrame, embeddings: np.ndarray) -> list[PointStruct]
 
 def embed_and_upsert(source: str, chunks_path: Path, model: SentenceTransformer, client: QdrantClient, batch: int) -> None:
     if not chunks_path.is_file():
-        print(f"[{source.upper()}] Chunk file not found: {chunks_path} — skipping.")
+        print(f"[{source.upper()}] Chunk file not found: {chunks_path} - skipping.")
         return
 
     print(f"\n[{source.upper()}] Loading chunks from {chunks_path}...")
@@ -121,7 +121,7 @@ def embed_and_upsert(source: str, chunks_path: Path, model: SentenceTransformer,
     for i in tqdm(range(0, len(points), 200), desc=f"[{source.upper()}] Upserting"):
         client.upsert(collection_name=COLLECTION, points=points[i:i + 200])
 
-    print(f"[{source.upper()}] Done — {len(points)} points upserted.")
+    print(f"[{source.upper()}] Done - {len(points)} points upserted.")
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 

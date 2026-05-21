@@ -16,3 +16,6 @@ CLAUDE.md
 GEMINI.md
 
 .claude
+
+docs/gemini_summarize.md
+docs/claude_summarize.md

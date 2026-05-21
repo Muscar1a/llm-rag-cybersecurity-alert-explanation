@@ -36,6 +36,7 @@ def _parse_sigma_rules(sigma_base_dir: str) -> list[dict]:
                     "tags":           json.dumps(rule.get("tags", [])),
                     "logsource":      str(rule.get("logsource", {})),
                     "falsepositives": json.dumps(rule.get("falsepositives", [])),
+                    "detection":      str(rule.get("detection", {})),
                     "source":         "sigma",
                 })
             except Exception:

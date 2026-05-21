@@ -99,9 +99,21 @@ Weighted average vì mỗi file có số Benign rows khác nhau — file nhiều
 
 ---
 
-## Evaluation Architecture (`tests/evaluate_rag.py`)
+## Evaluation Architecture (`tests/evaluate_ragas.py`)
 
 Đánh giá chất lượng RAG pipeline trên `data/raw/cse-cic-ids2018/combined_shorten.csv` (chỉ gồm attack records, đã loại Benign).
+
+### Vai trò các model
+
+| Model | Vai trò | Lý do |
+|---|---|---|
+| `qwen2.5:3b` (Ollama local) | RAG output generation | System under test |
+| Gemini Pro (`gemini-pro-latest`) | Ground truth generation | SOTA model sinh reference answer |
+| GPT-4.1 (OpenAI) | RAGAs judge | Khác family với Gemini → tránh intra-family bias |
+
+**Tại sao tách ground truth gen và judge:**
+- Nếu Gemini Pro sinh GT và Gemini Flash judge → Flash chấm cao những gì giống style của Pro (same-family bias)
+- Dùng GPT-4.1 làm judge → cross-family, đánh giá dựa trên nội dung thực chất
 
 ### Luồng dữ liệu
 
@@ -111,47 +123,65 @@ combined_shorten.csv
         ▼
 build_alert_text(row, baseline)
         │ alert_text
-        ▼
-RagService.analyze()
-        │ {answer, context_ids, context_texts}  ← context_texts cần thêm vào lc_service.py
-        ▼
-┌─────────────────────────────────────────┐
-│            evaluate_rag.py              │
-│                                         │
-│  Layer 1 — RAGAs (Gemini 1.5 Flash)    │
-│    faithfulness, answer_relevancy       │
-│                                         │
-│  Layer 2 — Rule-based (no LLM judge)   │
-│    severity_correct                     │
-│    attack_type_hit                      │
-│    hallucination_flag                   │
-│    context_source_diversity             │
-│    sigma_2514_hit                       │
-└─────────────────────────────────────────┘
-        │
-        ▼
-tests/evaluation_report.csv
+        ├─────────────────────────────────────────┐
+        ▼                                         ▼
+RagService.analyze()                   Gemini Pro
+(qwen2.5:3b via Ollama)                generate_ground_truth(alert_text)
+        │                                         │
+        │ actual_output                            │ reference
+        │ retrieved_contexts                       │
+        └──────────────────┬──────────────────────┘
+                           ▼
+        ┌──────────────────────────────────────────┐
+        │           evaluate_ragas.py              │
+        │                                          │
+        │  Layer 1 — RAGAs (GPT-4.1 as judge)     │
+        │    answer_correctness  ← cần reference   │
+        │    faithfulness        ← không cần GT    │
+        │    answer_relevancy    ← không cần GT    │
+        │                                          │
+        │  Layer 2 — Rule-based (no LLM judge)    │
+        │    severity_verdict                      │
+        │    attack_type_hit                       │
+        │    hallucination_flag                    │
+        │    context_source_diversity              │
+        │    sigma_2514_hit                        │
+        └──────────────────────────────────────────┘
+                           │
+                           ▼
+              evaluation_report.csv
+              evaluation_results.json
 ```
 
 ### Layer 1 — RAGAs metrics
-
-Dùng **Gemini Flash** làm judge LLM (free tier đủ cho 36 records).
-
-| Metric | Cần ground truth? | Đo gì |
-|---|---|---|
-| `faithfulness` | Không | Answer có được support bởi retrieved context không, hay LLM tự bịa? |
-| `answer_relevancy` | Không | Answer có trả lời đúng câu hỏi (alert) không? |
 
 Input cho RAGAs mỗi record:
 ```
 user_input         = alert_text
 response           = threat_description + "\n" + rationale
 retrieved_contexts = [page_content của mỗi chunk retrieved]
+reference          = ground truth do Gemini Pro sinh ra
 ```
+
+| Metric | Cần GT? | Đo gì |
+|---|---|---|
+| `answer_correctness` | Có | Output của local LLM có đúng với reference (Gemini Pro) không? |
+| `faithfulness` | Không | Output có hallucinate so với retrieved context không? |
+| `answer_relevancy` | Không | Output có trả lời đúng câu hỏi (alert) không? |
+
+### Ground truth generation
+
+Gemini Pro nhận `alert_text` và sinh ra một reference answer theo cùng schema với local LLM:
+
+```
+threat_description, severity, rationale, mitigation_steps
+```
+
+Reference này không phải "đáp án tuyệt đối" mà là **upper-bound anchor** — đánh giá local LLM lệch bao nhiêu so với một SOTA model khi cùng nhìn vào cùng alert.
 
 ### Layer 2 — Rule-based metrics
 
-**`severity_verdict`** — thay vì binary đúng/sai, dùng 3 giá trị dựa trên ordering `Low < Medium < High`:
+**`severity_verdict`** — 3 giá trị dựa trên ordering `Low < Medium < High`:
 
 | Verdict | Ý nghĩa | Rủi ro |
 |---|---|---|
@@ -166,11 +196,9 @@ Expected minimum severity per attack type:
 | `High` | DDOS attack-HOIC, DoS attacks-GoldenEye, DoS attacks-Hulk, SQL Injection, Infilteration |
 | `Medium` | DoS attacks-Slowloris, DoS attacks-SlowHTTPTest, FTP-BruteForce, SSH-Bruteforce, Brute Force -Web, Brute Force -XSS, Bot |
 
-Aggregate thành 2 con số báo cáo: **underestimation rate** (quan trọng nhất) và **overestimation rate**.
+**`attack_type_hit`** — `threat_description + rationale` có chứa keyword đúng của label không (case-insensitive).
 
-**`attack_type_hit`** — kiểm tra `threat_description + rationale` có chứa keyword đúng của label không (case-insensitive). Ví dụ: `SQL Injection` → keywords `["sql", "injection", "database"]`.
-
-**`hallucination_flag`** — phát hiện mâu thuẫn giữa alert text và output:
+**`hallucination_flag`** — mâu thuẫn giữa alert text và output:
 
 | Điều kiện trong alert_text | Output vi phạm nếu chứa |
 |---|---|
@@ -178,17 +206,29 @@ Aggregate thành 2 con số báo cáo: **underestimation rate** (quan trọng nh
 | `"Zero-byte flow"` | `"exfiltrat"` |
 | `"server did not respond"` | `"established connection"` |
 
-**`context_source_diversity`** — từ `retrieved_context_ids`, check có đủ ≥1 CVE + ≥1 MITRE + ≥1 Sigma không.
+**`context_source_diversity`** — từ `retrieved_context_ids`, check có ≥1 CVE + ≥1 MITRE + ≥1 Sigma không.
 
 **`sigma_2514_hit`** — boolean, theo dõi tỷ lệ `sigma_2514_c0` xuất hiện trước/sau khi fix sigma enrichment.
 
-### Output schema (`evaluation_report.csv`)
+### Output schema
 
-Mỗi record = 1 row:
-
+`evaluation_report.csv` — mỗi record = 1 row:
 ```
 label, severity_output, severity_verdict, attack_type_hit, hallucination_flag,
-sigma_2514_hit, context_diversity, faithfulness, answer_relevancy
+sigma_2514_hit, context_diversity, answer_correctness, faithfulness, answer_relevancy
 ```
 
-Cuối file: aggregate summary per label + overall averages, bao gồm underestimation rate và overestimation rate.
+`evaluation_results.json` — full detail per record:
+```json
+{
+  "label": "...",
+  "raw_packet": { ... },
+  "input": "alert_text",
+  "reference": "ground truth từ Gemini Pro",
+  "output": { "threat_description", "severity", "rationale", "mitigation_steps",
+              "retrieved_context_ids", "retrieved_contexts_text" },
+  "evaluation": { "severity_verdict", "attack_type_hit", "hallucination_flag",
+                  "sigma_2514_hit", "context_diversity",
+                  "answer_correctness", "faithfulness", "answer_relevancy" }
+}
+```

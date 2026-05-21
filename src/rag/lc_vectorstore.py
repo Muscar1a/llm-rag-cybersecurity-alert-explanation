@@ -27,8 +27,9 @@ class BalancedRetriever(BaseRetriever):
 
     vectorstore: QdrantVectorStore
     source_k: dict[str, int] = Field(default_factory=lambda: dict(_DEFAULT_SOURCE_K))
-    lambda_mult: float = 0.6
-    fetch_k_mult: int = 4
+    lambda_mult: float = 0.5
+    fetch_k_mult: int = 10
+    min_score: float = 0.82
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -42,10 +43,12 @@ class BalancedRetriever(BaseRetriever):
                 k=k,
                 fetch_k=k * self.fetch_k_mult,
                 lambda_mult=self.lambda_mult,
+                score_threshold=self.min_score,
                 filter=Filter(must=[
                     FieldCondition(key="metadata.source", match=MatchValue(value=source))
                 ]),
             )
+            
             for doc in results:
                 uid = doc.metadata.get("chunk_id") or doc.metadata.get("_id", "")
                 if uid not in seen:
@@ -61,6 +64,7 @@ def build_retriever(source: str | None = None, k: int = 5) -> BaseRetriever:
             "k": k,
             "fetch_k": k * 4,
             "lambda_mult": 0.6,
+            "score_threshold": 0.82,
             "filter": Filter(must=[
                 FieldCondition(key="metadata.source", match=MatchValue(value=source))
             ]),
