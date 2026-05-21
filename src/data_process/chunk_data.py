@@ -34,10 +34,14 @@ SOURCES = [
 
 
 def _is_junk(text: str) -> bool:
-    # Heuristic: too many hex addresses or stack trace patterns
-    if len(re.findall(r"0x[0-9a-fA-F]{4,}", text)) > 3:
+    # kernel function offset notation: +0x12c/0x2a0 (both sides have 0x in real stack traces)
+    if len(re.findall(r"\+0x[0-9a-fA-F]+/0x[0-9a-fA-F]+", text)) > 1:
         return True
-    if len(re.findall(r"\+0x[0-9a-fA-F]+/[0-9a-fA-F]+", text)) > 2:
+    # kernel log timestamps: [47200.376770]
+    if re.search(r"\[\s*\d{5,}\.\d+\]", text):
+        return True
+    # long memory addresses: 0xffff88816d2c0400
+    if len(re.findall(r"0x[0-9a-fA-F]{8,}", text)) > 2:
         return True
     return False
 

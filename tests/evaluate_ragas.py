@@ -402,7 +402,7 @@ def main():
     ground_truth = json.loads(GROUND_TRUTH_FILE.read_text(encoding="utf-8"))
     
     #* This is for tét
-    ground_truth = ground_truth[:3]
+    # ground_truth = ground_truth[:3] #!comment thí 
     
     print(f"Loaded {len(ground_truth)} entries from {GROUND_TRUTH_FILE}")
 

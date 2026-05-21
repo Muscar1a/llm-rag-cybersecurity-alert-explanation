@@ -2,17 +2,17 @@
   {
     "template": "basic",
     "total": 3,
-    "severity_underestimated": 1,
+    "severity_underestimated": 0,
     "severity_overestimated": 0,
-    "severity_correct": 2,
+    "severity_correct": 3,
     "attack_semantic_hit": 0,
     "hallucination_flagged": 0,
     "sigma_2514_hit": 0,
-    "avg_faithfulness": NaN,
-    "avg_answer_relevancy": NaN,
-    "avg_answer_correctness": NaN,
-    "avg_context_precision": NaN,
-    "avg_context_recall": NaN
+    "avg_faithfulness": 0.0,
+    "avg_answer_relevancy": 0.828,
+    "avg_answer_correctness": 0.504,
+    "avg_context_precision": 0.0,
+    "avg_context_recall": 0.0
   },
   {
     "template": "cot",
@@ -23,25 +23,25 @@
     "attack_semantic_hit": 0,
     "hallucination_flagged": 0,
     "sigma_2514_hit": 0,
-    "avg_faithfulness": NaN,
-    "avg_answer_relevancy": NaN,
-    "avg_answer_correctness": NaN,
-    "avg_context_precision": NaN,
-    "avg_context_recall": NaN
+    "avg_faithfulness": 0.0,
+    "avg_answer_relevancy": 0.789,
+    "avg_answer_correctness": 0.514,
+    "avg_context_precision": 0.0,
+    "avg_context_recall": 0.0
   },
   {
     "template": "few_shot",
     "total": 3,
     "severity_underestimated": 0,
-    "severity_overestimated": 0,
-    "severity_correct": 3,
+    "severity_overestimated": 2,
+    "severity_correct": 1,
     "attack_semantic_hit": 0,
     "hallucination_flagged": 0,
     "sigma_2514_hit": 0,
-    "avg_faithfulness": NaN,
-    "avg_answer_relevancy": NaN,
-    "avg_answer_correctness": NaN,
-    "avg_context_precision": NaN,
-    "avg_context_recall": NaN
+    "avg_faithfulness": null,
+    "avg_answer_relevancy": null,
+    "avg_answer_correctness": null,
+    "avg_context_precision": null,
+    "avg_context_recall": 0.0
   }
 ]

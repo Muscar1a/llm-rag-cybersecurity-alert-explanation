@@ -6,16 +6,16 @@
 
 | Metric | basic | cot | few_shot |
 |--------|------:|----:|---------:|
-| Severity correct | 2 | 1 | 3 |
-| Severity underestimated | 1 | 2 | 0 |
-| Severity overestimated | 0 | 0 | 0 |
+| Severity correct | 3 | 1 | 1 |
+| Severity underestimated | 0 | 2 | 0 |
+| Severity overestimated | 0 | 0 | 2 |
 | Attack semantic hit | 0 | 0 | 0 |
 | Hallucination flagged | 0 | 0 | 0 |
-| Avg faithfulness | nan | nan | nan |
-| Avg answer relevancy | nan | nan | nan |
-| Avg answer correctness | nan | nan | nan |
-| Avg context precision | nan | nan | nan |
-| Avg context recall | nan | nan | nan |
+| Avg faithfulness | 0.0 | 0.0 | None |
+| Avg answer relevancy | 0.828 | 0.789 | None |
+| Avg answer correctness | 0.504 | 0.514 | None |
+| Avg context precision | 0.0 | 0.0 | None |
+| Avg context recall | 0.0 | 0.0 | 0.0 |
 
 ## Output Files
 

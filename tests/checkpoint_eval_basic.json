@@ -5,27 +5,23 @@
     "input": "TCP flow on port 8080/HTTP-Proxy Volume: 7 packets total (3 forward / 4 backward), 455 bytes total (326 B sent, 129 B received). Byte ratio received/sent: 0.4x (client-dominant). Duration: 9.3 ms. Inter-arrival time (IAT): mean 1.6 ms, std 3.3 ms, max 8.3 ms. Forward IAT: mean 0.3 ms, max 0.6 ms. Forward packet sizes: min 0 B, max 326 B, std 188.2 B. Backward packet sizes: min 0 B, max 112 B, std 53.8 B. TCP flags: PSHx1, RSTx1, ECEx1. TCP window: client init window 8192 B (non-standard/custom stack); server init window 219 B. Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Flow Duration: 9309.0 (unusually low, z=-9.9); Flow IAT Mean: 1551.5 (unusually low, z=-9.9).",
     "reference": "Short TCP session to HTTP-Proxy port 8080 lasting 9.3 ms with 7 packets and 455 bytes (client-dominant), terminated by RST. The non-standard initial window of 8192 B identifies a custom (non-browser) TCP stack, and the PSH-data-then-RST pattern is consistent with botnet C2 beaconing or proxy-tunneled check-in where the implant posts a small payload and tears the connection down to evade flow-based detection.\nBehavioral fingerprint (custom TCP stack, micro-burst with PSH+RST, proxy port) matches malware check-in traffic; if confirmed, the source host is already under remote control and exfiltration or command retrieval is in progress.",
     "output": {
-      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusual characteristics. The flow has a very low duration and inter-arrival time, which is indicative of an unusually low volume of traffic. The byte ratio received/sent is also abnormally high, suggesting that the client is dominating the communication. These conditions suggest that this may be an attempt to evade detection by using environmental keying to deliver an encrypted payload.",
+      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusual characteristics.",
       "severity": "Medium",
-      "rationale": "The alert indicates unusual characteristics in a TCP flow on port 8080/HTTP-Proxy, which could be indicative of an attempt to evade detection. The low duration and inter-arrival time suggest that this may be an attempt to use environmental keying to deliver an encrypted payload. The byte ratio received/sent is also abnormally high, suggesting that the client is dominating the communication. These conditions suggest that this may be a sophisticated attack technique.",
+      "rationale": "The flow has an unusually low duration (9.3 ms) and IAT mean (1551.5 ms), which is below the threshold for normal traffic. The byte ratio received/sent is also 0.4x, indicating a client-dominant flow. These characteristics suggest that this flow may be abnormal or malicious.",
       "mitigation_steps": [
-        "Increase visibility into network traffic by implementing network monitoring tools",
-        "Implement intrusion detection and prevention systems (IDPS) to detect and block suspicious traffic",
-        "Implement security information and event management (SIEM) solutions to aggregate and analyze security events across the organization"
+        "Investigate the source and destination of the traffic to determine if it is legitimate.",
+        "Monitor the traffic for any signs of suspicious activity, such as sudden spikes in volume or unusual packet sizes.",
+        "Implement rate limiting or other traffic control mechanisms to prevent abuse of the system."
       ],
       "retrieved_context_ids": [
         "CVE-2021-47139_c4",
-        "CVE-2025-68199_c2",
-        "T1480.001_c1",
-        "T1499.001_c0",
-        "sigma_2453_c1"
+        "CVE-2024-56770_c1",
+        "CVE-2025-68199_c2"
       ],
       "retrieved_contexts_text": [
         "##x40 / 0xb0 [ hns3 ] [ 47200. 376770 ] hns3 _ set _ channels + 0x12c / 0x2a0 [ hns3 ] [ 47200. 383353 ] ethtool _ set _ channels + 0x140 / 0x250 [ 47200. 389772 ] dev _ ethtool + 0x714 / 0x23d0 [ 47200. 394440 ] dev _ ioctl + 0x4cc / 0x640 [ 47200. 399277 ] sock _ do _ ioctl + 0x100 / 0x2a0 [ 47200. 404574 ] sock _ ioctl + 0x28c / 0x470 [ 47200. 409079 ] _ _ arm64 _ sys _ ioctl + 0xb4 / 0x100 [ 47200. 415217 ] el0 _ svc _ common. constprop. 0 + 0x84 / 0x210 [ 47200. 422088 ] do _ el0 _ svc + 0x28 / 0x34 [ 47200. 426387 ] el0 _ svc + 0x28 / 0x70 [ 47200. 431308 ] el0 _ sync _ handler + 0x1a4 / 0x1b0 [ 47200. 436477 ] el0 _ sync + 0x174 / 0x180 [ 47200. 441562 ] code : 11000405 79000c45 f8247861 d65f03c0 ( d4210000 ) [ 47200. 448869 ] - - - [ end trace a01efe4ce42e5f34 ] - - - the process is like below : excuting hns3 _ client",
-        "##or _ neon raid6 _ pq loop sctp ip6 _ udp _ tunnel udp _ tunnel nft _ fib _ inet nft _ fib _ ipv4 nft _ fib _ ipv6 nft _ fib nft _ reject _ inet nf _ reject _ ipv4 nf _ reject _ ipv6 nft _ reject nft _ ct nft _ chain _ nat nf _ nat nf _ conntrack nf _ defrag _ ipv6 nf _ defrag _ ipv4 nf _ tables rfkill ip _ set sunrpc vfat fat joydev sg sch _ fq _ codel nfnetlink virtio _ gpu sr _ mod cdrom drm _ client _ lib virtio _ dma _ buf drm _ shmem _ helper drm _ kms _ helper drm ghash _ ce backlight virtio _ net virtio _ blk virtio _ scsi net _ failover virtio _ console failover virtio _ mmio dm _ mirror dm _ region _ hash dm _ log dm _ multipath dm _ mod fuse i2c _ dev virtio _ pci virtio _ pci _ legacy _ dev virtio _ pci _ modern _ dev virtio virtio _ ring autofs4 aes _ neon _ bs aes _ ce _ blk [ last unloaded : hwpoison _ inject ] [ 21630. 909177 ] cpu : 3 uid : 0 pid : 3787 comm : kylin - process - m kdump : loaded tainted : g w 6. 18. 0 - rc1 + # 74 preempt ( voluntary ) [ 21630. 910495 ] tainted : [ w ] = warn",
-        "##ps ). similar to [ obfuscated files or information ] ( https : / / attack. mitre. org / techniques / t1027 ), adversaries may use environmental keying to help protect their ttps and evade detection. environmental keying may be used to deliver an encrypted payload to the target that will use target - specific values to decrypt the payload before execution. ( citation : kaspersky gauss whitepaper ) ( citation : ek impeding malware analysis ) ( citation : environmental keyed hta ) ( citation : demiguise guardrail router logo ) by utilizing target - specific values to decrypt the payload the adversary can avoid packaging the decryption key with the payload or sending it over a potentially monitored network connection. depending on the technique for gathering target - specific values, reverse engineering of the encrypted payload can be exceptionally difficult. ( citation : kaspersky gauss whitepaper ) this can be used to prevent exposure of capabilities in environments that are not intended to be compromised or operated within. like other [ execution guardrails ] ( https : / / attack. mitre. org / techniques / t1480 ), environmental keying can be used to prevent exposure of capabilities in environments that are not intended to be compromised or operated within. this activity is distinct from typical [ virtualization / sandbox evasion ] ( https : / / attack. mitre. org / techniques / t1497 ). while use of [ virtualization / sandbox evasion ] ( https : / / attack. mitre. org / techniques / t1497 ) may involve checking for known sandbox values and continuing with execution only if there is no match, the use of environmental keying will involve checking for an expected target - specific value that must match for decryption and subsequent execution to be successful. [ \" stealth \" ]",
-        "OS Exhaustion Flood\nAdversaries may launch a denial of service (DoS) attack targeting an endpoint's operating system (OS). A system's OS is responsible for managing the finite resources as well as preventing the entire system from being overwhelmed by excessive demands on its capacity. These attacks do not need to exhaust the actual resources on a system; the attacks may simply exhaust the limits and available resources that an OS self-imposes.\n\nDifferent ways to achieve this exist, including TCP state-exhaustion attacks such as SYN floods and ACK floods.(Citation: Arbor AnnualDoSreport Jan 2018) With SYN floods, excessive amounts of SYN packets are sent, but the 3-way TCP handshake is never completed. Because each OS has a maximum number of concurrent TCP connections that it will allow, this can quickly exhaust the ability of the system to receive new requests for TCP connections, thus preventing access to any TCP service provided by the server.(Citation: Cloudflare SynFlood)\n\nACK floods leverage the stateful nature of the TCP protocol. A flood of ACK packets are sent to the target. This forces the OS to search its state table for a related TCP connection that has already been established. Because the ACK packets are for connections that do not exist, the OS will have to search the entire state table to confirm that no match exists. When it is necessary to do this for a large flood of packets, the computational requirements can cause the server to become sluggish and/or unresponsive, due to the work it must do to eliminate the rogue ACK packets. This greatly reduces the resources available for providing the targeted service.(Citation: Corero SYN-ACKflood)\n[\"impact\"]",
-        "- w / usr / bin / netstat - p x - k susp _ activity \\ n - w / usr / bin / ssh - p x - k susp _ activity \\ n - w / usr / bin / scp - p x - k susp _ activity \\ n - w / usr / bin / sftp - p x - k susp _ activity \\ n - w / usr / bin / ftp - p x - k susp _ activity \\ n - w / usr / bin / socat - p x - k susp _ activity \\ n - w / usr / bin / wireshark - p x - k susp _ activity \\ n - w / usr / bin / tshark - p x - k susp _ activity \\ n - w / usr / bin / rawshark - p x - k susp _ activity \\ n - w / usr / bin / rdesktop - p x - k susp _ activity \\ n - w / usr / local / bin / rdesktop - p x - k susp _ activity \\ n - w / usr / bin / wlfreerdp - p x - k susp _ activity \\ n - w / usr / bin / xfreerdp - p x - k susp _ activity \\ n - w / usr / local / bin / xfreerdp - p x - k susp _ activity \\ n - w / usr / bin / nmap - p x - k susp _ activity \\ n ( via https : / / github. com / neo23x0 / auditd / blob / ddf2603dbc985f97538d102f13b4e4446b402bae / audit. rules # l336 ) \\ n'} [ \" ad"
+        "##figure netem as rootqdisc and tbf as its child on the outgoing interface of the machineas follows : $ tc qdisc add dev root handle 1 : netem delay 100ms limit 100 $ tc qdisc add dev parent 1 : 0 tbf rate 50mbit burst 1542 latency 50mssend bulk tcp traffic out via this interface, e. g., by running an iperf3client on the machine. check the qdisc statistics : $ tc - s qdisc show dev statistics after 10s of iperf3 tcp test before the fix ( note thatnetem's backlog > limit, netem stopped accepting packets ) : qdisc netem 1 : root refcnt 2 limit 1000 delay 100ms sent 2767766 bytes 1848 pkt ( dropped 652, overlimits 0 requeues 0 ) backlog 4294528236b 1155p requeues 0qdisc tbf 10 : parent 1 : 1 rate 50mbit burst 1537b lat 50ms sent 2767766 bytes 1848 pkt ( dropped 327, overlimits 7601 requeues 0 ) backlog 0b 0p requeues 0statistics after the fix : qdisc netem 1 : root refcnt 2 limit 1000 delay 100ms sent 37766372 bytes 24974 pkt ( dropped 9, overlimits 0 requeues 0 ) backlog 0b 0p requeues 0qdisc tbf 10 : parent 1 : 1 rate 50mbit burst 1537b lat 50ms sent 37766372 bytes 24974 pkt ( dropped 327, overlimits 96017 requeues 0 ) backlog 0b 0p requeues 0tbf segments the gso skbs ( tbf _ segment ) and updates the netem's'qlen '.",
+        "##or _ neon raid6 _ pq loop sctp ip6 _ udp _ tunnel udp _ tunnel nft _ fib _ inet nft _ fib _ ipv4 nft _ fib _ ipv6 nft _ fib nft _ reject _ inet nf _ reject _ ipv4 nf _ reject _ ipv6 nft _ reject nft _ ct nft _ chain _ nat nf _ nat nf _ conntrack nf _ defrag _ ipv6 nf _ defrag _ ipv4 nf _ tables rfkill ip _ set sunrpc vfat fat joydev sg sch _ fq _ codel nfnetlink virtio _ gpu sr _ mod cdrom drm _ client _ lib virtio _ dma _ buf drm _ shmem _ helper drm _ kms _ helper drm ghash _ ce backlight virtio _ net virtio _ blk virtio _ scsi net _ failover virtio _ console failover virtio _ mmio dm _ mirror dm _ region _ hash dm _ log dm _ multipath dm _ mod fuse i2c _ dev virtio _ pci virtio _ pci _ legacy _ dev virtio _ pci _ modern _ dev virtio virtio _ ring autofs4 aes _ neon _ bs aes _ ce _ blk [ last unloaded : hwpoison _ inject ] [ 21630. 909177 ] cpu : 3 uid : 0 pid : 3787 comm : kylin - process - m kdump : loaded tainted : g w 6. 18. 0 - rc1 + # 74 preempt ( voluntary ) [ 21630. 910495 ] tainted : [ w ] = warn"
       ]
     },
     "evaluation": {
@@ -33,12 +29,12 @@
       "attack_semantic_hit": false,
       "hallucination_flag": false,
       "sigma_2514_hit": false,
-      "context_diversity": "cve+mitre+sigma",
-      "faithfulness": NaN,
-      "answer_relevancy": NaN,
-      "answer_correctness": NaN,
-      "context_precision": NaN,
-      "context_recall": NaN
+      "context_diversity": "cve",
+      "faithfulness": 0.0,
+      "answer_relevancy": 0.817,
+      "answer_correctness": 0.507,
+      "context_precision": 0.0,
+      "context_recall": 0.0
     }
   },
   {
@@ -47,39 +43,36 @@
     "input": "TCP flow on port 8080/HTTP-Proxy Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.6 ms. Inter-arrival time (IAT): mean 0.6 ms, std 0.0 ms, max 0.6 ms. Forward IAT: mean 0.6 ms, max 0.6 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 2052 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Duration: 578.0 (unusually low, z=-9.9); Flow IAT Mean: 578.0 (unusually low, z=-9.9).",
     "reference": "Two-packet ACK-only probe to HTTP-Proxy port 8080 with zero payload and no server response, completing in 0.58 ms. The non-standard initial window of 2052 B (consistent with an embedded or stripped-down malware TCP stack rather than a real browser) and the lone ACK without a SYN handshake indicate a botnet implant probing whether its C2/proxy channel is reachable.\nNo payload was exchanged and the server did not respond, limiting immediate impact, but the fingerprint matches automated bot reachability checks rather than legitimate user traffic.",
     "output": {
-      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusually low volume and duration. The flow has no data transferred and the forward IAT is also unusually low.",
-      "severity": "Low",
-      "rationale": "The alert does not meet any of the required conditions for a SYN flood, DoS/DDoS attack, or port scan. The flow duration and IAT are unusually low, which could be due to network congestion or other factors. However, without additional context or information about the source and destination IP addresses, it is difficult to determine if this behavior is malicious.",
+      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusually low volume and duration. The flow has no data transferred and the TCP flags indicate an ACK packet.",
+      "severity": "Medium",
+      "rationale": "The low volume and duration of the flow suggest that it may be a false positive or a benign event. However, the lack of data transferred and the ACK packet indicate that there might be some form of communication happening on this port. This could potentially be an attack vector if exploited.",
       "mitigation_steps": [
-        "Monitor the traffic on port 8080/HTTP-Proxy for any signs of abnormal behavior or increased volume.",
-        "Investigate the source and destination IP addresses to determine if they are known to be associated with malicious activity.",
-        "Consider implementing rate limiting or other traffic control mechanisms to prevent excessive traffic from overwhelming the system."
+        "Investigate the source and destination IP addresses to determine if they are known or suspicious.",
+        "Check for any other alerts related to this IP address or port.",
+        "Monitor the traffic on this port for any unusual patterns or behaviors.",
+        "Consider blocking the traffic on this port if it is deemed unnecessary or a potential security risk."
       ],
       "retrieved_context_ids": [
         "CVE-2024-26781_c2",
         "CVE-2024-26669_c2",
-        "T1499.001_c0",
-        "T1572_c1",
-        "sigma_2453_c1"
+        "CVE-2023-53133_c2"
       ],
       "retrieved_contexts_text": [
         "##1 _ _ inet _ listen _ sk + 0x2a2 / 0x770 net / ipv4 / af _ inet. c : 217 inet _ listen + 0xa3 / 0x110 net / ipv4 / af _ inet. c : 239 rds _ tcp _ listen _ init + 0x3fd / 0x5a0 net / rds / tcp _ listen. c : 316 rds _ tcp _ init _ net + 0x141 / 0x320 net / rds / tcp. c : 577 ops _ init + 0x352 / 0x610 net / core / net _ namespace. c : 136 _ _ register _ pernet _ operations net / core / net _ namespace. c : 1214 [ inline ] register _ pernet _ operations + 0x2cb / 0x660 net / core / net _ namespace. c : 1283 register _ pernet _ device + 0x33 / 0x80 net / core / net _ namespace. c : 1370 rds _ tcp _ init + 0x62 / 0xd0 net / rds / tcp. c : 735 do _ one _ initcall + 0x238 / 0x830 init / main. c : 1236 do _ initcall _ level + 0x157 / 0x210 init / main. c : 1298 do _ initcalls + 0x3f / 0x80 init / main. c : 1314 kernel _ init _ freeable + 0x42f / 0x5d0 init / main. c : 1551 kernel _ init + 0x1d / 0x2a0 init / main. c : 1441 ret _ from _ fork +",
         "##sw _ sp _ flower _ tmplt _ create + 0x145 / 0x180 [ ] mlxsw _ sp _ flow _ block _ cb + 0x1ea / 0x280 [ ] tc _ setup _ cb _ call + 0x183 / 0x340 [ ] fl _ tmplt _ create + 0x3da / 0x4c0 [ ] tc _ ctl _ chain + 0xa15 / 0x1170 [ ] rtnetlink _ rcv _ msg + 0x3cc / 0xed0 [ ] netlink _ rcv _ skb + 0x170 / 0x440 [ ] netlink _ unicast + 0x540 / 0x820 [ ] netlink _ sendmsg + 0x8d8 / 0xda0 [ ] _ _ _ _ sys _ sendmsg + 0x30f / 0xa80 [ ] _ _ _ sys _ sendmsg + 0x13a / 0x1e0 [ ] _ _ sys _ sendmsg + 0x11c / 0x1f0 [ ] do _ syscall _ 64 + 0x40 / 0xe0unreferenced object 0xffff88816d2c0400 ( size 1024 ) : comm \" tc \", pid 1079, jiffies 4294958525 ( age 3074. 287s ) hex dump ( first 32 bytes ) : 40 00 00 00 00 00 00 00 57 f6 38 be 00 00 00 00 @....... w. 8..... 10 04 2c 6d 81 88 ff ff 10 04 2c 6d 81 88 ff ff.., m......, m.... backtrace : [ ] _ _ kmem _",
-        "OS Exhaustion Flood\nAdversaries may launch a denial of service (DoS) attack targeting an endpoint's operating system (OS). A system's OS is responsible for managing the finite resources as well as preventing the entire system from being overwhelmed by excessive demands on its capacity. These attacks do not need to exhaust the actual resources on a system; the attacks may simply exhaust the limits and available resources that an OS self-imposes.\n\nDifferent ways to achieve this exist, including TCP state-exhaustion attacks such as SYN floods and ACK floods.(Citation: Arbor AnnualDoSreport Jan 2018) With SYN floods, excessive amounts of SYN packets are sent, but the 3-way TCP handshake is never completed. Because each OS has a maximum number of concurrent TCP connections that it will allow, this can quickly exhaust the ability of the system to receive new requests for TCP connections, thus preventing access to any TCP service provided by the server.(Citation: Cloudflare SynFlood)\n\nACK floods leverage the stateful nature of the TCP protocol. A flood of ACK packets are sent to the target. This forces the OS to search its state table for a related TCP connection that has already been established. Because the ACK packets are for connections that do not exist, the OS will have to search the entire state table to confirm that no match exists. When it is necessary to do this for a large flood of packets, the computational requirements can cause the server to become sluggish and/or unresponsive, due to the work it must do to eliminate the rogue ACK packets. This greatly reduces the resources available for providing the targeted service.(Citation: Corero SYN-ACKflood)\n[\"impact\"]",
-        "##versaries may also leverage [ protocol tunneling ] ( https : / / attack. mitre. org / techniques / t1572 ) in conjunction with [ proxy ] ( https : / / attack. mitre. org / techniques / t1090 ) and / or [ protocol or service impersonation ] ( https : / / attack. mitre. org / techniques / t1001 / 003 ) to further conceal c2 communications and infrastructure. [ \" command - and - control \" ]",
-        "- w / usr / bin / netstat - p x - k susp _ activity \\ n - w / usr / bin / ssh - p x - k susp _ activity \\ n - w / usr / bin / scp - p x - k susp _ activity \\ n - w / usr / bin / sftp - p x - k susp _ activity \\ n - w / usr / bin / ftp - p x - k susp _ activity \\ n - w / usr / bin / socat - p x - k susp _ activity \\ n - w / usr / bin / wireshark - p x - k susp _ activity \\ n - w / usr / bin / tshark - p x - k susp _ activity \\ n - w / usr / bin / rawshark - p x - k susp _ activity \\ n - w / usr / bin / rdesktop - p x - k susp _ activity \\ n - w / usr / local / bin / rdesktop - p x - k susp _ activity \\ n - w / usr / bin / wlfreerdp - p x - k susp _ activity \\ n - w / usr / bin / xfreerdp - p x - k susp _ activity \\ n - w / usr / local / bin / xfreerdp - p x - k susp _ activity \\ n - w / usr / bin / nmap - p x - k susp _ activity \\ n ( via https : / / github. com / neo23x0 / auditd / blob / ddf2603dbc985f97538d102f13b4e4446b402bae / audit. rules # l336 ) \\ n'} [ \" ad"
+        "##00000000000 dr1 : 0000000000000000 dr2 : 0000000000000000dr3 : 0000000000000000 dr6 : 00000000fffe0ff0 dr7 : 0000000000000400call trace : tcp _ msg _ wait _ data + 0x279 / 0x2f0 tcp _ bpf _ recvmsg _ parser + 0x3c6 / 0x490 inet _ recvmsg + 0x280 / 0x290 sock _ recvmsg + 0xfc / 0x120 _ _ _ _ sys _ recvmsg + 0x160 / 0x3d0 _ _ _ sys _ recvmsg + 0xf0 / 0x180 _ _ sys _ recvmsg + 0xea / 0x1a0 do _ syscall _ 64 + 0x3f / 0x90 entry _ syscall _ 64 _ after _ hwframe + 0x72 / 0xdcthe logic in tcp _ bpf _ recvmsg _ parser is as follows : msg _ bytes _ ready : copied = sk _ msg _ recvmsg ( sk, psock, msg, len, flags ) ; if (! copied ) { wait data ; goto msg _ bytes _ ready ; } in this case, \" copied \" always is 0, the infinite loop occurs. according to the linux system call man page, 0 should be returned in thiscase. therefore, in tcp _ bpf _ recvmsg _ parser ( ), if the length is 0, directlyreturn. also modify several other functions with the same problem."
       ]
     },
     "evaluation": {
-      "severity_verdict": "underestimated",
+      "severity_verdict": "correct",
       "attack_semantic_hit": false,
       "hallucination_flag": false,
       "sigma_2514_hit": false,
-      "context_diversity": "cve+mitre+sigma",
+      "context_diversity": "cve",
       "faithfulness": 0.0,
-      "answer_relevancy": 0.798,
-      "answer_correctness": NaN,
-      "context_precision": NaN,
+      "answer_relevancy": 0.829,
+      "answer_correctness": 0.667,
+      "context_precision": 0.0,
       "context_recall": 0.0
     }
   },
@@ -89,27 +82,23 @@
     "input": "TCP flow on port 8080/HTTP-Proxy Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.6 ms. Inter-arrival time (IAT): mean 0.6 ms, std 0.0 ms, max 0.6 ms. Forward IAT: mean 0.6 ms, max 0.6 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 256 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Duration: 553.0 (unusually low, z=-9.9); Flow IAT Mean: 553.0 (unusually low, z=-9.9).",
     "reference": "Two-packet ACK-only probe to HTTP-Proxy port 8080 with zero payload and no server response, completing in 0.55 ms. The non-standard initial window of 256 B (consistent with an embedded or stripped-down malware TCP stack rather than a real browser) and the lone ACK without a SYN handshake indicate a botnet implant probing whether its C2/proxy channel is reachable.\nNo payload was exchanged and the server did not respond, limiting immediate impact, but the fingerprint matches automated bot reachability checks rather than legitimate user traffic.",
     "output": {
-      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusual characteristics.",
+      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusually low volume and duration. The forward IAT is also unusually low, suggesting a potential DoS or DDoS attack.",
       "severity": "Medium",
-      "rationale": "The flow has an unusually low duration and inter-arrival time, which could indicate a denial of service (DoS) attack or other malicious activity. The lack of SYN flood and zero-byte flow further supports this conclusion.",
+      "rationale": "The low volume and duration of the TCP flow on port 8080/HTTP-Proxy suggest that it may be a result of a DoS or DDoS attack. The unusually low forward IAT also supports this conclusion, as it indicates that the attacker is sending packets at an abnormally high rate. However, without additional information about the source IP address or other indicators, it is difficult to determine the exact nature of the attack.",
       "mitigation_steps": [
-        "Increase monitoring of port 8080/HTTP-Proxy for any suspicious activity.",
-        "Implement rate limiting on port 8080/HTTP-Proxy to prevent abuse or DoS attacks.",
-        "Block incoming traffic from known malicious IP addresses associated with similar attacks."
+        "Increase monitoring of port 8080/HTTP-Proxy for any suspicious activity",
+        "Implement rate limiting on port 8080/HTTP-Proxy to prevent abuse",
+        "Block incoming traffic from known malicious IP addresses"
       ],
       "retrieved_context_ids": [
         "CVE-2024-26781_c2",
         "CVE-2024-26669_c2",
-        "T1499.001_c0",
-        "T1572_c1",
-        "sigma_2453_c1"
+        "CVE-2023-53133_c2"
       ],
       "retrieved_contexts_text": [
         "##1 _ _ inet _ listen _ sk + 0x2a2 / 0x770 net / ipv4 / af _ inet. c : 217 inet _ listen + 0xa3 / 0x110 net / ipv4 / af _ inet. c : 239 rds _ tcp _ listen _ init + 0x3fd / 0x5a0 net / rds / tcp _ listen. c : 316 rds _ tcp _ init _ net + 0x141 / 0x320 net / rds / tcp. c : 577 ops _ init + 0x352 / 0x610 net / core / net _ namespace. c : 136 _ _ register _ pernet _ operations net / core / net _ namespace. c : 1214 [ inline ] register _ pernet _ operations + 0x2cb / 0x660 net / core / net _ namespace. c : 1283 register _ pernet _ device + 0x33 / 0x80 net / core / net _ namespace. c : 1370 rds _ tcp _ init + 0x62 / 0xd0 net / rds / tcp. c : 735 do _ one _ initcall + 0x238 / 0x830 init / main. c : 1236 do _ initcall _ level + 0x157 / 0x210 init / main. c : 1298 do _ initcalls + 0x3f / 0x80 init / main. c : 1314 kernel _ init _ freeable + 0x42f / 0x5d0 init / main. c : 1551 kernel _ init + 0x1d / 0x2a0 init / main. c : 1441 ret _ from _ fork +",
         "##sw _ sp _ flower _ tmplt _ create + 0x145 / 0x180 [ ] mlxsw _ sp _ flow _ block _ cb + 0x1ea / 0x280 [ ] tc _ setup _ cb _ call + 0x183 / 0x340 [ ] fl _ tmplt _ create + 0x3da / 0x4c0 [ ] tc _ ctl _ chain + 0xa15 / 0x1170 [ ] rtnetlink _ rcv _ msg + 0x3cc / 0xed0 [ ] netlink _ rcv _ skb + 0x170 / 0x440 [ ] netlink _ unicast + 0x540 / 0x820 [ ] netlink _ sendmsg + 0x8d8 / 0xda0 [ ] _ _ _ _ sys _ sendmsg + 0x30f / 0xa80 [ ] _ _ _ sys _ sendmsg + 0x13a / 0x1e0 [ ] _ _ sys _ sendmsg + 0x11c / 0x1f0 [ ] do _ syscall _ 64 + 0x40 / 0xe0unreferenced object 0xffff88816d2c0400 ( size 1024 ) : comm \" tc \", pid 1079, jiffies 4294958525 ( age 3074. 287s ) hex dump ( first 32 bytes ) : 40 00 00 00 00 00 00 00 57 f6 38 be 00 00 00 00 @....... w. 8..... 10 04 2c 6d 81 88 ff ff 10 04 2c 6d 81 88 ff ff.., m......, m.... backtrace : [ ] _ _ kmem _",
-        "OS Exhaustion Flood\nAdversaries may launch a denial of service (DoS) attack targeting an endpoint's operating system (OS). A system's OS is responsible for managing the finite resources as well as preventing the entire system from being overwhelmed by excessive demands on its capacity. These attacks do not need to exhaust the actual resources on a system; the attacks may simply exhaust the limits and available resources that an OS self-imposes.\n\nDifferent ways to achieve this exist, including TCP state-exhaustion attacks such as SYN floods and ACK floods.(Citation: Arbor AnnualDoSreport Jan 2018) With SYN floods, excessive amounts of SYN packets are sent, but the 3-way TCP handshake is never completed. Because each OS has a maximum number of concurrent TCP connections that it will allow, this can quickly exhaust the ability of the system to receive new requests for TCP connections, thus preventing access to any TCP service provided by the server.(Citation: Cloudflare SynFlood)\n\nACK floods leverage the stateful nature of the TCP protocol. A flood of ACK packets are sent to the target. This forces the OS to search its state table for a related TCP connection that has already been established. Because the ACK packets are for connections that do not exist, the OS will have to search the entire state table to confirm that no match exists. When it is necessary to do this for a large flood of packets, the computational requirements can cause the server to become sluggish and/or unresponsive, due to the work it must do to eliminate the rogue ACK packets. This greatly reduces the resources available for providing the targeted service.(Citation: Corero SYN-ACKflood)\n[\"impact\"]",
-        "##versaries may also leverage [ protocol tunneling ] ( https : / / attack. mitre. org / techniques / t1572 ) in conjunction with [ proxy ] ( https : / / attack. mitre. org / techniques / t1090 ) and / or [ protocol or service impersonation ] ( https : / / attack. mitre. org / techniques / t1001 / 003 ) to further conceal c2 communications and infrastructure. [ \" command - and - control \" ]",
-        "- w / usr / bin / netstat - p x - k susp _ activity \\ n - w / usr / bin / ssh - p x - k susp _ activity \\ n - w / usr / bin / scp - p x - k susp _ activity \\ n - w / usr / bin / sftp - p x - k susp _ activity \\ n - w / usr / bin / ftp - p x - k susp _ activity \\ n - w / usr / bin / socat - p x - k susp _ activity \\ n - w / usr / bin / wireshark - p x - k susp _ activity \\ n - w / usr / bin / tshark - p x - k susp _ activity \\ n - w / usr / bin / rawshark - p x - k susp _ activity \\ n - w / usr / bin / rdesktop - p x - k susp _ activity \\ n - w / usr / local / bin / rdesktop - p x - k susp _ activity \\ n - w / usr / bin / wlfreerdp - p x - k susp _ activity \\ n - w / usr / bin / xfreerdp - p x - k susp _ activity \\ n - w / usr / local / bin / xfreerdp - p x - k susp _ activity \\ n - w / usr / bin / nmap - p x - k susp _ activity \\ n ( via https : / / github. com / neo23x0 / auditd / blob / ddf2603dbc985f97538d102f13b4e4446b402bae / audit. rules # l336 ) \\ n'} [ \" ad"
+        "##00000000000 dr1 : 0000000000000000 dr2 : 0000000000000000dr3 : 0000000000000000 dr6 : 00000000fffe0ff0 dr7 : 0000000000000400call trace : tcp _ msg _ wait _ data + 0x279 / 0x2f0 tcp _ bpf _ recvmsg _ parser + 0x3c6 / 0x490 inet _ recvmsg + 0x280 / 0x290 sock _ recvmsg + 0xfc / 0x120 _ _ _ _ sys _ recvmsg + 0x160 / 0x3d0 _ _ _ sys _ recvmsg + 0xf0 / 0x180 _ _ sys _ recvmsg + 0xea / 0x1a0 do _ syscall _ 64 + 0x3f / 0x90 entry _ syscall _ 64 _ after _ hwframe + 0x72 / 0xdcthe logic in tcp _ bpf _ recvmsg _ parser is as follows : msg _ bytes _ ready : copied = sk _ msg _ recvmsg ( sk, psock, msg, len, flags ) ; if (! copied ) { wait data ; goto msg _ bytes _ ready ; } in this case, \" copied \" always is 0, the infinite loop occurs. according to the linux system call man page, 0 should be returned in thiscase. therefore, in tcp _ bpf _ recvmsg _ parser ( ), if the length is 0, directlyreturn. also modify several other functions with the same problem."
       ]
     },
     "evaluation": {
@@ -117,12 +106,165 @@
       "attack_semantic_hit": false,
       "hallucination_flag": false,
       "sigma_2514_hit": false,
-      "context_diversity": "cve+mitre+sigma",
-      "faithfulness": NaN,
-      "answer_relevancy": 0.814,
-      "answer_correctness": 0.431,
-      "context_precision": NaN,
+      "context_diversity": "cve",
+      "faithfulness": 0.0,
+      "answer_relevancy": 0.838,
+      "answer_correctness": 0.338,
+      "context_precision": 0.0,
       "context_recall": 0.0
+    }
+  },
+  {
+    "label": "Bot",
+    "raw_packet": {},
+    "input": "TCP flow on port 8080/HTTP-Proxy Volume: 7 packets total (3 forward / 4 backward), 455 bytes total (326 B sent, 129 B received). Byte ratio received/sent: 0.4x (client-dominant). Duration: 10.9 ms. Inter-arrival time (IAT): mean 1.8 ms, std 4.0 ms, max 10.0 ms. Forward IAT: mean 0.3 ms, max 0.5 ms. Forward packet sizes: min 0 B, max 326 B, std 188.2 B. Backward packet sizes: min 0 B, max 112 B, std 53.8 B. TCP flags: PSHx1, RSTx1, ECEx1. TCP window: client init window 8192 B (non-standard/custom stack); server init window 219 B. Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Flow Duration: 10899.0 (unusually low, z=-9.9); Flow IAT Mean: 1816.5 (unusually low, z=-9.9).",
+    "reference": "Short TCP session to HTTP-Proxy port 8080 lasting 10.9 ms with 7 packets and 455 bytes (client-dominant), terminated by RST. The non-standard initial window of 8192 B identifies a custom (non-browser) TCP stack, and the PSH-data-then-RST pattern is consistent with botnet C2 beaconing or proxy-tunneled check-in where the implant posts a small payload and tears the connection down to evade flow-based detection.\nBehavioral fingerprint (custom TCP stack, micro-burst with PSH+RST, proxy port) matches malware check-in traffic; if confirmed, the source host is already under remote control and exfiltration or command retrieval is in progress.",
+    "output": {
+      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusual characteristics.",
+      "severity": "Medium",
+      "rationale": "The flow has an unusually low duration and IAT, which could indicate a malicious activity such as a denial-of-service (DoS) attack or port scanning. However, the alert does not provide enough information to confirm this suspicion.",
+      "mitigation_steps": [
+        "Increase monitoring of port 8080/HTTP-Proxy",
+        "Implement rate limiting on port 8080/HTTP-Proxy",
+        "Block IP addresses associated with suspicious activity"
+      ],
+      "retrieved_context_ids": [
+        "CVE-2021-47139_c4",
+        "CVE-2025-68199_c2",
+        "CVE-2022-49266_c2"
+      ],
+      "retrieved_contexts_text": [
+        "##x40 / 0xb0 [ hns3 ] [ 47200. 376770 ] hns3 _ set _ channels + 0x12c / 0x2a0 [ hns3 ] [ 47200. 383353 ] ethtool _ set _ channels + 0x140 / 0x250 [ 47200. 389772 ] dev _ ethtool + 0x714 / 0x23d0 [ 47200. 394440 ] dev _ ioctl + 0x4cc / 0x640 [ 47200. 399277 ] sock _ do _ ioctl + 0x100 / 0x2a0 [ 47200. 404574 ] sock _ ioctl + 0x28c / 0x470 [ 47200. 409079 ] _ _ arm64 _ sys _ ioctl + 0xb4 / 0x100 [ 47200. 415217 ] el0 _ svc _ common. constprop. 0 + 0x84 / 0x210 [ 47200. 422088 ] do _ el0 _ svc + 0x28 / 0x34 [ 47200. 426387 ] el0 _ svc + 0x28 / 0x70 [ 47200. 431308 ] el0 _ sync _ handler + 0x1a4 / 0x1b0 [ 47200. 436477 ] el0 _ sync + 0x174 / 0x180 [ 47200. 441562 ] code : 11000405 79000c45 f8247861 d65f03c0 ( d4210000 ) [ 47200. 448869 ] - - - [ end trace a01efe4ce42e5f34 ] - - - the process is like below : excuting hns3 _ client",
+        "##or _ neon raid6 _ pq loop sctp ip6 _ udp _ tunnel udp _ tunnel nft _ fib _ inet nft _ fib _ ipv4 nft _ fib _ ipv6 nft _ fib nft _ reject _ inet nf _ reject _ ipv4 nf _ reject _ ipv6 nft _ reject nft _ ct nft _ chain _ nat nf _ nat nf _ conntrack nf _ defrag _ ipv6 nf _ defrag _ ipv4 nf _ tables rfkill ip _ set sunrpc vfat fat joydev sg sch _ fq _ codel nfnetlink virtio _ gpu sr _ mod cdrom drm _ client _ lib virtio _ dma _ buf drm _ shmem _ helper drm _ kms _ helper drm ghash _ ce backlight virtio _ net virtio _ blk virtio _ scsi net _ failover virtio _ console failover virtio _ mmio dm _ mirror dm _ region _ hash dm _ log dm _ multipath dm _ mod fuse i2c _ dev virtio _ pci virtio _ pci _ legacy _ dev virtio _ pci _ modern _ dev virtio virtio _ ring autofs4 aes _ neon _ bs aes _ ce _ blk [ last unloaded : hwpoison _ inject ] [ 21630. 909177 ] cpu : 3 uid : 0 pid : 3787 comm : kylin - process - m kdump : loaded tainted : g w 6. 18. 0 - rc1 + # 74 preempt ( voluntary ) [ 21630. 910495 ] tainted : [ w ] = warn",
+        "max = 8. 0m : 36. 4m / 350m w p50 = 221u : 323u / 1. 5m p90 = 709u : 1. 2m / 5. 5m p99 = 1. 5m : 2. 5m / 9. 5m max = 6. 9m : 35. 9m / 350m isolation and request latency impact distributions : min p01 p05 p10 p25 p50 p75 p90 p95 p99 max mean stdev isol % 15. 90 15. 90 15. 90 40. 05 57. 24 59. 07 60. 01 74. 63 74. 63 90. 35 90. 35 58. 12 15. 82 lat - imp % 0 0 0 0 0 4. 55 14. 68 15. 54 233. 5 548. 1 548. 1 53. 88 143. 6 result : isol = 58. 12 : 15. 82 % lat _ imp = 53. 88 % : 143. 6 work _ csv = 100. 0 % missing = 3. 96 % the isolation result of 58. 12 % is close to what this device would showwithout any io control. fix it by introducing a new flag bio _ qos _ merged to mark merged bios andcalling rq _ qos _ done _ bio ( ) on them too. for consistency and clarity, renamebio _ tracked to bio _ qos _ throttled. the flag checks are moved intorq _ qos _ done _ bio ( ) so that it's next to the code paths that set the flags. with the patch applied, the above same benchmark shows : # resctl - bench - m 29. 6g - r out. json run protection : : scenario = mem - hog, loops = 1... memory hog summary = = = = = = = = = = = = ="
+      ]
+    },
+    "evaluation": {
+      "severity_verdict": "correct",
+      "attack_semantic_hit": false,
+      "hallucination_flag": false,
+      "sigma_2514_hit": false,
+      "context_diversity": "cve",
+      "faithfulness": 0.0,
+      "answer_relevancy": 0.675,
+      "answer_correctness": null,
+      "context_precision": null,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "label": "Bot",
+    "raw_packet": {},
+    "input": "TCP flow on port 8080/HTTP-Proxy Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.6 ms. Inter-arrival time (IAT): mean 0.6 ms, std 0.0 ms, max 0.6 ms. Forward IAT: mean 0.6 ms, max 0.6 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 2052 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Duration: 585.0 (unusually low, z=-9.9); Flow IAT Mean: 585.0 (unusually low, z=-9.9).",
+    "reference": "Two-packet ACK-only probe to HTTP-Proxy port 8080 with zero payload and no server response, completing in 0.58 ms. The non-standard initial window of 2052 B (consistent with an embedded or stripped-down malware TCP stack rather than a real browser) and the lone ACK without a SYN handshake indicate a botnet implant probing whether its C2/proxy channel is reachable.\nNo payload was exchanged and the server did not respond, limiting immediate impact, but the fingerprint matches automated bot reachability checks rather than legitimate user traffic.",
+    "output": {
+      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusually low volume and duration. The forward IAT is also unusually low, suggesting a potential DoS or DDoS attack.",
+      "severity": "Medium",
+      "rationale": "The alert meets the conditions for a DoS/DDoS attack (abnormally high packet rate or very long duration) and port scan (many distinct destination ports). However, it does not meet the condition for a SYN flood (SYN Flag Cnt must be > 0 AND ACK Flag Cnt near 0). The retrieved knowledge suggests that this behavior could be related to a TCP flow parser issue in the Linux kernel. This is a known vulnerability (CVE-2018-5389) that can lead to a DoS attack if exploited.",
+      "mitigation_steps": [
+        "Check for any known vulnerabilities in the TCP flow parser and apply patches if necessary.",
+        "Implement rate limiting or other measures to mitigate potential DoS/DDoS attacks.",
+        "Monitor network traffic closely for any signs of further exploitation or abuse."
+      ],
+      "retrieved_context_ids": [
+        "CVE-2024-26781_c2",
+        "CVE-2024-26669_c2",
+        "CVE-2023-53133_c2"
+      ],
+      "retrieved_contexts_text": [
+        "##1 _ _ inet _ listen _ sk + 0x2a2 / 0x770 net / ipv4 / af _ inet. c : 217 inet _ listen + 0xa3 / 0x110 net / ipv4 / af _ inet. c : 239 rds _ tcp _ listen _ init + 0x3fd / 0x5a0 net / rds / tcp _ listen. c : 316 rds _ tcp _ init _ net + 0x141 / 0x320 net / rds / tcp. c : 577 ops _ init + 0x352 / 0x610 net / core / net _ namespace. c : 136 _ _ register _ pernet _ operations net / core / net _ namespace. c : 1214 [ inline ] register _ pernet _ operations + 0x2cb / 0x660 net / core / net _ namespace. c : 1283 register _ pernet _ device + 0x33 / 0x80 net / core / net _ namespace. c : 1370 rds _ tcp _ init + 0x62 / 0xd0 net / rds / tcp. c : 735 do _ one _ initcall + 0x238 / 0x830 init / main. c : 1236 do _ initcall _ level + 0x157 / 0x210 init / main. c : 1298 do _ initcalls + 0x3f / 0x80 init / main. c : 1314 kernel _ init _ freeable + 0x42f / 0x5d0 init / main. c : 1551 kernel _ init + 0x1d / 0x2a0 init / main. c : 1441 ret _ from _ fork +",
+        "##sw _ sp _ flower _ tmplt _ create + 0x145 / 0x180 [ ] mlxsw _ sp _ flow _ block _ cb + 0x1ea / 0x280 [ ] tc _ setup _ cb _ call + 0x183 / 0x340 [ ] fl _ tmplt _ create + 0x3da / 0x4c0 [ ] tc _ ctl _ chain + 0xa15 / 0x1170 [ ] rtnetlink _ rcv _ msg + 0x3cc / 0xed0 [ ] netlink _ rcv _ skb + 0x170 / 0x440 [ ] netlink _ unicast + 0x540 / 0x820 [ ] netlink _ sendmsg + 0x8d8 / 0xda0 [ ] _ _ _ _ sys _ sendmsg + 0x30f / 0xa80 [ ] _ _ _ sys _ sendmsg + 0x13a / 0x1e0 [ ] _ _ sys _ sendmsg + 0x11c / 0x1f0 [ ] do _ syscall _ 64 + 0x40 / 0xe0unreferenced object 0xffff88816d2c0400 ( size 1024 ) : comm \" tc \", pid 1079, jiffies 4294958525 ( age 3074. 287s ) hex dump ( first 32 bytes ) : 40 00 00 00 00 00 00 00 57 f6 38 be 00 00 00 00 @....... w. 8..... 10 04 2c 6d 81 88 ff ff 10 04 2c 6d 81 88 ff ff.., m......, m.... backtrace : [ ] _ _ kmem _",
+        "##00000000000 dr1 : 0000000000000000 dr2 : 0000000000000000dr3 : 0000000000000000 dr6 : 00000000fffe0ff0 dr7 : 0000000000000400call trace : tcp _ msg _ wait _ data + 0x279 / 0x2f0 tcp _ bpf _ recvmsg _ parser + 0x3c6 / 0x490 inet _ recvmsg + 0x280 / 0x290 sock _ recvmsg + 0xfc / 0x120 _ _ _ _ sys _ recvmsg + 0x160 / 0x3d0 _ _ _ sys _ recvmsg + 0xf0 / 0x180 _ _ sys _ recvmsg + 0xea / 0x1a0 do _ syscall _ 64 + 0x3f / 0x90 entry _ syscall _ 64 _ after _ hwframe + 0x72 / 0xdcthe logic in tcp _ bpf _ recvmsg _ parser is as follows : msg _ bytes _ ready : copied = sk _ msg _ recvmsg ( sk, psock, msg, len, flags ) ; if (! copied ) { wait data ; goto msg _ bytes _ ready ; } in this case, \" copied \" always is 0, the infinite loop occurs. according to the linux system call man page, 0 should be returned in thiscase. therefore, in tcp _ bpf _ recvmsg _ parser ( ), if the length is 0, directlyreturn. also modify several other functions with the same problem."
+      ]
+    },
+    "evaluation": {
+      "severity_verdict": "correct",
+      "attack_semantic_hit": false,
+      "hallucination_flag": false,
+      "sigma_2514_hit": false,
+      "context_diversity": "cve",
+      "faithfulness": null,
+      "answer_relevancy": null,
+      "answer_correctness": null,
+      "context_precision": null,
+      "context_recall": null
+    }
+  },
+  {
+    "label": "Bot",
+    "raw_packet": {},
+    "input": "TCP flow on port 8080/HTTP-Proxy Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.5 ms. Inter-arrival time (IAT): mean 0.5 ms, std 0.0 ms, max 0.5 ms. Forward IAT: mean 0.5 ms, max 0.5 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 2052 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Duration: 497.0 (unusually low, z=-9.9); Flow IAT Mean: 497.0 (unusually low, z=-9.9).",
+    "reference": "Two-packet ACK-only probe to HTTP-Proxy port 8080 with zero payload and no server response, completing in 0.50 ms. The non-standard initial window of 2052 B (consistent with an embedded or stripped-down malware TCP stack rather than a real browser) and the lone ACK without a SYN handshake indicate a botnet implant probing whether its C2/proxy channel is reachable.\nNo payload was exchanged and the server did not respond, limiting immediate impact, but the fingerprint matches automated bot reachability checks rather than legitimate user traffic.",
+    "output": {
+      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusually low volume and duration. The flow has no data transferred and the TCP flags indicate ACKx1.",
+      "severity": "Medium",
+      "rationale": "The low volume and duration of the flow suggest that it may be a result of a misconfigured proxy server or an issue with network connectivity. The lack of data transferred and the specific TCP flags indicate that this is not a typical HTTP traffic pattern. However, without additional context or information about the system being monitored, it is difficult to determine the exact nature of the threat.",
+      "mitigation_steps": [
+        "Investigate the proxy server configuration to ensure it is functioning correctly.",
+        "Check network connectivity between the client and proxy server.",
+        "Monitor the traffic for any signs of malicious activity or unauthorized access.",
+        "Consult with security experts if necessary."
+      ],
+      "retrieved_context_ids": [
+        "CVE-2024-26781_c2",
+        "CVE-2024-26669_c2",
+        "CVE-2023-53133_c2"
+      ],
+      "retrieved_contexts_text": [
+        "##1 _ _ inet _ listen _ sk + 0x2a2 / 0x770 net / ipv4 / af _ inet. c : 217 inet _ listen + 0xa3 / 0x110 net / ipv4 / af _ inet. c : 239 rds _ tcp _ listen _ init + 0x3fd / 0x5a0 net / rds / tcp _ listen. c : 316 rds _ tcp _ init _ net + 0x141 / 0x320 net / rds / tcp. c : 577 ops _ init + 0x352 / 0x610 net / core / net _ namespace. c : 136 _ _ register _ pernet _ operations net / core / net _ namespace. c : 1214 [ inline ] register _ pernet _ operations + 0x2cb / 0x660 net / core / net _ namespace. c : 1283 register _ pernet _ device + 0x33 / 0x80 net / core / net _ namespace. c : 1370 rds _ tcp _ init + 0x62 / 0xd0 net / rds / tcp. c : 735 do _ one _ initcall + 0x238 / 0x830 init / main. c : 1236 do _ initcall _ level + 0x157 / 0x210 init / main. c : 1298 do _ initcalls + 0x3f / 0x80 init / main. c : 1314 kernel _ init _ freeable + 0x42f / 0x5d0 init / main. c : 1551 kernel _ init + 0x1d / 0x2a0 init / main. c : 1441 ret _ from _ fork +",
+        "##sw _ sp _ flower _ tmplt _ create + 0x145 / 0x180 [ ] mlxsw _ sp _ flow _ block _ cb + 0x1ea / 0x280 [ ] tc _ setup _ cb _ call + 0x183 / 0x340 [ ] fl _ tmplt _ create + 0x3da / 0x4c0 [ ] tc _ ctl _ chain + 0xa15 / 0x1170 [ ] rtnetlink _ rcv _ msg + 0x3cc / 0xed0 [ ] netlink _ rcv _ skb + 0x170 / 0x440 [ ] netlink _ unicast + 0x540 / 0x820 [ ] netlink _ sendmsg + 0x8d8 / 0xda0 [ ] _ _ _ _ sys _ sendmsg + 0x30f / 0xa80 [ ] _ _ _ sys _ sendmsg + 0x13a / 0x1e0 [ ] _ _ sys _ sendmsg + 0x11c / 0x1f0 [ ] do _ syscall _ 64 + 0x40 / 0xe0unreferenced object 0xffff88816d2c0400 ( size 1024 ) : comm \" tc \", pid 1079, jiffies 4294958525 ( age 3074. 287s ) hex dump ( first 32 bytes ) : 40 00 00 00 00 00 00 00 57 f6 38 be 00 00 00 00 @....... w. 8..... 10 04 2c 6d 81 88 ff ff 10 04 2c 6d 81 88 ff ff.., m......, m.... backtrace : [ ] _ _ kmem _",
+        "##00000000000 dr1 : 0000000000000000 dr2 : 0000000000000000dr3 : 0000000000000000 dr6 : 00000000fffe0ff0 dr7 : 0000000000000400call trace : tcp _ msg _ wait _ data + 0x279 / 0x2f0 tcp _ bpf _ recvmsg _ parser + 0x3c6 / 0x490 inet _ recvmsg + 0x280 / 0x290 sock _ recvmsg + 0xfc / 0x120 _ _ _ _ sys _ recvmsg + 0x160 / 0x3d0 _ _ _ sys _ recvmsg + 0xf0 / 0x180 _ _ sys _ recvmsg + 0xea / 0x1a0 do _ syscall _ 64 + 0x3f / 0x90 entry _ syscall _ 64 _ after _ hwframe + 0x72 / 0xdcthe logic in tcp _ bpf _ recvmsg _ parser is as follows : msg _ bytes _ ready : copied = sk _ msg _ recvmsg ( sk, psock, msg, len, flags ) ; if (! copied ) { wait data ; goto msg _ bytes _ ready ; } in this case, \" copied \" always is 0, the infinite loop occurs. according to the linux system call man page, 0 should be returned in thiscase. therefore, in tcp _ bpf _ recvmsg _ parser ( ), if the length is 0, directlyreturn. also modify several other functions with the same problem."
+      ]
+    },
+    "evaluation": {
+      "severity_verdict": "correct",
+      "attack_semantic_hit": false,
+      "hallucination_flag": false,
+      "sigma_2514_hit": false,
+      "context_diversity": "cve",
+      "faithfulness": null,
+      "answer_relevancy": null,
+      "answer_correctness": null,
+      "context_precision": null,
+      "context_recall": null
+    }
+  },
+  {
+    "label": "Bot",
+    "raw_packet": {},
+    "input": "TCP flow on port 8080/HTTP-Proxy Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.5 ms. Inter-arrival time (IAT): mean 0.5 ms, std 0.0 ms, max 0.5 ms. Forward IAT: mean 0.5 ms, max 0.5 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 2052 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Duration: 505.0 (unusually low, z=-9.9); Flow IAT Mean: 505.0 (unusually low, z=-9.9).",
+    "reference": "Two-packet ACK-only probe to HTTP-Proxy port 8080 with zero payload and no server response, completing in 0.51 ms. The non-standard initial window of 2052 B (consistent with an embedded or stripped-down malware TCP stack rather than a real browser) and the lone ACK without a SYN handshake indicate a botnet implant probing whether its C2/proxy channel is reachable.\nNo payload was exchanged and the server did not respond, limiting immediate impact, but the fingerprint matches automated bot reachability checks rather than legitimate user traffic.",
+    "output": {
+      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusually low volume and duration. The forward IAT is also unusually low, suggesting a potential DoS or DDoS attack.",
+      "severity": "Medium",
+      "rationale": "The alert meets the conditions for a possible DoS/DDoS attack: abnormally high packet rate or very long duration. The forward IAT is unusually low, which could indicate an attempt to overwhelm the server with traffic. However, without additional context or information about the target system, it's difficult to determine the exact nature of the attack.",
+      "mitigation_steps": [
+        "Increase monitoring of port 8080/HTTP-Proxy for unusual activity",
+        "Implement rate limiting or traffic shaping on port 8080/HTTP-Proxy",
+        "Consider blocking port 8080/HTTP-Proxy if the attack persists or becomes more severe"
+      ],
+      "retrieved_context_ids": [
+        "CVE-2024-26781_c2",
+        "CVE-2024-26669_c2",
+        "CVE-2023-53133_c2"
+      ],
+      "retrieved_contexts_text": [
+        "##1 _ _ inet _ listen _ sk + 0x2a2 / 0x770 net / ipv4 / af _ inet. c : 217 inet _ listen + 0xa3 / 0x110 net / ipv4 / af _ inet. c : 239 rds _ tcp _ listen _ init + 0x3fd / 0x5a0 net / rds / tcp _ listen. c : 316 rds _ tcp _ init _ net + 0x141 / 0x320 net / rds / tcp. c : 577 ops _ init + 0x352 / 0x610 net / core / net _ namespace. c : 136 _ _ register _ pernet _ operations net / core / net _ namespace. c : 1214 [ inline ] register _ pernet _ operations + 0x2cb / 0x660 net / core / net _ namespace. c : 1283 register _ pernet _ device + 0x33 / 0x80 net / core / net _ namespace. c : 1370 rds _ tcp _ init + 0x62 / 0xd0 net / rds / tcp. c : 735 do _ one _ initcall + 0x238 / 0x830 init / main. c : 1236 do _ initcall _ level + 0x157 / 0x210 init / main. c : 1298 do _ initcalls + 0x3f / 0x80 init / main. c : 1314 kernel _ init _ freeable + 0x42f / 0x5d0 init / main. c : 1551 kernel _ init + 0x1d / 0x2a0 init / main. c : 1441 ret _ from _ fork +",
+        "##sw _ sp _ flower _ tmplt _ create + 0x145 / 0x180 [ ] mlxsw _ sp _ flow _ block _ cb + 0x1ea / 0x280 [ ] tc _ setup _ cb _ call + 0x183 / 0x340 [ ] fl _ tmplt _ create + 0x3da / 0x4c0 [ ] tc _ ctl _ chain + 0xa15 / 0x1170 [ ] rtnetlink _ rcv _ msg + 0x3cc / 0xed0 [ ] netlink _ rcv _ skb + 0x170 / 0x440 [ ] netlink _ unicast + 0x540 / 0x820 [ ] netlink _ sendmsg + 0x8d8 / 0xda0 [ ] _ _ _ _ sys _ sendmsg + 0x30f / 0xa80 [ ] _ _ _ sys _ sendmsg + 0x13a / 0x1e0 [ ] _ _ sys _ sendmsg + 0x11c / 0x1f0 [ ] do _ syscall _ 64 + 0x40 / 0xe0unreferenced object 0xffff88816d2c0400 ( size 1024 ) : comm \" tc \", pid 1079, jiffies 4294958525 ( age 3074. 287s ) hex dump ( first 32 bytes ) : 40 00 00 00 00 00 00 00 57 f6 38 be 00 00 00 00 @....... w. 8..... 10 04 2c 6d 81 88 ff ff 10 04 2c 6d 81 88 ff ff.., m......, m.... backtrace : [ ] _ _ kmem _",
+        "##00000000000 dr1 : 0000000000000000 dr2 : 0000000000000000dr3 : 0000000000000000 dr6 : 00000000fffe0ff0 dr7 : 0000000000000400call trace : tcp _ msg _ wait _ data + 0x279 / 0x2f0 tcp _ bpf _ recvmsg _ parser + 0x3c6 / 0x490 inet _ recvmsg + 0x280 / 0x290 sock _ recvmsg + 0xfc / 0x120 _ _ _ _ sys _ recvmsg + 0x160 / 0x3d0 _ _ _ sys _ recvmsg + 0xf0 / 0x180 _ _ sys _ recvmsg + 0xea / 0x1a0 do _ syscall _ 64 + 0x3f / 0x90 entry _ syscall _ 64 _ after _ hwframe + 0x72 / 0xdcthe logic in tcp _ bpf _ recvmsg _ parser is as follows : msg _ bytes _ ready : copied = sk _ msg _ recvmsg ( sk, psock, msg, len, flags ) ; if (! copied ) { wait data ; goto msg _ bytes _ ready ; } in this case, \" copied \" always is 0, the infinite loop occurs. according to the linux system call man page, 0 should be returned in thiscase. therefore, in tcp _ bpf _ recvmsg _ parser ( ), if the length is 0, directlyreturn. also modify several other functions with the same problem."
+      ]
+    },
+    "evaluation": {
+      "severity_verdict": "correct",
+      "attack_semantic_hit": false,
+      "hallucination_flag": false,
+      "sigma_2514_hit": false,
+      "context_diversity": "cve",
+      "faithfulness": null,
+      "answer_relevancy": null,
+      "answer_correctness": null,
+      "context_precision": null,
+      "context_recall": null
     }
   }
 ]

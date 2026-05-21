@@ -8,7 +8,7 @@ from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 import numpy as np
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct
+from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue, FilterSelector
 
 EMBED_MODEL = "intfloat/e5-small-v2"
 COLLECTION  = "cyber_chunks"
@@ -97,6 +97,16 @@ def _build_points(df: pd.DataFrame, embeddings: np.ndarray) -> list[PointStruct]
     return points
 
 
+def delete_source(client: QdrantClient, source: str) -> None:
+    client.delete(
+        collection_name=COLLECTION,
+        points_selector=FilterSelector(filter=Filter(must=[
+            FieldCondition(key="metadata.source", match=MatchValue(value=source))
+        ])),
+    )
+    print(f"[{source.upper()}] Deleted existing points from collection.")
+
+
 def embed_and_upsert(source: str, chunks_path: Path, model: SentenceTransformer, client: QdrantClient, batch: int) -> None:
     if not chunks_path.is_file():
         print(f"[{source.upper()}] Chunk file not found: {chunks_path} - skipping.")
@@ -152,6 +162,7 @@ def main():
     ensure_collection(client)
 
     for source, chunks_path in sources_to_run.items():
+        delete_source(client, source)
         embed_and_upsert(source, chunks_path, model, client, args.batch)
 
     print(f"\n[+] All done. Collection: '{COLLECTION}'")

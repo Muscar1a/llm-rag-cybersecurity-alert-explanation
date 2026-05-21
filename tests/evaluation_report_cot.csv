@@ -1,4 +1,4 @@
 label,severity_output,severity_verdict,attack_semantic_hit,hallucination_flag,sigma_2514_hit,context_diversity,faithfulness,answer_relevancy,answer_correctness,context_precision,context_recall
-Bot,Medium,correct,False,False,False,cve+mitre+sigma,nan,nan,nan,nan,nan
-Bot,Low,underestimated,False,False,False,cve+mitre+sigma,nan,0.706,nan,nan,0.0
-Bot,Low,underestimated,False,False,False,cve+mitre+sigma,nan,nan,nan,nan,nan
+Bot,Medium,correct,False,False,False,cve,0.0,0.804,0.424,0.0,0.0
+Bot,Low,underestimated,False,False,False,cve,,0.779,0.541,0.0,0.0
+Bot,Low,underestimated,False,False,False,cve,0.0,0.785,0.577,0.0,0.0
