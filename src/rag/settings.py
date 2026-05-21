@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     ollama_model: str | None = None
     
     google_api_key: str | None = None
+    google_api_key_2: str | None = None
+    google_api_key_3: str | None = None
+    google_api_key_4: str | None = None
+    google_api_key_5: str | None = None
     google_model_name: str = "gemini-flash-latest"
     
     model_config = SettingsConfigDict(

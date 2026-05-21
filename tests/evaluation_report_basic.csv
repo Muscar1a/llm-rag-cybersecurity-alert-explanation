@@ -1,0 +1,4 @@
+label,severity_output,severity_verdict,attack_semantic_hit,hallucination_flag,sigma_2514_hit,context_diversity,faithfulness,answer_relevancy,answer_correctness,context_precision,context_recall
+Bot,Medium,correct,False,False,False,cve+mitre+sigma,nan,nan,nan,nan,nan
+Bot,Low,underestimated,False,False,False,cve+mitre+sigma,0.0,0.798,nan,nan,0.0
+Bot,Medium,correct,False,False,False,cve+mitre+sigma,nan,0.814,0.431,nan,0.0

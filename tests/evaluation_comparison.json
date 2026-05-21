@@ -1,0 +1,47 @@
+[
+  {
+    "template": "basic",
+    "total": 3,
+    "severity_underestimated": 1,
+    "severity_overestimated": 0,
+    "severity_correct": 2,
+    "attack_semantic_hit": 0,
+    "hallucination_flagged": 0,
+    "sigma_2514_hit": 0,
+    "avg_faithfulness": NaN,
+    "avg_answer_relevancy": NaN,
+    "avg_answer_correctness": NaN,
+    "avg_context_precision": NaN,
+    "avg_context_recall": NaN
+  },
+  {
+    "template": "cot",
+    "total": 3,
+    "severity_underestimated": 2,
+    "severity_overestimated": 0,
+    "severity_correct": 1,
+    "attack_semantic_hit": 0,
+    "hallucination_flagged": 0,
+    "sigma_2514_hit": 0,
+    "avg_faithfulness": NaN,
+    "avg_answer_relevancy": NaN,
+    "avg_answer_correctness": NaN,
+    "avg_context_precision": NaN,
+    "avg_context_recall": NaN
+  },
+  {
+    "template": "few_shot",
+    "total": 3,
+    "severity_underestimated": 0,
+    "severity_overestimated": 0,
+    "severity_correct": 3,
+    "attack_semantic_hit": 0,
+    "hallucination_flagged": 0,
+    "sigma_2514_hit": 0,
+    "avg_faithfulness": NaN,
+    "avg_answer_relevancy": NaN,
+    "avg_answer_correctness": NaN,
+    "avg_context_precision": NaN,
+    "avg_context_recall": NaN
+  }
+]
