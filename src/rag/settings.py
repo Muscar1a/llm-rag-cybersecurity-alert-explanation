@@ -10,16 +10,13 @@ class Settings(BaseSettings):
     qdrant_collection: str = "cyber_chunks"
     qdrant_timeout: int = 69
     
-    embedding_model: str = "intfloat/e5-small-v2"
+    # embedding_model: str = "intfloat/e5-small-v2"
+    embedding_model: str = "BAAI/bge-base-en-v1.5"
     
     ollama_host: str = "http://localhost:11434"
     ollama_model: str | None = None
     
     google_api_key: str | None = None
-    google_api_key_2: str | None = None
-    google_api_key_3: str | None = None
-    google_api_key_4: str | None = None
-    google_api_key_5: str | None = None
     google_model_name: str = "gemini-flash-latest"
     
     model_config = SettingsConfigDict(

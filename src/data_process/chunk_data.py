@@ -4,7 +4,8 @@ import re
 import pandas as pd
 from transformers import AutoTokenizer
 
-TOKENIZER_MODEL = "intfloat/e5-small-v2"
+# TOKENIZER_MODEL = "intfloat/e5-small-v2"
+TOKENIZER_MODEL = "BAAI/bge-base-en-v1.5"
 CHUNK_SIZE      = 400
 CHUNK_OVERLAP   = 100
 

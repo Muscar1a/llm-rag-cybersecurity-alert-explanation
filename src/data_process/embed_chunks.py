@@ -10,10 +10,10 @@ import numpy as np
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue, FilterSelector
 
-EMBED_MODEL = "intfloat/e5-small-v2"
+# EMBED_MODEL = "intfloat/e5-small-v2"
+EMBED_MODEL = "BAAI/bge-base-en-v1.5"
 COLLECTION  = "cyber_chunks"
-VECTOR_SIZE = 384
-
+VECTOR_SIZE = 768
 SOURCES = {
     "cve":   Path("data/processed/CVE/chunks.parquet"),
     "mitre": Path("data/processed/MITRE/chunks.parquet"),
@@ -117,7 +117,8 @@ def embed_and_upsert(source: str, chunks_path: Path, model: SentenceTransformer,
     print(f"[{source.upper()}] {len(df)} chunks loaded.")
 
     print(f"[{source.upper()}] Encoding...")
-    texts = [f"passage: {t}" for t in df["text"].tolist()]
+    # texts = [f"passage: {t}" for t in df["text"].tolist()]
+    texts = df["text"].tolist()
     embeddings = model.encode(
         texts,
         batch_size=batch,
@@ -149,7 +150,12 @@ def main():
 
     device = get_device()
     print(f"[i] Device: {device} | Model: {EMBED_MODEL}")
-    model = SentenceTransformer(EMBED_MODEL, device=device, model_kwargs=get_model_kwargs())
+    model = SentenceTransformer(
+        EMBED_MODEL, 
+        device=device, 
+        model_kwargs=get_model_kwargs(),
+        trust_remote_code=True,
+    )
 
     client = QdrantClient(host="localhost", port=6333)
 

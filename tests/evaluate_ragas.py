@@ -25,6 +25,12 @@ from ragas.metrics import (
 from google import genai
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
+try:
+    from langchain_google_vertexai import ChatVertexAI, VertexAIEmbeddings
+    HAS_VERTEX = True
+except ImportError:
+    HAS_VERTEX = False
+
 from src.rag.service import RagService
 from src.rag.settings import settings
 
@@ -91,76 +97,79 @@ def get_context_diversity(context_ids: list) -> str:
     parts = [s for s, flag in [("cve", has_cve), ("mitre", has_mitre), ("sigma", has_sigma)] if flag]
     return "+".join(parts) if parts else "none"
 
-# -- Key Management & LLM wrappers ---------------------------------------------------
+# -- LLM Helpers ---------------------------------------------------
 
-class APIKeyManager:
-    def __init__(self, keys: list[str], model_name: str):
-        self.keys = [k for k in keys if k]
-        self.model_name = model_name
-        self.current_idx = 0
-        if not self.keys:
-            raise ValueError("No Google API keys provided")
-        self._set_env()
+def get_judge_llm():
+    if settings.google_genai_use_vertexai:
+        if not HAS_VERTEX:
+            print("Warning: langchain-google-vertexai not installed, falling back to ChatGoogleGenerativeAI")
+        else:
+            return ChatVertexAI(
+                model_name=settings.google_model_name,
+                project=settings.google_cloud_project,
+                location=settings.google_cloud_location,
+            )
+    
+    return ChatGoogleGenerativeAI(
+        model=settings.google_model_name, 
+        google_api_key=settings.google_api_key,
+        max_retries=3
+    )
 
-    def get_current_key(self) -> str:
-        return self.keys[self.current_idx]
+def get_judge_emb():
+    if settings.google_genai_use_vertexai:
+        if not HAS_VERTEX:
+            print("Warning: langchain-google-vertexai not installed, falling back to GoogleGenerativeAIEmbeddings")
+        else:
+            return VertexAIEmbeddings(
+                model_name="text-embedding-004",
+                project=settings.google_cloud_project,
+                location=settings.google_cloud_location,
+            )
+            
+    return GoogleGenerativeAIEmbeddings(
+        model="gemini-embedding-001", 
+        google_api_key=settings.google_api_key
+    )
 
-    def _set_env(self):
-        os.environ["GEMINI_API_KEY"] = self.get_current_key()
-
-    def next_key(self):
-        if len(self.keys) <= 1:
-            print("  [KeyManager] Only one key available. Not rotating.")
-            return
-        self.current_idx = (self.current_idx + 1) % len(self.keys)
-        self._set_env()
-        print(f"  [KeyManager] Switched to API key index {self.current_idx}")
-
-    def get_judge_llm(self):
-        return ChatGoogleGenerativeAI(
-            model=self.model_name, 
-            google_api_key=self.get_current_key(),
-            max_retries=0 # Disable automatic internal retries to handle rate limits manually
+def get_genai_client():
+    if settings.google_genai_use_vertexai:
+        return genai.Client(
+            vertexai=True,
+            project=settings.google_cloud_project,
+            location=settings.google_cloud_location,
         )
+    else:
+        return genai.Client(api_key=settings.google_api_key)
 
-    def get_judge_emb(self):
-        return GoogleGenerativeAIEmbeddings(
-            model="gemini-embedding-001", 
-            google_api_key=self.get_current_key()
-        )
-
-    def get_genai_client(self):
-        return genai.Client(api_key=self.get_current_key())
-
-def judge_attack_type(key_manager: APIKeyManager, label: str, output_text: str) -> bool:
+def judge_attack_type(label: str, output_text: str) -> bool:
     prompt = (
         f"You are an elite SOC expert. Read the threat analysis report below and answer with only True or False:\n"
         f"Does the report correctly analyze and identify signs of a [{label}] attack?\n\n"
         f"Report:\n{output_text}"
     )
-    for attempt in range(10):
+    for attempt in range(5):
         try:
-            client = key_manager.get_genai_client()
-            response = client.models.generate_content(model=key_manager.model_name, contents=prompt)
+            client = get_genai_client()
+            response = client.models.generate_content(model=settings.google_model_name, contents=prompt)
             return response.text.strip().lower().startswith("true")
         except Exception as e:
             err_str = str(e).lower()
             if "429" in err_str or "quota" in err_str or "resourceexhausted" in err_str:
-                print(f"  [Rate Limit] Gemini API rate limit hit in judge_attack_type. Rotating key...")
-                key_manager.next_key()
-                time.sleep(2)
+                print(f"  [Rate Limit] Gemini API rate limit hit in judge_attack_type. Retrying in 30s...")
+                time.sleep(30)
             else:
-                if attempt == 9:
+                if attempt == 4:
                     raise e
                 print(f"  [GenAI Error] {e} (attempt {attempt+1}). Retrying...")
                 time.sleep(5)
     return False
 
-def run_ragas_evaluate_with_retry(key_manager: APIKeyManager, sample: SingleTurnSample) -> dict:
-    for attempt in range(10):
+def run_ragas_evaluate_with_retry(sample: SingleTurnSample) -> dict:
+    for attempt in range(5):
         try:
-            judge_llm = key_manager.get_judge_llm()
-            judge_emb = key_manager.get_judge_emb()
+            judge_llm = get_judge_llm()
+            judge_emb = get_judge_emb()
             
             ragas_result = evaluate(
                 EvaluationDataset(samples=[sample]),
@@ -173,14 +182,13 @@ def run_ragas_evaluate_with_retry(key_manager: APIKeyManager, sample: SingleTurn
         except Exception as e:
             err_str = str(e).lower()
             if "429" in err_str or "quota" in err_str or "resourceexhausted" in err_str or "rate limit" in err_str:
-                print(f"  [Rate Limit] Gemini API rate limit hit in RAGAS. Rotating key...")
-                key_manager.next_key()
-                time.sleep(2)
+                print(f"  [Rate Limit] Gemini API rate limit hit in RAGAS. Retrying in 60s...")
+                time.sleep(60)
             else:
-                if attempt == 9:
+                if attempt == 4:
                     raise e
                 print(f"  [RAGAS Error] {e} (attempt {attempt+1}). Retrying...")
-                time.sleep(5)
+                time.sleep(10)
     return {}
 
 # -- Evaluation per template --------------------------------------------------------------
@@ -189,7 +197,6 @@ def evaluate_template(
     template_name: str,
     ground_truth: list,
     rag_service: RagService,
-    key_manager: APIKeyManager,
     reset_checkpoint: bool = False,
 ) -> dict:
     print(f"\n{'='*60}")
@@ -251,11 +258,11 @@ def evaluate_template(
 
         # 2. RAGAs Evaluation
         print(f"  -> Running RAGAs evaluation...")
-        score = run_ragas_evaluate_with_retry(key_manager, sample)
+        score = run_ragas_evaluate_with_retry(sample)
 
         # 3. SOC Domain Evaluation
         print(f"  -> Running SOC domain evaluation...")
-        attack_hit = judge_attack_type(key_manager, label, output_text)
+        attack_hit = judge_attack_type(label, output_text)
         
         severity_verdict = get_severity_verdict(severity, label)
         hallucination_flag = get_hallucination_flag(alert_text, output_text)
@@ -303,10 +310,6 @@ def evaluate_template(
 
         # Save Checkpoint
         checkpoint_file.write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
-        
-        # Rotate Key after task completion
-        print(f"  -> [Task Complete] Rotating API Key...")
-        key_manager.next_key()
 
 
     # Final Write: CSV
@@ -382,27 +385,12 @@ def main():
         print(f"Error: ground_truth.json not found at {GROUND_TRUTH_FILE}")
         sys.exit(1)
 
-    keys = [
-        settings.google_api_key,
-        settings.google_api_key_2,
-        settings.google_api_key_3,
-        settings.google_api_key_4,
-        settings.google_api_key_5,
-    ]
-    google_model_name = settings.google_model_name
-
-    try:
-        key_manager = APIKeyManager(keys, google_model_name)
-    except ValueError as e:
-        print(f"Error: {e}")
-        sys.exit(1)
-
     rag_service = RagService()
 
     ground_truth = json.loads(GROUND_TRUTH_FILE.read_text(encoding="utf-8"))
     
-    #* This is for tét
-    # ground_truth = ground_truth[:3] #!comment thí 
+    # Optional: For debugging, use subset
+    # ground_truth = ground_truth[:3]
     
     print(f"Loaded {len(ground_truth)} entries from {GROUND_TRUTH_FILE}")
 
@@ -412,7 +400,6 @@ def main():
             template_name=template,
             ground_truth=ground_truth,
             rag_service=rag_service,
-            key_manager=key_manager,
             reset_checkpoint=args.reset,
         )
         all_summaries.append(summary)
