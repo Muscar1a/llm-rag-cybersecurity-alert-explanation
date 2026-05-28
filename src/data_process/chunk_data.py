@@ -11,18 +11,11 @@ CHUNK_OVERLAP   = 100
 
 SOURCES = [
     {
-        "name":       "cve",
-        "input":      "data/processed/CVE/cve_cleaned.parquet",
-        "output":     "data/processed/CVE/chunks.parquet",
-        "id_col":     "cve_id",
-        "text_cols":  ["cve_id", "description"],
-    },
-    {
         "name":       "mitre",
         "input":      "data/processed/MITRE/mitre_cleaned.parquet",
         "output":     "data/processed/MITRE/chunks.parquet",
         "id_col":     "mitre_id",
-        "text_cols":  ["name", "description", "tactics"],
+        "text_cols":  ["name", "description", "tactics", "detection"],
     },
     {
         "name":       "sigma",
@@ -30,6 +23,13 @@ SOURCES = [
         "output":     "data/processed/sigma/chunks.parquet",
         "id_col":     None,
         "text_cols":  ["title", "description", "level", "tags", "logsource", "falsepositives", "detection"],
+    },
+    {
+        "name":       "et_rules",
+        "input":      "data/processed/emerging_threats/et_rules_cleaned.parquet",
+        "output":     "data/processed/emerging_threats/chunks.parquet",
+        "id_col":     "sid",
+        "text_cols":  ["rule_text"],
     },
 ]
 

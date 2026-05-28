@@ -15,9 +15,7 @@ class Settings(BaseSettings):
     
     ollama_host: str = "http://localhost:11434"
     ollama_model: str | None = None
-    
-    google_api_key: str | None = None
-    google_model_name: str = "gemini-flash-latest"
+    ollama_judge_model: str = "qwen2.5:3b"
     
     model_config = SettingsConfigDict(
         env_file=".env",

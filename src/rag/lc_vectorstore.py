@@ -51,7 +51,7 @@ class BalancedRetriever(BaseRetriever):
     max_per_source: int = 2  # A2: cap per source instead of fixed allocation
     lambda_mult: float = 0.5
     fetch_k_mult: int = 10
-    min_score: float = 0.82
+    min_score: float = 0.60 # original was 0.82
     reranker_model: str | None = "cross-encoder/ms-marco-MiniLM-L-6-v2"  # C: None to disable
 
     def _get_relevant_documents(
@@ -106,7 +106,7 @@ def build_retriever(source: str | None = None, k: int = 5) -> BaseRetriever:
             "k": k,
             "fetch_k": k * 4,
             "lambda_mult": 0.6,
-            "score_threshold": 0.82,
+            "score_threshold": 0.60, # original was 0.82
             "filter": Filter(must=[
                 FieldCondition(key="metadata.source", match=MatchValue(value=source))
             ]),

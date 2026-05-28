@@ -5,6 +5,7 @@ import math
 import os
 import sys
 import time
+from functools import lru_cache
 from pathlib import Path
 
 project_root = Path(__file__).resolve().parent.parent
@@ -14,7 +15,7 @@ if str(project_root) not in sys.path:
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-from ragas import EvaluationDataset, SingleTurnSample, evaluate
+from ragas import EvaluationDataset, SingleTurnSample, evaluate, RunConfig
 from ragas.metrics import (
     faithfulness,
     answer_relevancy,
@@ -22,14 +23,8 @@ from ragas.metrics import (
     context_precision,
     context_recall,
 )
-from google import genai
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-
-try:
-    from langchain_google_vertexai import ChatVertexAI, VertexAIEmbeddings
-    HAS_VERTEX = True
-except ImportError:
-    HAS_VERTEX = False
+from langchain_ollama import ChatOllama
+from langchain_huggingface import HuggingFaceEmbeddings
 
 from src.rag.service import RagService
 from src.rag.settings import settings
@@ -39,7 +34,7 @@ from src.rag.settings import settings
 TEMPLATES = ["basic", "cot", "few_shot"]
 
 GROUND_TRUTH_FILE = Path(__file__).parent.parent / "baselines" / "ground_truth.json"
-OUTPUT_DIR = Path(__file__).parent
+OUTPUT_DIR = Path(__file__).parent.parent / "results"
 
 # -- Ground truth tables --------------------------------------------------
 
@@ -99,50 +94,25 @@ def get_context_diversity(context_ids: list) -> str:
 
 # -- LLM Helpers ---------------------------------------------------
 
-def get_judge_llm():
-    if settings.google_genai_use_vertexai:
-        if not HAS_VERTEX:
-            print("Warning: langchain-google-vertexai not installed, falling back to ChatGoogleGenerativeAI")
-        else:
-            return ChatVertexAI(
-                model_name=settings.google_model_name,
-                project=settings.google_cloud_project,
-                location=settings.google_cloud_location,
-            )
-    
-    return ChatGoogleGenerativeAI(
-        model=settings.google_model_name, 
-        google_api_key=settings.google_api_key,
-        max_retries=3
+@lru_cache(maxsize=1)
+def get_judge_llm() -> ChatOllama:
+    return ChatOllama(
+        model=settings.ollama_judge_model,
+        base_url=settings.ollama_host,
+        temperature=0,
+        # timeout=180,
     )
 
-def get_judge_emb():
-    if settings.google_genai_use_vertexai:
-        if not HAS_VERTEX:
-            print("Warning: langchain-google-vertexai not installed, falling back to GoogleGenerativeAIEmbeddings")
-        else:
-            return VertexAIEmbeddings(
-                model_name="text-embedding-004",
-                project=settings.google_cloud_project,
-                location=settings.google_cloud_location,
-            )
-            
-    return GoogleGenerativeAIEmbeddings(
-        model="gemini-embedding-001", 
-        google_api_key=settings.google_api_key
+@lru_cache(maxsize=1)
+def get_judge_emb() -> HuggingFaceEmbeddings:
+    return HuggingFaceEmbeddings(
+        model_name=settings.embedding_model,
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True},
     )
-
-def get_genai_client():
-    if settings.google_genai_use_vertexai:
-        return genai.Client(
-            vertexai=True,
-            project=settings.google_cloud_project,
-            location=settings.google_cloud_location,
-        )
-    else:
-        return genai.Client(api_key=settings.google_api_key)
 
 def judge_attack_type(label: str, output_text: str) -> bool:
+    from langchain_core.messages import HumanMessage
     prompt = (
         f"You are an elite SOC expert. Read the threat analysis report below and answer with only True or False:\n"
         f"Does the report correctly analyze and identify signs of a [{label}] attack?\n\n"
@@ -150,68 +120,65 @@ def judge_attack_type(label: str, output_text: str) -> bool:
     )
     for attempt in range(5):
         try:
-            client = get_genai_client()
-            response = client.models.generate_content(model=settings.google_model_name, contents=prompt)
-            return response.text.strip().lower().startswith("true")
+            llm = get_judge_llm()
+            response = llm.invoke([HumanMessage(content=prompt)])
+            return response.content.strip().lower().startswith("true")
         except Exception as e:
-            err_str = str(e).lower()
-            if "429" in err_str or "quota" in err_str or "resourceexhausted" in err_str:
-                print(f"  [Rate Limit] Gemini API rate limit hit in judge_attack_type. Retrying in 30s...")
-                time.sleep(30)
-            else:
-                if attempt == 4:
-                    raise e
-                print(f"  [GenAI Error] {e} (attempt {attempt+1}). Retrying...")
-                time.sleep(5)
+            if attempt == 4:
+                raise e
+            print(f"  [LLM Error] {e} (attempt {attempt+1}). Retrying...")
+            time.sleep(5)
     return False
 
+_RAGAS_RUN_CONFIG = RunConfig(timeout=180, max_retries=2, max_workers=1)
+
 def run_ragas_evaluate_with_retry(sample: SingleTurnSample) -> dict:
-    for attempt in range(5):
+    for attempt in range(3):
         try:
-            judge_llm = get_judge_llm()
-            judge_emb = get_judge_emb()
-            
             ragas_result = evaluate(
                 EvaluationDataset(samples=[sample]),
                 metrics=[faithfulness, answer_relevancy, answer_correctness, context_precision, context_recall],
-                llm=judge_llm,
-                embeddings=judge_emb,
+                llm=get_judge_llm(),
+                embeddings=get_judge_emb(),
+                run_config=_RAGAS_RUN_CONFIG,
                 show_progress=False
             )
-            return ragas_result.scores[0] if len(ragas_result.scores) > 0 else {}
+            return ragas_result.scores[0] if ragas_result.scores else {}
         except Exception as e:
-            err_str = str(e).lower()
-            if "429" in err_str or "quota" in err_str or "resourceexhausted" in err_str or "rate limit" in err_str:
-                print(f"  [Rate Limit] Gemini API rate limit hit in RAGAS. Retrying in 60s...")
-                time.sleep(60)
-            else:
-                if attempt == 4:
-                    raise e
-                print(f"  [RAGAS Error] {e} (attempt {attempt+1}). Retrying...")
-                time.sleep(10)
+            if attempt == 2:
+                raise e
+            print(f"  [RAGAS Error] {e} (attempt {attempt+1}). Retrying...")
+            time.sleep(5)
     return {}
 
 # -- Evaluation per template --------------------------------------------------------------
+
+def _safe(val, default=None):
+    if val is None or (isinstance(val, float) and math.isnan(val)):
+        return default
+    return round(val, 3)
+
 
 def evaluate_template(
     template_name: str,
     ground_truth: list,
     rag_service: RagService,
     reset_checkpoint: bool = False,
+    version: str = "v1",
 ) -> dict:
     print(f"\n{'='*60}")
     print(f"  Evaluating template: {template_name.upper()}")
     print(f"{'='*60}")
 
-    checkpoint_file = OUTPUT_DIR / f"checkpoint_eval_{template_name}.json"
-    
+    checkpoint_dir = OUTPUT_DIR / "checkpoints"
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    checkpoint_file = checkpoint_dir / f"checkpoint_eval_{template_name}_{version}.json"
+
     if reset_checkpoint and checkpoint_file.exists():
         print(f"  [Reset] Deleting existing checkpoint: {checkpoint_file.name}")
         checkpoint_file.unlink()
 
     records = []
-    
-    # Load Checkpoint
     if checkpoint_file.exists():
         try:
             records = json.loads(checkpoint_file.read_text(encoding="utf-8"))
@@ -220,124 +187,103 @@ def evaluate_template(
             print(f"  Error reading checkpoint: {e}. Starting fresh.")
             records = []
 
-    # Map processed labels to avoid re-evaluating
     processed_ids = {f"{r['label']}_{r['input']}" for r in records}
+    new_entries = [e for e in ground_truth if f"{e['label']}_{e['alert_text']}" not in processed_ids]
 
-    for idx, entry in enumerate(ground_truth):
-        label      = entry["label"]
-        alert_text = entry["alert_text"]
-        entry_id   = f"{label}_{alert_text}"
-        
-        print(f"\n  [{template_name}] Progress: {idx+1}/{len(ground_truth)} | Task: {label}")
+    if not new_entries:
+        print("  All entries already processed.")
+    else:
+        # Pass 1: RAG inference — run all before loading judge model
+        print(f"\n  [Pass 1/2] RAG inference: {len(new_entries)} entries...")
+        rag_cache: dict[str, dict] = {}
+        latency_cache: dict[str, float] = {}
+        for i, entry in enumerate(new_entries):
+            entry_id = f"{entry['label']}_{entry['alert_text']}"
+            print(f"  [{template_name}] {i+1}/{len(new_entries)} | RAG | {entry['label']}")
+            t0 = time.perf_counter()
+            rag_cache[entry_id] = rag_service.analyze(
+                alert_text=entry["alert_text"],
+                k=5,
+                source=None,
+                template_name=template_name,
+            )
+            latency_cache[entry_id] = round(time.perf_counter() - t0, 3)
 
-        if entry_id in processed_ids:
-            print(f"  -> Already processed. Skipping.")
-            continue
+        # Pass 2: Judge evaluation — RAG model naturally unloads when judge first loads
+        print(f"\n  [Pass 2/2] Evaluation: {len(new_entries)} entries...")
+        for i, entry in enumerate(new_entries):
+            label      = entry["label"]
+            alert_text = entry["alert_text"]
+            entry_id   = f"{label}_{alert_text}"
+            gt_output  = entry["output"]
+            rag_out    = rag_cache[entry_id]
 
-        gt_output  = entry["output"]
+            print(f"\n  [{template_name}] {i+1}/{len(new_entries)} | Eval | {label}")
 
-        # 1. RAG inference
-        rag_out = rag_service.analyze(
-            alert_text=alert_text,
-            k=5,
-            source=None,
-            template_name=template_name,
-        )
-        context_texts = rag_out.get("retrieved_contexts_text", [])
-        reference = gt_output["threat_description"] + "\n" + gt_output["rationale"]
+            context_texts = rag_out.get("retrieved_contexts_text", [])
+            reference     = gt_output["threat_description"] + "\n" + gt_output["rationale"]
+            output_text   = rag_out.get("threat_description", "") + "\n" + rag_out.get("rationale", "")
+            severity      = rag_out.get("severity", "Unknown")
 
-        output_text = rag_out.get("threat_description", "") + "\n" + rag_out.get("rationale", "")
-        severity = rag_out.get("severity", "Unknown")
+            sample = SingleTurnSample(
+                user_input=alert_text,
+                response=output_text,
+                retrieved_contexts=context_texts,
+                reference=reference,
+            )
 
-        sample = SingleTurnSample(
-            user_input=alert_text,
-            response=output_text,
-            retrieved_contexts=context_texts,
-            reference=reference,
-        )
+            print(f"  -> Running RAGAs evaluation...")
+            score = run_ragas_evaluate_with_retry(sample)
 
-        # 2. RAGAs Evaluation
-        print(f"  -> Running RAGAs evaluation...")
-        score = run_ragas_evaluate_with_retry(sample)
+            print(f"  -> Running SOC domain evaluation...")
+            attack_hit = judge_attack_type(label, output_text)
 
-        # 3. SOC Domain Evaluation
-        print(f"  -> Running SOC domain evaluation...")
-        attack_hit = judge_attack_type(label, output_text)
-        
-        severity_verdict = get_severity_verdict(severity, label)
-        hallucination_flag = get_hallucination_flag(alert_text, output_text)
-        context_ids = rag_out.get("retrieved_context_ids", [])
-        sigma_2514_hit = "sigma_2514_c0" in context_ids
-        context_diversity = get_context_diversity(context_ids)
+            context_ids       = rag_out.get("retrieved_context_ids", [])
+            severity_verdict  = get_severity_verdict(severity, label)
+            hallucination_flag = get_hallucination_flag(alert_text, output_text)
+            context_diversity = get_context_diversity(context_ids)
 
-        def _safe(val, default=None):
-            if val is None or (isinstance(val, float) and math.isnan(val)):
-                return default
-            return round(val, 3)
+            faith = _safe(score.get("faithfulness"))
+            hallucination_rate = _safe(1.0 - faith) if faith is not None else None
+            latency_s = latency_cache.get(entry_id)
 
-        record = {
-            "label":      label,
-            "raw_packet": entry.get("raw_packet", {}),
-            "input":      alert_text,
-            "reference":  reference,
-            "output": {
-                "threat_description":      rag_out.get("threat_description", ""),
-                "severity":                severity,
-                "rationale":               rag_out.get("rationale", ""),
-                "mitigation_steps":        rag_out.get("mitigation_steps", []),
-                "retrieved_context_ids":   context_ids,
-                "retrieved_contexts_text": context_texts,
-            },
-            "evaluation": {
-                "severity_verdict":    severity_verdict,
-                "attack_semantic_hit": attack_hit,
-                "hallucination_flag":  hallucination_flag,
-                "sigma_2514_hit":      sigma_2514_hit,
-                "context_diversity":   context_diversity,
-                "faithfulness":        _safe(score.get("faithfulness")),
-                "answer_relevancy":    _safe(score.get("answer_relevancy")),
-                "answer_correctness":  _safe(score.get("answer_correctness")),
-                "context_precision":   _safe(score.get("context_precision")),
-                "context_recall":      _safe(score.get("context_recall")),
-            },
-        }
+            record = {
+                "label":      label,
+                "raw_packet": entry.get("raw_packet", {}),
+                "input":      alert_text,
+                "reference":  reference,
+                "output": {
+                    "threat_description":      rag_out.get("threat_description", ""),
+                    "severity":                severity,
+                    "rationale":               rag_out.get("rationale", ""),
+                    "mitigation_steps":        rag_out.get("mitigation_steps", []),
+                    "retrieved_context_ids":   context_ids,
+                    "retrieved_contexts_text": context_texts,
+                },
+                "evaluation": {
+                    "severity_verdict":    severity_verdict,
+                    "attack_semantic_hit": attack_hit,
+                    "hallucination_flag":  hallucination_flag,
+                    "context_diversity":   context_diversity,
+                    "hallucination_rate":  hallucination_rate,
+                    "answer_relevancy":    _safe(score.get("answer_relevancy")),
+                    "answer_correctness":  _safe(score.get("answer_correctness")),
+                    "context_precision":   _safe(score.get("context_precision")),
+                    "context_recall":      _safe(score.get("context_recall")),
+                    "response_latency_s":  latency_s,
+                },
+            }
 
-        records.append(record)
-        processed_ids.add(entry_id)
+            records.append(record)
+            processed_ids.add(entry_id)
 
-        # Output Intermediate Results
-        print(f"  -> [Result] Answer Correctness: {record['evaluation']['answer_correctness']} | Semantic Hit: {attack_hit}")
-
-        # Save Checkpoint
-        checkpoint_file.write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-    # Final Write: CSV
-    csv_file = OUTPUT_DIR / f"evaluation_report_{template_name}.csv"
-    with open(csv_file, "w", newline="", encoding="utf-8") as f:
-        if records:
-            fieldnames = ["label", "severity_output", "severity_verdict", "attack_semantic_hit", "hallucination_flag", "sigma_2514_hit", "context_diversity", "faithfulness", "answer_relevancy", "answer_correctness", "context_precision", "context_recall"]
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            for r in records:
-                eval_data = r["evaluation"]
-                writer.writerow({
-                    "label": r["label"],
-                    "severity_output": r["output"]["severity"],
-                    "severity_verdict": eval_data["severity_verdict"],
-                    "attack_semantic_hit": eval_data["attack_semantic_hit"],
-                    "hallucination_flag": eval_data["hallucination_flag"],
-                    "sigma_2514_hit": eval_data["sigma_2514_hit"],
-                    "context_diversity": eval_data["context_diversity"],
-                    "faithfulness": eval_data["faithfulness"],
-                    "answer_relevancy": eval_data["answer_relevancy"],
-                    "answer_correctness": eval_data["answer_correctness"],
-                    "context_precision": eval_data["context_precision"],
-                    "context_recall": eval_data["context_recall"],
-                })
+            print(f"  -> [Result] Correctness: {record['evaluation']['answer_correctness']} | Semantic Hit: {attack_hit}")
+            checkpoint_file.write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
 
     # Final Write: JSON
-    json_file = OUTPUT_DIR / f"evaluation_results_{template_name}.json"
+    result_dir = OUTPUT_DIR / template_name
+    result_dir.mkdir(parents=True, exist_ok=True)
+    json_file = result_dir / f"evaluation_results_{template_name}_{version}.json"
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump(records, f, ensure_ascii=False, indent=2)
 
@@ -355,21 +301,21 @@ def evaluate_template(
         "severity_correct":        sum(1 for r in records if r["evaluation"]["severity_verdict"] == "correct"),
         "attack_semantic_hit":     sum(1 for r in records if r["evaluation"]["attack_semantic_hit"]),
         "hallucination_flagged":   sum(1 for r in records if r["evaluation"]["hallucination_flag"]),
-        "sigma_2514_hit":          sum(1 for r in records if r["evaluation"]["sigma_2514_hit"]),
-        "avg_faithfulness":        _nanmean(records, "faithfulness"),
+        "avg_hallucination_rate":   _nanmean(records, "hallucination_rate"),
         "avg_answer_relevancy":    _nanmean(records, "answer_relevancy"),
         "avg_answer_correctness":  _nanmean(records, "answer_correctness"),
         "avg_context_precision":   _nanmean(records, "context_precision"),
         "avg_context_recall":      _nanmean(records, "context_recall"),
+        "avg_response_latency_s":  _nanmean(records, "response_latency_s"),
     }
 
     print(f"\n  [{template_name.upper()}] Summary:")
-    print(f"    Severity correct       : {summary['severity_correct']}/{total}")
-    print(f"    Attack semantic hit    : {summary['attack_semantic_hit']}/{total}")
-    print(f"    Hallucination flagged  : {summary['hallucination_flagged']}/{total}")
-    print(f"    Avg faithfulness       : {summary['avg_faithfulness']}")
-    print(f"    Avg answer_correctness : {summary['avg_answer_correctness']}")
-    print(f"  CSV : {csv_file}")
+    print(f"    Severity correct        : {summary['severity_correct']}/{total}")
+    print(f"    Attack semantic hit     : {summary['attack_semantic_hit']}/{total}")
+    print(f"    Hallucination flagged   : {summary['hallucination_flagged']}/{total}")
+    print(f"    Avg hallucination rate  : {summary['avg_hallucination_rate']}")
+    print(f"    Avg answer_correctness  : {summary['avg_answer_correctness']}")
+    print(f"    Avg response latency(s) : {summary['avg_response_latency_s']}")
     print(f"  JSON: {json_file}")
 
     return summary
@@ -379,6 +325,7 @@ def evaluate_template(
 def main():
     parser = argparse.ArgumentParser(description="Run RAG evaluation with RAGAs and SOC domain metrics.")
     parser.add_argument("--reset", action="store_true", help="Delete existing checkpoints and start evaluation from scratch.")
+    parser.add_argument("--version", type=str, default="v1", help="Version identifier for output files (e.g., v3).")
     args = parser.parse_args()
 
     if not GROUND_TRUTH_FILE.exists():
@@ -389,10 +336,18 @@ def main():
 
     ground_truth = json.loads(GROUND_TRUTH_FILE.read_text(encoding="utf-8"))
     
-    # Optional: For debugging, use subset
-    # ground_truth = ground_truth[:3]
+    ############
+    # Sample exactly 1 record per attack type
+    seen_labels = set()
+    sampled_ground_truth = []
+    for record in ground_truth:
+        if record["label"] not in seen_labels:
+            seen_labels.add(record["label"])
+            sampled_ground_truth.append(record)
+    ground_truth = sampled_ground_truth
     
-    print(f"Loaded {len(ground_truth)} entries from {GROUND_TRUTH_FILE}")
+    print(f"Loaded {len(ground_truth)} entries from {GROUND_TRUTH_FILE} (1 per category)")
+    ############
 
     all_summaries = []
     for template in TEMPLATES:
@@ -401,21 +356,23 @@ def main():
             ground_truth=ground_truth,
             rag_service=rag_service,
             reset_checkpoint=args.reset,
+            version=args.version,
         )
         all_summaries.append(summary)
 
     # Metrics to compare
     metrics = [
-        ("severity_correct",       "Severity correct"),
-        ("severity_underestimated","Severity underestimated"),
-        ("severity_overestimated", "Severity overestimated"),
-        ("attack_semantic_hit",    "Attack semantic hit"),
-        ("hallucination_flagged",  "Hallucination flagged"),
-        ("avg_faithfulness",       "Avg faithfulness"),
-        ("avg_answer_relevancy",   "Avg answer relevancy"),
-        ("avg_answer_correctness", "Avg answer correctness"),
-        ("avg_context_precision",  "Avg context precision"),
-        ("avg_context_recall",     "Avg context recall"),
+        ("severity_correct",        "Severity correct"),
+        ("severity_underestimated", "Severity underestimated"),
+        ("severity_overestimated",  "Severity overestimated"),
+        ("attack_semantic_hit",     "Attack semantic hit"),
+        ("hallucination_flagged",   "Hallucination flagged"),
+        ("avg_hallucination_rate",  "Avg hallucination rate"),
+        ("avg_answer_relevancy",    "Avg answer relevancy"),
+        ("avg_answer_correctness",  "Avg answer correctness"),
+        ("avg_context_precision",   "Avg context precision"),
+        ("avg_context_recall",      "Avg context recall"),
+        ("avg_response_latency_s",  "Avg response latency (s)"),
     ]
 
     # Print to console
@@ -430,7 +387,7 @@ def main():
     # Generate markdown report
     total = all_summaries[0]["total"] if all_summaries else 0
     md_lines = [
-        "# Evaluation Report: Prompt Template Comparison",
+        f"# Evaluation Report: Prompt Template Comparison ({args.version})",
         "",
         f"**Ground Truth**: `{GROUND_TRUTH_FILE.name}` ({total} samples)",
         "",
@@ -447,18 +404,20 @@ def main():
         "",
         "## Output Files",
         "",
-        "| Template | CSV Report | JSON Results |",
-        "|----------|------------|--------------|",
-        f"| basic | `evaluation_report_basic.csv` | `evaluation_results_basic.json` |",
-        f"| cot | `evaluation_report_cot.csv` | `evaluation_results_cot.json` |",
-        f"| few_shot | `evaluation_report_few_shot.csv` | `evaluation_results_few_shot.json` |",
+        "| Template | JSON Results |",
+        "|----------|--------------|",
+        f"| basic | `results/basic/evaluation_results_basic_{args.version}.json` |",
+        f"| cot | `results/cot/evaluation_results_cot_{args.version}.json` |",
+        f"| few_shot | `results/few_shot/evaluation_results_few_shot_{args.version}.json` |",
     ]
 
-    md_file = OUTPUT_DIR / "evaluation_comparison.md"
+    comp_dir = OUTPUT_DIR / "comparison"
+    comp_dir.mkdir(parents=True, exist_ok=True)
+    md_file = comp_dir / f"evaluation_comparison_{args.version}.md"
     md_file.write_text("\n".join(md_lines), encoding="utf-8")
 
     # Save JSON comparison
-    json_file = OUTPUT_DIR / "evaluation_comparison.json"
+    json_file = comp_dir / f"evaluation_comparison_{args.version}.json"
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump(all_summaries, f, ensure_ascii=False, indent=2)
 

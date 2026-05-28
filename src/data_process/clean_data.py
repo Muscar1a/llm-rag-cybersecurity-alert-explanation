@@ -1,22 +1,44 @@
+import argparse
 import json
 import os
 import glob
 import re
 import sys
 import pandas as pd
-import numpy as np
 import yaml
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 os.chdir(PROJECT_ROOT)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-
 from ingest_cve import get_cves_for_year
 from parse_attck import load_attack_techniques
 
-SIGMA_CATEGORIES = ["network", "windows", "linux", "cloud"]
+SIGMA_CATEGORIES = ["network"]
 
+ET_RULE_FILES = [
+    "emerging-scan.rules",
+    "emerging-dos.rules",
+    "emerging-sql.rules",
+    "emerging-web_specific_apps.rules",
+    "emerging-policy.rules",
+]
+
+ET_IMPORT_ALL = {"emerging-scan.rules", "emerging-dos.rules", "emerging-sql.rules"}
+
+ET_KEEP_KEYWORDS = [
+    "brute", "xss", "cross-site", "sql", "injection",
+    "botnet", "c2", "beacon", "c&c", "command and control",
+    "ssh", "ftp", "telnet", "rdp",
+    "dos", "flood", "slowloris", "slow http",
+    "scan", "sweep", "cleartext", "non-standard port",
+    "infiltrat", "exfiltrat", "tunnel",
+]
+
+
+# ---------------------------------------------------------------------------
+# Sigma
+# ---------------------------------------------------------------------------
 
 def _parse_sigma_rules(sigma_base_dir: str) -> list[dict]:
     rules = []
@@ -44,61 +66,328 @@ def _parse_sigma_rules(sigma_base_dir: str) -> list[dict]:
     return rules
 
 
-def run_pipeline():
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+# ---------------------------------------------------------------------------
+# Emerging Threats
+# ---------------------------------------------------------------------------
 
-    # CVE ==================================================
+def _et_extract_quoted(field: str, text: str) -> str | None:
+    m = re.search(rf'{field}:"([^"]*)"', text)
+    return m.group(1).strip() if m else None
+
+
+def _et_parse_rule(line: str) -> dict | None:
+    line = line.strip()
+    if not line or line.startswith("#"):
+        return None
+    if not re.match(r'^(alert|drop|pass|reject|log)\s', line):
+        return None
+
+    header = re.match(
+        r'^(\w+)\s+(\w+)\s+\S+\s+(\S+)\s+(?:->|<>)\s+\S+\s+(\S+)',
+        line,
+    )
+    if not header:
+        return None
+    _, proto, src_port, dst_port = header.groups()
+
+    opts_m = re.search(r'\((.+)\)\s*$', line, re.DOTALL)
+    if not opts_m:
+        return None
+    opts = opts_m.group(1)
+
+    msg       = _et_extract_quoted("msg", opts)
+    classtype = _et_extract_quoted("classtype", opts)
+    sid_m     = re.search(r'\bsid:(\d+)', opts)
+    sid       = sid_m.group(1) if sid_m else ""
+    contents  = re.findall(r'content:"([^"]*)"', opts)
+    refs      = re.findall(r'reference:([^;]+)', opts)
+
+    severity = ""
+    meta_m = re.search(r'metadata:([^;]+)', opts)
+    if meta_m:
+        sev_m = re.search(r'signature_severity\s+(\S+)', meta_m.group(1))
+        if sev_m:
+            severity = sev_m.group(1).strip(" ,)")
+
+    if not msg:
+        return None
+
+    return {
+        "sid": sid, "msg": msg,
+        "proto": proto.upper(), "src_port": src_port, "dst_port": dst_port,
+        "classtype": classtype or "", "severity": severity,
+        "contents": contents, "refs": refs,
+    }
+
+
+def _et_render_text(r: dict) -> str:
+    lines = [f"Rule: {r['msg']}"]
+
+    port_parts = []
+    for label, val in [("src_port", r["src_port"]), ("dst_port", r["dst_port"])]:
+        if val not in ("any", "$EXTERNAL_NET", "$HTTP_SERVERS", "$HTTP_PORTS", ""):
+            port_parts.append(f"{label}:{val}")
+    port_str = " | ".join(port_parts)
+    lines.append(f"Protocol: {r['proto']}" + (f" | Ports: {port_str}" if port_str else ""))
+
+    if r["contents"]:
+        lines.append(f"Detection: {'; '.join(repr(c) for c in r['contents'][:3])}")
+    if r["classtype"]:
+        lines.append(f"Classtype: {r['classtype']}")
+    if r["severity"]:
+        lines.append(f"Severity: {r['severity']}")
+    if r["refs"]:
+        lines.append(f"Reference: {'; '.join(r['refs'][:2])}")
+
+    return "\n".join(lines)
+
+
+def _et_should_keep(msg: str, filename: str) -> bool:
+    if filename in ET_IMPORT_ALL:
+        return True
+    return any(kw in msg.lower() for kw in ET_KEEP_KEYWORDS)
+
+
+def _parse_et_rules(raw_dir: str) -> list[dict]:
+    records = []
+    for filename in ET_RULE_FILES:
+        filepath = os.path.join(raw_dir, filename)
+        if not os.path.isfile(filepath):
+            print(f"  [SKIP] Not found: {filepath}")
+            continue
+
+        kept = 0
+        filtered = 0
+        with open(filepath, encoding="utf-8", errors="replace") as f:
+            for line in f:
+                parsed = _et_parse_rule(line)
+                if parsed is None:
+                    continue
+                if not _et_should_keep(parsed["msg"], filename):
+                    filtered += 1
+                    continue
+                rule_text = _et_render_text(parsed)
+                records.append({
+                    "sid":         parsed["sid"],
+                    "msg":         parsed["msg"],
+                    "classtype":   parsed["classtype"],
+                    "severity":    parsed["severity"],
+                    "source_file": filename,
+                    "rule_text":   rule_text,
+                })
+                kept += 1
+
+        print(f"  [{filename}] kept={kept}, filtered={filtered}")
+
+    return records
+
+
+# ---------------------------------------------------------------------------
+# Individual source runners
+# ---------------------------------------------------------------------------
+
+def run_cve():
     print("=== CVE ===")
-    cve_out_dir = os.path.join("data", "processed", "CVE")
-    os.makedirs(cve_out_dir, exist_ok=True)
+    out_dir = os.path.join("data", "processed", "CVE")
+    os.makedirs(out_dir, exist_ok=True)
 
     all_cves = []
     for year in range(2010, 2026):
         print(f"  Fetching {year}...")
         all_cves.extend(get_cves_for_year(year))
 
-    cve_df = pd.DataFrame(all_cves)
-    cve_df["products"] = cve_df["products"].apply(
-        lambda x: json.dumps(x) if isinstance(x, list) else x
-    )
-    cve_df["references"] = cve_df["references"].apply(
-        lambda x: json.dumps(x) if isinstance(x, list) else x
-    )
-    cve_out = os.path.join(cve_out_dir, "cve_cleaned.parquet")
-    cve_df.to_parquet(cve_out, index=False)
-    print(f"  Saved {len(cve_df)} CVE records → {cve_out}")
+    df = pd.DataFrame(all_cves)
+    df["products"]   = df["products"].apply(lambda x: json.dumps(x) if isinstance(x, list) else x)
+    df["references"] = df["references"].apply(lambda x: json.dumps(x) if isinstance(x, list) else x)
+    out = os.path.join(out_dir, "cve_cleaned.parquet")
+    df.to_parquet(out, index=False)
+    print(f"  Saved {len(df)} CVE records → {out}")
 
-    # MITRE ==================================================
-    print("\n=== MITRE ===")
+
+def run_mitre():
+    print("=== MITRE ===")
     techniques = load_attack_techniques()
-    mitre_df = pd.DataFrame(techniques)
-    mitre_df["tactics"] = mitre_df["tactics"].apply(json.dumps)
-    mitre_df["platforms"] = mitre_df["platforms"].apply(json.dumps)
-    mitre_df = mitre_df.rename(columns={"id": "mitre_id"})
+    df = pd.DataFrame(techniques)
+    df["tactics"]   = df["tactics"].apply(json.dumps)
+    df["platforms"] = df["platforms"].apply(json.dumps)
+    df = df.rename(columns={"id": "mitre_id"})
 
-    mitre_out_dir = os.path.join("data", "processed", "MITRE")
-    os.makedirs(mitre_out_dir, exist_ok=True)
-    mitre_out = os.path.join(mitre_out_dir, "mitre_cleaned.parquet")
-    mitre_df.to_parquet(mitre_out, index=False)
-    print(f"  Saved {len(mitre_df)} MITRE techniques → {mitre_out}")
+    out_dir = os.path.join("data", "processed", "MITRE")
+    os.makedirs(out_dir, exist_ok=True)
+    out = os.path.join(out_dir, "mitre_cleaned.parquet")
+    df.to_parquet(out, index=False)
+    print(f"  Saved {len(df)} MITRE techniques → {out}")
 
-    # Sigma ==================================================
-    print("\n=== Sigma ===")
+
+def run_sigma():
+    print("=== Sigma ===")
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     sigma_raw_dir = os.path.join(project_root, "data", "raw", "sigma")
     if not os.path.isdir(sigma_raw_dir):
         print(f"  No Sigma data at {sigma_raw_dir} — skipping.")
-    else:   
-        sigma_rules = _parse_sigma_rules(sigma_raw_dir)
-        if not sigma_rules:
-            print("  No valid Sigma rules found — skipping.")
-        else:
-            sigma_df = pd.DataFrame(sigma_rules)
-            sigma_out_dir = os.path.join("data", "processed", "sigma")
-            os.makedirs(sigma_out_dir, exist_ok=True)
-            sigma_out = os.path.join(sigma_out_dir, "sigma_cleaned.parquet")
-            sigma_df.to_parquet(sigma_out, index=False)
-            print(f"  Saved {len(sigma_df)} Sigma rules → {sigma_out}")
+        return
+
+    rules = _parse_sigma_rules(sigma_raw_dir)
+    if not rules:
+        print("  No valid Sigma rules found — skipping.")
+        return
+
+    df = pd.DataFrame(rules)
+    out_dir = os.path.join("data", "processed", "sigma")
+    os.makedirs(out_dir, exist_ok=True)
+    out = os.path.join(out_dir, "sigma_cleaned.parquet")
+    df.to_parquet(out, index=False)
+    print(f"  Saved {len(df)} Sigma rules → {out}")
+
+
+def run_et_rules():
+    print("=== Emerging Threats ===")
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    raw_dir = os.path.join(project_root, "data", "raw", "emerging_threats")
+    if not os.path.isdir(raw_dir):
+        print(f"  No ET rules data at {raw_dir} — skipping.")
+        return
+
+    records = _parse_et_rules(raw_dir)
+    if not records:
+        print("  No valid ET rules found — skipping.")
+        return
+
+    df = pd.DataFrame(records)
+    out_dir = os.path.join("data", "processed", "emerging_threats")
+    os.makedirs(out_dir, exist_ok=True)
+    out = os.path.join(out_dir, "et_rules_cleaned.parquet")
+    df.to_parquet(out, index=False)
+    print(f"  Saved {len(df)} ET rules → {out}")
+
+    print("\n--- Sample rule_text ---")
+    print(df.iloc[0]["rule_text"])
+
+
+# ---------------------------------------------------------------------------
+# Behavioral rules (flow-level detection, v3 schema)
+# ---------------------------------------------------------------------------
+
+def _render_behavioral_rule_text(rule: dict) -> str:
+    """Render a v3 behavioral rule to embedding text. Mirrors ingest_behavioral_rules.render_text."""
+    lines = [f"Behavioral Rule: {rule['name']}"]
+
+    proto = rule.get("proto", "TCP")
+    ports = rule.get("dst_ports", [])
+    port_str = f"dst_port:{','.join(str(p) for p in ports)}" if ports else ""
+    lines.append(f"Protocol: {proto}" + (f" | Ports: {port_str}" if port_str else ""))
+
+    keywords = rule.get("keywords", [])
+    if keywords:
+        lines.append(f"Keywords: {', '.join(keywords)}")
+
+    mitre = rule.get("mitre_attack", {})
+    if mitre:
+        technique_id = mitre.get("technique_id", "")
+        technique    = mitre.get("technique", "")
+        tactic       = mitre.get("tactic", "")
+        sub          = mitre.get("sub_technique") or ""
+        mitre_str    = f"{technique_id} — {technique}"
+        if sub:
+            mitre_str += f" ({sub})"
+        lines.append(f"MITRE ATT&CK: {tactic} | {mitre_str}")
+
+    indicators = rule.get("indicators", [])
+    if indicators:
+        lines.append("Detection: " + "; ".join(indicators))
+
+    fp = rule.get("flow_profile", {})
+    if fp:
+        fp_parts = [
+            f"{k}={v}" for k, v in fp.items()
+            if v and str(v).lower() not in ("varies", "")
+        ]
+        if fp_parts:
+            lines.append("Flow profile: " + "; ".join(fp_parts))
+
+    if rule.get("classtype"):
+        lines.append(f"Classtype: {rule['classtype']}")
+    if rule.get("severity"):
+        lines.append(f"Severity: {rule['severity']}")
+    if rule.get("context"):
+        lines.append(f"Context: {rule['context']}")
+
+    dd = rule.get("differential_diagnosis", {})
+    if dd.get("distinguishing_factor"):
+        lines.append(f"Differential diagnosis: {dd['distinguishing_factor']}")
+
+    return "\n".join(lines)
+
+
+def run_behavioral_rules():
+    print("=== Behavioral Rules ===")
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    rules_file   = os.path.join(project_root, "data", "raw", "behavioral_rules", "behavioral_rules_v3.json")
+
+    if not os.path.isfile(rules_file):
+        print(f"  No behavioral rules file at {rules_file} — skipping.")
+        return
+
+    with open(rules_file, encoding="utf-8") as f:
+        rules = json.load(f)
+
+    if not rules:
+        print("  Empty rules file — skipping.")
+        return
+
+    # Each rule is rendered directly as one chunk — no further splitting needed
+    records = []
+    for rule in rules:
+        rule_id  = rule.get("id", "BHR-XXX")
+        chunk_id = f"{rule_id}_c0"
+        text     = _render_behavioral_rule_text(rule)
+        metadata = json.dumps({
+            "rule_id":   rule_id,
+            "classtype": rule.get("classtype", ""),
+            "severity":  rule.get("severity", ""),
+            "mitre_technique_id": (rule.get("mitre_attack") or {}).get("technique_id", ""),
+        })
+        records.append({
+            "chunk_id": chunk_id,
+            "doc_id":   rule_id,
+            "source":   "behavioral_rules",
+            "text":     text,
+            "metadata": metadata,
+        })
+
+    out_dir = os.path.join("data", "processed", "behavioral_rules")
+    os.makedirs(out_dir, exist_ok=True)
+    out = os.path.join(out_dir, "chunks.parquet")
+    pd.DataFrame(records).to_parquet(out, index=False)
+    print(f"  Saved {len(records)} behavioral rules → {out}")
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
+SOURCE_MAP = {
+    "cve":              run_cve,
+    "mitre":            run_mitre,
+    "sigma":            run_sigma,
+    "et_rules":         run_et_rules,
+    "behavioral_rules": run_behavioral_rules,
+}
+
+
+def run_pipeline(sources: list[str]):
+    for src in sources:
+        SOURCE_MAP[src]()
+        print()
 
 
 if __name__ == "__main__":
-    run_pipeline()
+    parser = argparse.ArgumentParser(description="Clean raw data sources into parquet files.")
+    parser.add_argument(
+        "--source", nargs="+",
+        choices=list(SOURCE_MAP),
+        default=["mitre", "sigma", "et_rules", "behavioral_rules"],
+        help="Sources to process (default: mitre sigma et_rules behavioral_rules). Use 'cve' to also re-download CVEs.",
+    )
+    args = parser.parse_args()
+    run_pipeline(args.source)

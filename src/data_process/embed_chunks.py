@@ -15,9 +15,10 @@ EMBED_MODEL = "BAAI/bge-base-en-v1.5"
 COLLECTION  = "cyber_chunks"
 VECTOR_SIZE = 768
 SOURCES = {
-    "cve":   Path("data/processed/CVE/chunks.parquet"),
-    "mitre": Path("data/processed/MITRE/chunks.parquet"),
-    "sigma": Path("data/processed/sigma/chunks.parquet"),
+    "mitre":            Path("data/processed/MITRE/chunks.parquet"),
+    "sigma":            Path("data/processed/sigma/chunks.parquet"),
+    "et_rules":         Path("data/processed/emerging_threats/chunks.parquet"),
+    "behavioral_rules": Path("data/processed/behavioral_rules/chunks.parquet"),
 }
 
 
@@ -72,13 +73,7 @@ def _build_points(df: pd.DataFrame, embeddings: np.ndarray) -> list[PointStruct]
         }
 
         source = row["source"]
-        if source == "cve":
-            payload.update({
-                "cve_id":        row["doc_id"],
-                "cvss_score":    meta.get("cvss_score"),
-                "cvss_severity": meta.get("cvss_severity"),
-            })
-        elif source == "mitre":
+        if source == "mitre":
             payload.update({
                 "technique_id": row["doc_id"],
                 "tactics":      meta.get("tactics", ""),
@@ -87,6 +82,19 @@ def _build_points(df: pd.DataFrame, embeddings: np.ndarray) -> list[PointStruct]
             payload.update({
                 "level": meta.get("level", ""),
                 "tags":  meta.get("tags", ""),
+            })
+        elif source == "et_rules":
+            payload.update({
+                "classtype": meta.get("classtype", ""),
+                "severity":  meta.get("severity", ""),
+                "sid":       meta.get("sid", ""),
+            })
+        elif source == "behavioral_rules":
+            payload.update({
+                "classtype":          meta.get("classtype", ""),
+                "severity":           meta.get("severity", ""),
+                "rule_id":            meta.get("rule_id", ""),
+                "mitre_technique_id": meta.get("mitre_technique_id", ""),
             })
 
         points.append(PointStruct(
@@ -157,7 +165,7 @@ def main():
         trust_remote_code=True,
     )
 
-    client = QdrantClient(host="localhost", port=6333)
+    client = QdrantClient(host="localhost", port=6333, timeout=120)
 
     if args.recreate:
         existing = [c.name for c in client.get_collections().collections]

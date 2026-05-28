@@ -5,13 +5,12 @@
     "input": "TCP flow on port 8080/HTTP-Proxy Volume: 7 packets total (3 forward / 4 backward), 455 bytes total (326 B sent, 129 B received). Byte ratio received/sent: 0.4x (client-dominant). Duration: 9.3 ms. Inter-arrival time (IAT): mean 1.6 ms, std 3.3 ms, max 8.3 ms. Forward IAT: mean 0.3 ms, max 0.6 ms. Forward packet sizes: min 0 B, max 326 B, std 188.2 B. Backward packet sizes: min 0 B, max 112 B, std 53.8 B. TCP flags: PSHx1, RSTx1, ECEx1. TCP window: client init window 8192 B (non-standard/custom stack); server init window 219 B. Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Flow Duration: 9309.0 (unusually low, z=-9.9); Flow IAT Mean: 1551.5 (unusually low, z=-9.9).",
     "reference": "Short TCP session to HTTP-Proxy port 8080 lasting 9.3 ms with 7 packets and 455 bytes (client-dominant), terminated by RST. The non-standard initial window of 8192 B identifies a custom (non-browser) TCP stack, and the PSH-data-then-RST pattern is consistent with botnet C2 beaconing or proxy-tunneled check-in where the implant posts a small payload and tears the connection down to evade flow-based detection.\nBehavioral fingerprint (custom TCP stack, micro-burst with PSH+RST, proxy port) matches malware check-in traffic; if confirmed, the source host is already under remote control and exfiltration or command retrieval is in progress.",
     "output": {
-      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusual behavior.",
-      "severity": "Medium",
-      "rationale": "The byte ratio received/sent is client-dominant, which could indicate an attack such as Slowloris or a custom stack implementation. The duration and inter-arrival time are also unusually low, suggesting a denial of service (DoS) attack. However, the alert does not contain enough information to determine the specific type of attack. The retrieved knowledge mentions a few possible attacks, but none of them match the conditions in the alert.",
+      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusual characteristics.",
+      "severity": "Low",
+      "rationale": "The byte ratio received/sent is client-dominant (0.4x), which is normal for content delivery. The duration of the flow is unusually low (9.3 ms) and the inter-arrival time (IAT) mean is also unusually low (1551.5 ms). However, these characteristics do not match any known attack patterns or techniques. Therefore, this alert should be treated as a false positive.",
       "mitigation_steps": [
-        "Increase monitoring on port 8080/HTTP-Proxy for any further unusual behavior or attacks.",
-        "Implement rate limiting or other traffic control mechanisms to prevent DoS attacks.",
-        "Review and update network security policies to address custom stack implementations."
+        "Ignore the alert",
+        "Investigate further if there are other indicators of compromise"
       ],
       "retrieved_context_ids": [
         "2023831_c0",
@@ -25,16 +24,16 @@
       ]
     },
     "evaluation": {
-      "severity_verdict": "correct",
+      "severity_verdict": "underestimated",
       "attack_semantic_hit": false,
       "hallucination_flag": false,
       "context_diversity": "none",
-      "hallucination_rate": 0.8,
-      "answer_relevancy": 0.565,
-      "answer_correctness": 0.512,
+      "hallucination_rate": 1.0,
+      "answer_relevancy": 0.677,
+      "answer_correctness": 0.513,
       "context_precision": 0.5,
       "context_recall": 0.75,
-      "response_latency_s": 37.529
+      "response_latency_s": 31.907
     }
   },
   {
@@ -43,52 +42,14 @@
     "input": "TCP flow on port 8080/HTTP-Proxy Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.6 ms. Inter-arrival time (IAT): mean 0.6 ms, std 0.0 ms, max 0.6 ms. Forward IAT: mean 0.6 ms, max 0.6 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 2052 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Duration: 578.0 (unusually low, z=-9.9); Flow IAT Mean: 578.0 (unusually low, z=-9.9).",
     "reference": "Two-packet ACK-only probe to HTTP-Proxy port 8080 with zero payload and no server response, completing in 0.58 ms. The non-standard initial window of 2052 B (consistent with an embedded or stripped-down malware TCP stack rather than a real browser) and the lone ACK without a SYN handshake indicate a botnet implant probing whether its C2/proxy channel is reachable.\nNo payload was exchanged and the server did not respond, limiting immediate impact, but the fingerprint matches automated bot reachability checks rather than legitimate user traffic.",
     "output": {
-      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusually low volume and duration.",
-      "severity": "Low",
-      "rationale": "The alert does not indicate any specific attack pattern or behavior. The retrieved knowledge mentions three different rules, but none of them are relevant to this alert. The severity is determined based on the lack of any indicators of compromise.",
-      "mitigation_steps": [
-        "Monitor the port for any suspicious activity",
-        "Increase logging and analysis capabilities",
-        "Implement rate limiting or other traffic control mechanisms"
-      ],
-      "retrieved_context_ids": [
-        "2023831_c0",
-        "2102715_c0",
-        "2019347_c0"
-      ],
-      "retrieved_contexts_text": [
-        "Rule: ET DOS Excessive Large Tree Connect Response\nProtocol: TCP | Ports: src_port:445\nSeverity: Major\nReference: url,isc.sans.edu/forums/diary/Windows+SMBv3+Denial+of+Service+Proof+of+Concept+0+Day+Exploit/22029/",
-        "Rule: GPL SQL dbms_offline_snapshot.begin_load buffer overflow attempt\nProtocol: TCP | Ports: dst_port:$ORACLE_PORTS\nDetection: 'dbms_offline_snapshot.begin_load'\nSeverity: Major\nReference: url,www.appsecinc.com/resources/alerts/oracle/2004-0001/25.html",
-        "Rule: ET DOS HTTP GET AAAAAAAA Likely FireFlood\nProtocol: TCP\nDetection: 'GET AAAAAAAA HTTP/1.1'\nSeverity: Major"
-      ]
-    },
-    "evaluation": {
-      "severity_verdict": "underestimated",
-      "attack_semantic_hit": false,
-      "hallucination_flag": false,
-      "context_diversity": "none",
-      "hallucination_rate": 1.0,
-      "answer_relevancy": 0.0,
-      "answer_correctness": 0.46,
-      "context_precision": 0.0,
-      "context_recall": 0.0,
-      "response_latency_s": 20.699
-    }
-  },
-  {
-    "label": "Bot",
-    "raw_packet": {},
-    "input": "TCP flow on port 8080/HTTP-Proxy Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.6 ms. Inter-arrival time (IAT): mean 0.6 ms, std 0.0 ms, max 0.6 ms. Forward IAT: mean 0.6 ms, max 0.6 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 256 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Duration: 553.0 (unusually low, z=-9.9); Flow IAT Mean: 553.0 (unusually low, z=-9.9).",
-    "reference": "Two-packet ACK-only probe to HTTP-Proxy port 8080 with zero payload and no server response, completing in 0.55 ms. The non-standard initial window of 256 B (consistent with an embedded or stripped-down malware TCP stack rather than a real browser) and the lone ACK without a SYN handshake indicate a botnet implant probing whether its C2/proxy channel is reachable.\nNo payload was exchanged and the server did not respond, limiting immediate impact, but the fingerprint matches automated bot reachability checks rather than legitimate user traffic.",
-    "output": {
-      "threat_description": "The alert indicates a TCP flow on port 8080/HTTP-Proxy with low volume and duration. The forward packet sizes are zero bytes, which suggests no data transfer occurred. The inter-arrival time (IAT) is also unusually low.",
+      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusually low volume and duration. The forward packet sizes are also zero bytes, which suggests no data transfer occurred. The analysis hints mention FireFlood, an HTTP DDoS attack technique that involves sending GET requests with long URLs to overwhelm the target server. However, the alert does not meet the conditions for a DoS/DDoS attack as it doesn't require abnormally high packet rate or very long duration.",
       "severity": "Medium",
-      "rationale": "The low volume and duration of the flow suggest that it may be a legitimate connection or a small-scale attack. However, the unusually low IAT indicates that the attacker may be using techniques to manipulate network traffic, such as FireFlood or other similar attacks. The retrieved knowledge about FireFlood and other HTTP GET AAAAAAAA attacks further supports this suspicion.",
+      "rationale": "The low volume and duration of the TCP flow suggest that this is likely an anomaly rather than a deliberate attack. The zero-byte flow further supports this assumption. While FireFlood is mentioned in the analysis hints, the alert doesn't meet the conditions for a DoS/DDoS attack. Therefore, the severity of this alert is medium.",
       "mitigation_steps": [
-        "Investigate the source of the traffic to determine if it is legitimate or malicious.",
-        "Monitor the network for any signs of manipulation or abnormal behavior related to the low IAT.",
-        "Implement rate limiting or other measures to prevent excessive traffic on port 8080/HTTP-Proxy.",
-        "Consider implementing intrusion detection and prevention systems (IDPS) to detect and block malicious traffic."
+        "Investigate the source of the traffic to determine if it's legitimate or malicious.",
+        "Monitor the traffic closely for any signs of abnormal behavior or escalation.",
+        "Implement rate limiting or other mitigation measures to prevent potential abuse.",
+        "Consider blocking the IP address or implementing additional security controls if necessary."
       ],
       "retrieved_context_ids": [
         "2023831_c0",
@@ -107,11 +68,49 @@
       "hallucination_flag": false,
       "context_diversity": "none",
       "hallucination_rate": 1.0,
-      "answer_relevancy": 0.749,
-      "answer_correctness": 0.573,
-      "context_precision": 0.333,
+      "answer_relevancy": 0.547,
+      "answer_correctness": 0.645,
+      "context_precision": 0.0,
       "context_recall": 0.0,
-      "response_latency_s": 38.57
+      "response_latency_s": 43.27
+    }
+  },
+  {
+    "label": "Bot",
+    "raw_packet": {},
+    "input": "TCP flow on port 8080/HTTP-Proxy Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.6 ms. Inter-arrival time (IAT): mean 0.6 ms, std 0.0 ms, max 0.6 ms. Forward IAT: mean 0.6 ms, max 0.6 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 256 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Duration: 553.0 (unusually low, z=-9.9); Flow IAT Mean: 553.0 (unusually low, z=-9.9).",
+    "reference": "Two-packet ACK-only probe to HTTP-Proxy port 8080 with zero payload and no server response, completing in 0.55 ms. The non-standard initial window of 256 B (consistent with an embedded or stripped-down malware TCP stack rather than a real browser) and the lone ACK without a SYN handshake indicate a botnet implant probing whether its C2/proxy channel is reachable.\nNo payload was exchanged and the server did not respond, limiting immediate impact, but the fingerprint matches automated bot reachability checks rather than legitimate user traffic.",
+    "output": {
+      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusually low volume and duration. The forward packet sizes are also zero, suggesting no data transfer. The analysis hints mention FireFlood, which is a type of DDoS attack that floods HTTP GET requests. However, the alert does not meet the conditions for a DDoS attack as it does not require abnormally high packet rate or very long duration.",
+      "severity": "Medium",
+      "rationale": "The low volume and duration of the flow suggest that this may be an intentional action by an attacker. The zero-byte flow further supports this suspicion. While FireFlood is a known DDoS attack, the alert does not meet the required conditions for one. Therefore, the severity is set to Medium.",
+      "mitigation_steps": [
+        "Investigate the source of the traffic and determine if it is malicious.",
+        "Implement rate limiting or other traffic control mechanisms on port 8080/HTTP-Proxy.",
+        "Monitor the network for similar patterns and take appropriate action if necessary."
+      ],
+      "retrieved_context_ids": [
+        "2023831_c0",
+        "2102715_c0",
+        "2019347_c0"
+      ],
+      "retrieved_contexts_text": [
+        "Rule: ET DOS Excessive Large Tree Connect Response\nProtocol: TCP | Ports: src_port:445\nSeverity: Major\nReference: url,isc.sans.edu/forums/diary/Windows+SMBv3+Denial+of+Service+Proof+of+Concept+0+Day+Exploit/22029/",
+        "Rule: GPL SQL dbms_offline_snapshot.begin_load buffer overflow attempt\nProtocol: TCP | Ports: dst_port:$ORACLE_PORTS\nDetection: 'dbms_offline_snapshot.begin_load'\nSeverity: Major\nReference: url,www.appsecinc.com/resources/alerts/oracle/2004-0001/25.html",
+        "Rule: ET DOS HTTP GET AAAAAAAA Likely FireFlood\nProtocol: TCP\nDetection: 'GET AAAAAAAA HTTP/1.1'\nSeverity: Major"
+      ]
+    },
+    "evaluation": {
+      "severity_verdict": "correct",
+      "attack_semantic_hit": false,
+      "hallucination_flag": false,
+      "context_diversity": "none",
+      "hallucination_rate": 1.0,
+      "answer_relevancy": 0.0,
+      "answer_correctness": 0.772,
+      "context_precision": 0.0,
+      "context_recall": 0.0,
+      "response_latency_s": 38.129
     }
   },
   {
@@ -122,11 +121,9 @@
     "output": {
       "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusual characteristics.",
       "severity": "Medium",
-      "rationale": "The byte ratio received/sent is client-dominant, which could indicate an attack such as Slowloris or HTTP Flooder. However, the alert does not meet the conditions for a SYN flood or DoS/DDoS attack. The flow duration and IAT values are also unusually low, which may suggest an attempt to evade detection. The retrieved knowledge mentions a rule for detecting Slowloris attacks and another for detecting SQL injection attacks, but neither of these seem to be applicable based on the information provided in the alert.",
+      "rationale": "The byte ratio received/sent is unusually low (client-dominant), and the duration of the flow is unusually low as well. The inter-arrival time (IAT) is also unusually low, which could indicate a denial-of-service (DoS) attack or a slowloris flooder. However, the alert does not contain enough information to determine the exact type of attack. Therefore, this alert should be escalated for further investigation.",
       "mitigation_steps": [
-        "Increase monitoring of port 8080/HTTP-Proxy for unusual traffic patterns.",
-        "Implement rate limiting or other measures to prevent excessive traffic on this port.",
-        "Review application logs and configurations to identify any potential vulnerabilities that could be exploited by an attacker."
+        "1. Review the network traffic logs and other relevant data sources to gather more context about the flow. <br>2. Analyze the TCP flags and window sizes to identify any abnormalities. <br>3. Configure a firewall or intrusion prevention system (IPS) to block or limit traffic on port 8080/HTTP-Proxy until the issue is resolved. <br>4. Monitor the network for any signs of a DoS attack or slowloris flooder, and take appropriate action if necessary."
       ],
       "retrieved_context_ids": [
         "2023831_c0",
@@ -144,12 +141,12 @@
       "attack_semantic_hit": false,
       "hallucination_flag": false,
       "context_diversity": "none",
-      "hallucination_rate": 1.0,
-      "answer_relevancy": 0.709,
-      "answer_correctness": 0.647,
-      "context_precision": 0.333,
-      "context_recall": 0.0,
-      "response_latency_s": 36.041
+      "hallucination_rate": 0.833,
+      "answer_relevancy": 0.657,
+      "answer_correctness": 0.488,
+      "context_precision": 0.0,
+      "context_recall": 0.667,
+      "response_latency_s": 37.748
     }
   },
   {
@@ -158,13 +155,13 @@
     "input": "TCP flow on port 8080/HTTP-Proxy Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.6 ms. Inter-arrival time (IAT): mean 0.6 ms, std 0.0 ms, max 0.6 ms. Forward IAT: mean 0.6 ms, max 0.6 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 2052 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Duration: 585.0 (unusually low, z=-9.9); Flow IAT Mean: 585.0 (unusually low, z=-9.9).",
     "reference": "Two-packet ACK-only probe to HTTP-Proxy port 8080 with zero payload and no server response, completing in 0.58 ms. The non-standard initial window of 2052 B (consistent with an embedded or stripped-down malware TCP stack rather than a real browser) and the lone ACK without a SYN handshake indicate a botnet implant probing whether its C2/proxy channel is reachable.\nNo payload was exchanged and the server did not respond, limiting immediate impact, but the fingerprint matches automated bot reachability checks rather than legitimate user traffic.",
     "output": {
-      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusual characteristics.",
+      "threat_description": "This alert indicates a TCP flow on port 8080/HTTP-Proxy with unusually low volume and duration. The forward packet sizes are also zero.",
       "severity": "Medium",
-      "rationale": "The flow has an unusually low volume and duration, which could indicate a denial-of-service (DoS) attack or a malicious traffic pattern. However, the alert does not meet the criteria for a DoS/DDoS attack or a port scan. The retrieved knowledge mentions a FireFlood attack, but it is not clear if this specific attack is relevant to the observed behavior.",
+      "rationale": "The low volume and duration suggest that this may be an attempt to evade detection by a network intrusion system. The zero-byte flow further supports this suspicion, as it indicates no data transfer occurred during the connection. While not definitive proof of an attack, these characteristics warrant further investigation.",
       "mitigation_steps": [
-        "Investigate the source and destination IP addresses of the flow to identify any potential threats or malicious activity.",
-        "Monitor the network traffic for any other unusual patterns or behaviors that could indicate a DoS/DDoS attack or a malicious traffic pattern.",
-        "Consider implementing rate limiting or other mitigation measures to prevent excessive traffic on port 8080/HTTP-Proxy."
+        "Increase monitoring on port 8080/HTTP-Proxy",
+        "Implement traffic analysis tools to detect anomalies",
+        "Conduct a deeper analysis of the network traffic patterns"
       ],
       "retrieved_context_ids": [
         "2023831_c0",
@@ -183,11 +180,11 @@
       "hallucination_flag": false,
       "context_diversity": "none",
       "hallucination_rate": 1.0,
-      "answer_relevancy": 0.658,
-      "answer_correctness": 0.758,
+      "answer_relevancy": 0.663,
+      "answer_correctness": 0.7,
       "context_precision": 0.0,
       "context_recall": 0.0,
-      "response_latency_s": 34.287
+      "response_latency_s": 27.009
     }
   },
   {
@@ -196,13 +193,13 @@
     "input": "TCP flow on port 80/HTTP Volume: 2 packets total (2 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 18.6 ms. Inter-arrival time (IAT): mean 18.6 ms, std 0.0 ms, max 18.6 ms. Forward IAT: mean 18.6 ms, max 18.6 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 225 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 32 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred.",
     "reference": "Two-packet ACK-only HTTP/80 micro-flow with no payload, captured in 18.6 ms and no server response. The recurring fingerprint (init window 225 B, minimum forward segment 32 B) is characteristic of HULK flood traffic: the tool emits massive parallel HTTP requests, and many flow records like this one are the teardown/ACK fragments from the broader barrage.\nA single fragment looks benign, but aggregated across thousands of similar flows per second a HULK campaign exhausts web server worker pools and renders the application unavailable.",
     "output": {
-      "threat_description": "The alert indicates a TCP flow on port 80/HTTP with very low packet rate and volume, which is consistent with a Slowloris attack.",
+      "threat_description": "This alert indicates a potential Slowloris attack on port 80/HTTP. The attacker is sending partial HTTP request headers very slowly, keeping the connection open and exhausting server resources.",
       "severity": "Medium",
-      "rationale": "The alert meets the conditions for a Slowloris attack: very long flow duration (minutes to hours), very low packet rate (slow inter-arrival time), and small forward packets (incomplete HTTP headers sent in fragments). The analysis hints also confirm this as a Slowloris attack.",
+      "rationale": "The alert meets the conditions for a Slowloris attack: very long flow duration (minutes to hours), very low packet rate, small forward packets with incomplete HTTP headers. The behavior matches the description of a Slowloris attack and is consistent with known indicators of compromise.",
       "mitigation_steps": [
-        "Block the IP address or range associated with the alerted traffic to prevent further connection exhaustion attacks.",
-        "Implement rate limiting on incoming HTTP requests to prevent slow and low attacks from overwhelming servers.",
-        "Monitor network traffic for signs of other Slowloris attacks and implement additional mitigation measures as needed."
+        "Block incoming traffic on port 80/HTTP from the source IP address",
+        "Implement rate limiting or other measures to prevent excessive slow HTTP requests",
+        "Monitor network traffic for signs of Slowloris attacks and adjust security controls accordingly"
       ],
       "retrieved_context_ids": [
         "BHR-006_c0",
@@ -225,11 +222,11 @@
       "hallucination_flag": false,
       "context_diversity": "none",
       "hallucination_rate": 1.0,
-      "answer_relevancy": 0.66,
-      "answer_correctness": 0.769,
-      "context_precision": 0.833,
-      "context_recall": 0.0,
-      "response_latency_s": 51.521
+      "answer_relevancy": 0.556,
+      "answer_correctness": 0.71,
+      "context_precision": 1.0,
+      "context_recall": 1.0,
+      "response_latency_s": 71.249
     }
   },
   {
@@ -238,13 +235,13 @@
     "input": "TCP flow on port 21/FTP Volume: 2 packets total (1 forward / 1 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.0 ms. Inter-arrival time (IAT): mean 0.0 ms, std 0.0 ms, max 0.0 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: PSHx1. TCP window: client init window 26883 B (unknown OS). Minimum forward segment size: 40 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Pkts/s: 666666.6667 (>p99, z=6431730.6); Flow IAT Mean: 3.0 (unusually low, z=-3.8).",
     "reference": "Sub-millisecond PSH-only flow on FTP/21 with zero payload and a computed packet rate of 666,667 pkts/s, from a client using a custom TCP stack (init window 26883 B, min segment 40 B). The fingerprint matches slowhttptest-style connection-holding behavior misdirected at the FTP service, where the attacker opens many concurrent sockets and dribbles minimal data to exhaust the daemon's connection pool while evading byte-rate detection.\nFTP daemons typically support few concurrent connections; slow-resource exhaustion against port 21 can knock the service offline quickly and may mask credential brute-force activity underneath.",
     "output": {
-      "threat_description": "This alert indicates a potential Slowloris attack on port 21/FTP.",
+      "threat_description": "This alert indicates a potential Slowloris DoS attack on port 21/FTP. The flow has very low packet rates and extremely long duration, with minimal data transferred. The TCP flags are normal, but the connection is kept alive with minimal traffic.",
       "severity": "Medium",
-      "rationale": "The alert exhibits several key indicators of a Slowloris attack, including very long flow duration (minutes to hours), very low packet rate, small forward packets with incomplete HTTP headers sent in fragments, high flow IAT mean with low packet count, and standard TCP window. The analysis hints also confirm these findings and classify the threat as a denial-of-service attack.",
+      "rationale": "The alert meets the conditions for a Slowloris attack: very long flow duration (minutes to hours), very low packet rate (slow inter-arrival time), small forward packets (incomplete HTTP headers sent in fragments), high flow IAT mean with low packet count, standard TCP window. The behavior matches the description of Slowloris in the retrieved knowledge.",
       "mitigation_steps": [
-        "Block port 21/FTP traffic from the source IP address to prevent further connection exhaustion attacks.",
-        "Implement rate limiting on FTP traffic to prevent abuse and reduce the impact of Slowloris attacks.",
-        "Monitor FTP traffic for other suspicious patterns or behaviors that may indicate additional attacks or compromises."
+        "Block port 21/FTP",
+        "Increase monitoring for similar patterns",
+        "Implement rate limiting on FTP traffic"
       ],
       "retrieved_context_ids": [
         "BHR-006_c0",
@@ -266,12 +263,12 @@
       "attack_semantic_hit": false,
       "hallucination_flag": false,
       "context_diversity": "none",
-      "hallucination_rate": 0.667,
-      "answer_relevancy": 0.683,
-      "answer_correctness": 0.529,
+      "hallucination_rate": 1.0,
+      "answer_relevancy": 0.535,
+      "answer_correctness": 0.775,
       "context_precision": 0.639,
       "context_recall": 1.0,
-      "response_latency_s": 42.545
+      "response_latency_s": 36.747
     }
   },
   {
@@ -280,14 +277,13 @@
     "input": "TCP flow on port 80/HTTP Volume: 8 packets total (4 forward / 4 backward), 1055 bytes total (660 B sent, 395 B received). Byte ratio received/sent: 0.6x (balanced). Duration: 5.01 s. Inter-arrival time (IAT): mean 715.8 ms, std 1867.6 ms, max 4950.8 ms. Forward IAT: mean 19.8 ms, max 56.2 ms. Forward packet sizes: min 0 B, max 660 B, std 330.0 B. Backward packet sizes: min 0 B, max 395 B, std 197.5 B. TCP flags: PSHx1, RSTx1, ECEx1. TCP window: client init window 8192 B (non-standard/custom stack); server init window 221 B. Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0).",
     "reference": "HTTP/80 conversation of 8 packets (660 B sent, 395 B received) spanning 5.0 s and ending with RST, from a client using a non-standard TCP stack (init window 8192 B). The cadence — short forward request bursts followed by multi-second idle gaps before the abort — is characteristic of time-based blind SQL injection (e.g., sqlmap with SLEEP/BENCHMARK payloads) where the tool injects delay primitives and measures server response time to infer query truth values.\nTime-based blind SQLi reliably extracts data even without visible error output; successful exploitation grants attacker-controlled database access and may enable authentication bypass or remote code execution.",
     "output": {
-      "threat_description": "This alert indicates a potential Slowloris attack on port 80/HTTP. The attacker is sending partial HTTP request headers very slowly, keeping the connection open and exhausting the server's connection pool.",
+      "threat_description": "The alert indicates a potential Slowloris DoS attack on port 80/HTTP. The attacker is sending partial HTTP request headers very slowly, keeping the connection alive with minimal traffic.",
       "severity": "Medium",
-      "rationale": "The alert meets the conditions for a Slowloris attack: very long flow duration (minutes to hours), very low packet rate, small forward packets with incomplete HTTP headers sent in fragments, high flow IAT mean with low packet count, and standard TCP window. The behavioral rule and MITRE ATT&CK match this pattern as well.",
+      "rationale": "The alert meets the conditions for a Slowloris DoS attack: very long flow duration (minutes to hours), very low packet rate, small forward packets with incomplete HTTP headers sent in fragments, high flow IAT mean with low packet count, standard TCP window. The attacker is using a non-standard/custom stack and the connection is kept alive with minimal traffic.",
       "mitigation_steps": [
-        "Block the source IP address to prevent further attacks.",
-        "Increase monitoring of port 80/HTTP for signs of other Slowloris attacks or other DDoS activity.",
-        "Implement rate limiting or other traffic control mechanisms to limit the impact of the attack.",
-        "Consider implementing a web application firewall (WAF) to filter out malicious traffic and protect against other types of attacks."
+        "Block port 80/HTTP",
+        "Increase monitoring for similar attacks",
+        "Implement rate limiting on HTTP requests"
       ],
       "retrieved_context_ids": [
         "BHR-006_c0",
@@ -309,12 +305,12 @@
       "attack_semantic_hit": false,
       "hallucination_flag": false,
       "context_diversity": "none",
-      "hallucination_rate": 1.0,
-      "answer_relevancy": 0.509,
-      "answer_correctness": 0.577,
-      "context_precision": 0.333,
-      "context_recall": 0.333,
-      "response_latency_s": 46.325
+      "hallucination_rate": 0.75,
+      "answer_relevancy": 0.533,
+      "answer_correctness": 0.585,
+      "context_precision": 0.833,
+      "context_recall": 0.667,
+      "response_latency_s": 33.586
     }
   },
   {
@@ -323,13 +319,13 @@
     "input": "UDP flow on port 500 Volume: 6 packets total (6 forward / 0 backward), 3000 bytes total (3000 B sent, 0 B received). Byte ratio received/sent: 0.0x (client-dominant). Duration: 1.5 min. Inter-arrival time (IAT): mean 17895.9 ms, std 15345.2 ms, max 41990.5 ms. Forward IAT: mean 17895.9 ms, max 41990.5 ms. Forward packet sizes: min 500 B, max 500 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: none set. TCP window: server init window: none (server did not respond). Minimum forward segment size: 8 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Flow IAT Mean: 17895933.8 (unusually low, z=-11.4).",
     "reference": "Six fixed-size 500-byte UDP packets to port 500 over 1.5 min with no replies and slow, regular spacing. Port 500 carries IKE (IPsec) and identical-size unsolicited datagrams at this cadence are characteristic of IKE aggressive-mode brute force or PSK enumeration against a VPN gateway, where the attacker iterates identities or shared secrets searching for a vulnerable responder.\nSuccessful VPN PSK compromise grants full network ingress; even unanswered IKE probes confirm active enumeration of the VPN concentrator and warrant immediate hardening.",
     "output": {
-      "threat_description": "The alert indicates a UDP flow on port 500 with a very low volume of packets and bytes sent. The byte ratio is client-dominant but the duration of the flow is unusually long (minutes to hours). The inter-arrival time (IAT) is also very low, indicating that the connection is kept alive with minimal traffic. The alert suggests that this behavior may be indicative of a Slowloris attack.",
+      "threat_description": "The alert indicates a potential Slowloris DoS attack on port 80 or 443. The attacker is sending partial HTTP request headers very slowly to keep the connection open, exhausting the server's connection pool.",
       "severity": "Medium",
-      "rationale": "The evidence from the alert and retrieved knowledge justifies a medium severity rating. The alert indicates a very low packet rate and long flow duration, which are key indicators of a Slowloris attack. The MITRE ATT&CK reference also supports this assessment, as T1499.001 (OS Exhaustion Flood) is classified as having a medium severity level.",
+      "rationale": "The alert meets the conditions for a Slowloris DoS attack: very long flow duration (minutes) and very low packet rate. The byte ratio is also client-dominant but has low volume due to the minimal data transferred in the partial headers. The TCP flags are normal, and the TCP window is standard. The detection rules match the behavior of a Slowloris attack.",
       "mitigation_steps": [
-        "Block port 500 to prevent further Slowloris attacks.",
-        "Monitor network traffic for other indicators of a Slowloris attack, such as extremely long flow durations and very low packet rates.",
-        "Implement rate limiting or other mechanisms to prevent excessive use of system resources by malicious actors."
+        "Block incoming traffic on ports 80 and 443 from the source IP address.",
+        "Implement rate limiting or other anti-DoS measures to prevent further attacks.",
+        "Monitor network traffic for signs of additional Slowloris attacks."
       ],
       "retrieved_context_ids": [
         "BHR-006_c0",
@@ -352,11 +348,11 @@
       "hallucination_flag": false,
       "context_diversity": "none",
       "hallucination_rate": 1.0,
-      "answer_relevancy": 0.502,
-      "answer_correctness": 0.5,
-      "context_precision": 0.333,
-      "context_recall": 0.667,
-      "response_latency_s": 54.14
+      "answer_relevancy": 0.543,
+      "answer_correctness": 0.467,
+      "context_precision": 0.5,
+      "context_recall": 1.0,
+      "response_latency_s": 42.732
     }
   },
   {
@@ -365,13 +361,13 @@
     "input": "TCP flow on port 80/HTTP Volume: 3 packets total (3 forward / 0 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.4 ms. Inter-arrival time (IAT): mean 0.2 ms, std 0.3 ms, max 0.4 ms. Forward IAT: mean 0.2 ms, max 0.4 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1. TCP window: client init window 2053 B (unknown OS); server init window: none (server did not respond). Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred.",
     "reference": "Short 3-packet ACK-only HTTP/80 fragment from a scripted client (init window 2053 B) with zero payload and no server response, completing in 0.41 ms. The fingerprint of repeated short-flow probes from the same source distinguishes this from normal browser behavior and matches automated XSS-spray tooling teardowns.\nSingle fragment has no payload, but the scripted-client fingerprint and XSS label indicate active payload spraying against the web application from this source.",
     "output": {
-      "threat_description": "This alert indicates a TCP flow on port 80/HTTP with very low packet rate and volume, which is consistent with a Slowloris DoS attack.",
+      "threat_description": "This alert indicates a TCP flow on port 80/HTTP with very low packet rate and volume, which is consistent with a Slowloris attack. The connection is kept alive with minimal traffic, and the server did not respond to the request. This behavior matches the characteristics of a Slowloris Partial HTTP Connection DoS.",
       "severity": "Medium",
-      "rationale": "The alert meets the conditions for a Slowloris attack: very long flow duration (minutes to hours), very low packet rate, small forward packets with incomplete HTTP headers sent in fragments, high flow IAT mean with low packet count, standard TCP window. The retrieved knowledge also confirms this as a known behavioral rule for Slowloris and provides additional context on the attack.",
+      "rationale": "The alert meets the conditions for a Slowloris attack: very long flow duration (minutes to hours), very low packet rate, small forward packets with incomplete HTTP headers sent in fragments, high flow IAT mean with low packet count, and standard TCP window. The behavioral rules also match the description of a Slowloris attack.",
       "mitigation_steps": [
-        "Block port 80/HTTP traffic from the source IP address of the alert.",
-        "Increase monitoring for similar patterns of behavior on other ports.",
-        "Implement rate limiting or other measures to prevent slow HTTP connections from consuming excessive resources."
+        "Block port 80/HTTP traffic from the source IP address",
+        "Implement rate limiting on port 80/HTTP to prevent further abuse",
+        "Monitor network traffic for additional signs of Slowloris attacks"
       ],
       "retrieved_context_ids": [
         "BHR-006_c0",
@@ -393,12 +389,12 @@
       "attack_semantic_hit": false,
       "hallucination_flag": false,
       "context_diversity": "none",
-      "hallucination_rate": 1.0,
-      "answer_relevancy": 0.73,
-      "answer_correctness": 0.627,
-      "context_precision": 0.5,
+      "hallucination_rate": 0.0,
+      "answer_relevancy": 0.684,
+      "answer_correctness": 0.616,
+      "context_precision": 1.0,
       "context_recall": null,
-      "response_latency_s": 39.583
+      "response_latency_s": 42.11
     }
   },
   {
@@ -407,14 +403,13 @@
     "input": "UDP flow on port 53/DNS Volume: 2 packets total (1 forward / 1 backward), 80 bytes total (32 B sent, 48 B received). Byte ratio received/sent: 1.5x (balanced). Duration: 0.3 ms. Inter-arrival time (IAT): mean 0.3 ms, std 0.0 ms, max 0.3 ms. Forward packet sizes: min 32 B, max 32 B, std 0.0 B. Backward packet sizes: min 48 B, max 48 B, std 0.0 B. TCP flags: none set. TCP window: server init window: none (server did not respond). Minimum forward segment size: 8 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Flow Pkts/s: 7604.562738 (>p95, z=2.7).",
     "reference": "Small DNS query/response pair on UDP/53 (32 B sent, 48 B received) completing in 0.26 ms. In an infiltration context this pattern is consistent with DNS-based C2 beaconing or low-and-slow DNS tunneling, where compromised hosts encode small command or exfil chunks inside frequent DNS lookups to attacker-controlled domains.\nLow immediate volume keeps single-flow impact modest, but consistent low-rate DNS to suspicious destinations is a hallmark of stealthy C2 that should not be dismissed.",
     "output": {
-      "threat_description": "UDP flow on port 53/DNS",
-      "severity": "Medium",
-      "rationale": "The alert indicates a UDP flow on port 53/DNS with a very short duration and low packet rate. The byte ratio received/sent is balanced, indicating that the traffic is likely legitimate DNS requests or responses. However, the retrieved knowledge suggests that this behavior could be indicative of an NTP DDoS attack (ET DOS Likely NTP DDoS In Progress PEER_LIST_SUM Response to Non-Ephemeral Port IMPL 0x03). The severity is medium due to the potential for a DDoS attack, but the low packet rate and short duration suggest that this may be a false positive or a non-malicious behavior.",
+      "threat_description": "UDP flow on port 53/DNS with high volume and short duration. No SYN flood or DoS detected.",
+      "severity": "Low",
+      "rationale": "The alert indicates a UDP flow on port 53/DNS with high volume (2 packets) and short duration (0.3 ms). The byte ratio received/sent is balanced at 1.5x. No SYN flood or DoS attack is detected based on the provided conditions. Retrieved knowledge suggests that this behavior could be related to a port probe or scan, but without additional context or information, it's difficult to determine the exact nature of the threat.",
       "mitigation_steps": [
-        "Investigate the source IP address of the UDP traffic to determine if it is associated with known botnets or malicious actors.",
-        "Monitor the network for other signs of DDoS attacks, such as increased packet rates or longer durations.",
-        "Implement rate limiting or other mitigation measures to prevent excessive UDP traffic on port 53/DNS.",
-        "Consider blocking the source IP address if it is determined to be malicious."
+        "Monitor the source IP address for further suspicious activity",
+        "Implement rate limiting on UDP traffic to port 53/DNS",
+        "Investigate potential misconfigured services or applications that may be generating high UDP traffic"
       ],
       "retrieved_context_ids": [
         "2019013_c0",
@@ -437,11 +432,11 @@
       "hallucination_flag": false,
       "context_diversity": "none",
       "hallucination_rate": 1.0,
-      "answer_relevancy": 0.772,
-      "answer_correctness": 0.576,
+      "answer_relevancy": 0.666,
+      "answer_correctness": 0.526,
       "context_precision": 0.0,
       "context_recall": 0.0,
-      "response_latency_s": 53.436
+      "response_latency_s": 39.38
     }
   },
   {
@@ -450,13 +445,13 @@
     "input": "TCP flow on port 80/HTTP Volume: 8 packets total (5 forward / 3 backward), 1126 bytes total (464 B sent, 662 B received). Byte ratio received/sent: 1.43x (balanced). Duration: 6.81 s. Inter-arrival time (IAT): mean 972.7 ms, std 2545.3 ms, max 6744.7 ms. Forward IAT: mean 1702.3 ms, max 6745.1 ms. Forward packet sizes: min 0 B, max 464 B, std 207.5 B. Backward packet sizes: min 0 B, max 662 B, std 382.2 B. TCP flags: PSHx1. TCP window: client init window 26883 B (unknown OS); server init window 219 B. Minimum forward segment size: 32 B. Analysis hints: SYN flood: NOT possible (SYN count = 0).",
     "reference": "HTTP/80 session of 8 packets (464 B sent, 662 B received) over 6.8 s from a client identified by the GoldenEye TCP stack fingerprint (init window 26883 B). The long duration with sparse, evenly spaced packets and a single PSH match GoldenEye's L7 DoS behavior: opening few connections that request cache-busting URLs and keep-alive each socket to exhaust the web server's worker pool.\nGoldenEye-style L7 floods reliably exhaust Apache/nginx worker capacity at scale; even small per-flow footprints aggregate into severe availability impact when many hosts run the tool simultaneously.",
     "output": {
-      "threat_description": "The alert indicates a TCP flow on port 80/HTTP with an extremely long duration of 6.81 seconds and very low packet rate, which is consistent with a Slowloris attack.",
+      "threat_description": "This alert indicates a potential Slowloris DoS attack on port 80/HTTP. The attacker is sending partial HTTP request headers very slowly, keeping the connection open and exhausting the server's connection pool.",
       "severity": "Medium",
-      "rationale": "The retrieved knowledge confirms that the alert indicates a Slowloris attack based on the behavioral rules. The analysis hints also indicate that this is a Slowloris attack, as it has a very long flow duration and low packet rate. The severity is medium because while Slowloris attacks can be disruptive, they are not typically as severe as other types of DDoS attacks.",
+      "rationale": "The alert meets the conditions for a Slowloris DoS attack: very long flow duration (minutes to hours), very low packet rate, small forward packets with incomplete HTTP headers sent in fragments, high flow IAT mean with low packet count, and standard TCP window. The analysis hints also confirm this as a Slowloris attack.",
       "mitigation_steps": [
-        "Block the IP address or range associated with the attack.",
-        "Implement rate limiting on incoming HTTP requests to prevent further abuse.",
-        "Monitor network traffic for signs of additional Slowloris attacks and adjust mitigation measures as needed."
+        "Block the source IP address of the attacker",
+        "Increase the server's connection pool size to handle more connections",
+        "Implement rate limiting on incoming HTTP requests"
       ],
       "retrieved_context_ids": [
         "BHR-006_c0",
@@ -478,12 +473,12 @@
       "attack_semantic_hit": false,
       "hallucination_flag": false,
       "context_diversity": "none",
-      "hallucination_rate": 0.0,
-      "answer_relevancy": 0.488,
-      "answer_correctness": 0.453,
+      "hallucination_rate": 1.0,
+      "answer_relevancy": 0.549,
+      "answer_correctness": 0.395,
       "context_precision": 1.0,
       "context_recall": 1.0,
-      "response_latency_s": 41.279
+      "response_latency_s": 37.927
     }
   },
   {
@@ -492,13 +487,13 @@
     "input": "TCP flow on port 80/HTTP Volume: 18 packets total (15 forward / 3 backward), 2530 bytes total (2530 B sent, 0 B received). Byte ratio received/sent: 0.0x (client-dominant). Duration: 1.8 min. Inter-arrival time (IAT): mean 6375.4 ms, std 13533.5 ms, max 53247.3 ms. Forward IAT: mean 7741.6 ms, max 53247.3 ms. Forward packet sizes: min 0 B, max 230 B, std 105.3 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: PSHx1. TCP window: client init window 26883 B (unknown OS). Minimum forward segment size: 32 B. Analysis hints: SYN flood: NOT possible (SYN count = 0).",
     "reference": "1.8 min HTTP/80 flow of 18 packets with extreme inter-arrival gaps (max IAT 53247 ms) and 2530 bytes sent client-to-server with zero or minimal response. This is the textbook Slowloris signature: the attacker dribbles partial HTTP headers very slowly so the server keeps the connection open waiting for the full request, eventually exhausting its worker pool with many such half-open sessions.\nSlowloris reliably DoS's threaded web servers (Apache prefork) with minimal bandwidth; a successful campaign takes down public-facing HTTP services with very few attacking hosts.",
     "output": {
-      "threat_description": "The alert indicates a TCP flow on port 80/HTTP with an extremely long duration of 1.8 minutes and very low packet rate, which is consistent with a Slowloris attack.",
+      "threat_description": "This alert indicates a Slowloris attack on port 80/HTTP. The attacker is using partial HTTP connections to exhaust the server's connection pool, resulting in a denial of service.",
       "severity": "Medium",
-      "rationale": "The retrieved knowledge confirms that the alert indicates a Slowloris attack based on the behavioral rules. The analysis hints also indicate that this is a Slowloris attack, as it has a very long flow duration and low packet rate. The severity is medium because while Slowloris attacks can cause significant disruption, they are not typically as severe as other types of DDoS attacks.",
+      "rationale": "The alert meets the conditions for a Slowloris attack: very long flow duration (minutes), very low packet rate, small forward packets with incomplete HTTP headers sent in fragments, and high flow IAT mean with low packet count. The analysis hints also confirm this as a Slowloris attack.",
       "mitigation_steps": [
-        "Block the IP address or range associated with the alerted traffic to prevent further attacks.",
-        "Implement rate limiting on incoming HTTP requests to prevent Slowloris attacks from overwhelming the server.",
-        "Monitor network traffic for signs of other types of DDoS attacks and implement appropriate mitigation measures if necessary."
+        "Block port 80/HTTP traffic from the source IP address of the alert.",
+        "Increase the TCP window size to reduce the impact of the attack.",
+        "Implement rate limiting on incoming HTTP requests to prevent further abuse."
       ],
       "retrieved_context_ids": [
         "BHR-006_c0",
@@ -520,12 +515,12 @@
       "attack_semantic_hit": true,
       "hallucination_flag": false,
       "context_diversity": "none",
-      "hallucination_rate": 0.0,
-      "answer_relevancy": 0.586,
-      "answer_correctness": null,
+      "hallucination_rate": 1.0,
+      "answer_relevancy": 0.533,
+      "answer_correctness": 0.747,
       "context_precision": 1.0,
       "context_recall": 1.0,
-      "response_latency_s": 44.671
+      "response_latency_s": 38.958
     }
   },
   {
@@ -534,13 +529,14 @@
     "input": "TCP flow on port 21/FTP Volume: 2 packets total (1 forward / 1 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.0 ms. Inter-arrival time (IAT): mean 0.0 ms, std 0.0 ms, max 0.0 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: PSHx1. TCP window: client init window 26883 B (unknown OS). Minimum forward segment size: 40 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Pkts/s: 2000000.0 (>p99, z=19295198.9); Flow IAT Mean: 1.0 (unusually low, z=-3.8).",
     "reference": "Sub-microsecond PSH-only zero-payload micro-flow on FTP/21 with a computed packet rate of ~2,000,000 pkts/s, from a client using a custom TCP stack (init window 26883 B). The fingerprint matches automated FTP credential brute-force tooling (Hydra, Medusa, Ncrack) firing back-to-back authentication attempts at the daemon.\nFTP transmits credentials in cleartext and many deployments lack account lockout; sustained brute force frequently succeeds against weak passwords and grants file system access or upload capability.",
     "output": {
-      "threat_description": "This alert indicates a potential Slowloris DoS attack on port 80/HTTP and port 443/HTTPS.",
+      "threat_description": "This alert indicates a potential Slowloris DoS attack on port 80/HTTP and port 443/HTTPS. The flow has very long duration (minutes to hours), very low packet rate, small forward packets with incomplete HTTP headers sent in fragments, high flow IAT mean with low packet count, standard TCP window, and minimal traffic keeping the connection alive.",
       "severity": "Medium",
-      "rationale": "The alert has several indicators that suggest a Slowloris attack, including very long flow duration (minutes to hours), very low packet rate, small forward packets with incomplete HTTP headers sent in fragments, high flow IAT mean with low packet count, and standard TCP window. The behavioral rule for Slowloris Partial HTTP Connection DoS matches these indicators closely.",
+      "rationale": "The alert meets the conditions for a Slowloris DoS attack. The SYN flag is present with no ACK, server did not respond or incomplete handshake, high SYN rate with no corresponding established connections, zero bytes transferred, and potentially spoofed source addresses. The behavior matches the description of a Slowloris attack.",
       "mitigation_steps": [
-        "Block incoming traffic on ports 80/HTTP and port 443/HTTPS from the source IP address of the alert.",
-        "Implement rate limiting or other traffic control mechanisms to prevent further abuse of the server resources.",
-        "Monitor network traffic for additional signs of Slowloris attacks, such as slow HTTP request times or high CPU usage on the target server."
+        "Block incoming traffic on ports 80/HTTP and 443/HTTPS",
+        "Implement rate limiting or other anti-DoS measures",
+        "Monitor network traffic for signs of Slowloris attacks",
+        "Update firewalls and intrusion prevention systems"
       ],
       "retrieved_context_ids": [
         "BHR-006_c0",
@@ -562,12 +558,12 @@
       "attack_semantic_hit": false,
       "hallucination_flag": false,
       "context_diversity": "none",
-      "hallucination_rate": 1.0,
-      "answer_relevancy": 0.541,
-      "answer_correctness": 0.831,
+      "hallucination_rate": 0.333,
+      "answer_relevancy": 0.537,
+      "answer_correctness": 0.587,
       "context_precision": 0.5,
-      "context_recall": 0.75,
-      "response_latency_s": 41.54
+      "context_recall": 1.0,
+      "response_latency_s": 44.385
     }
   },
   {
@@ -576,14 +572,14 @@
     "input": "TCP flow on port 22/SSH Volume: 2 packets total (1 forward / 1 backward), 0 bytes total (0 B sent, 0 B received). Duration: 0.0 ms. Inter-arrival time (IAT): mean 0.0 ms, std 0.0 ms, max 0.0 ms. Forward packet sizes: min 0 B, max 0 B, std 0.0 B. Backward packet sizes: min 0 B, max 0 B, std 0.0 B. TCP flags: ACKx1, URGx1. TCP window: client init window 241 B (unknown OS); server init window 230 B. Minimum forward segment size: 32 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Zero-byte flow: no data transferred; Flow Pkts/s: 400000.0 (>p99, z=259657.1).",
     "reference": "Two-packet ACK+URG zero-payload micro-flow on SSH/22 with a very high computed packet rate, completing in 0.01 ms. The unusual ACK+URG flag combination on rapid micro-flows is inconsistent with interactive SSH usage and signals automated brute-force tooling fragments captured between credential submission rounds.\nSustained SSH brute-force at this rate is a direct attack on credentials; even rate-limited attempts at scale frequently find weak passwords given long enough.",
     "output": {
-      "threat_description": "This alert indicates a possible SSH brute force login attempt using automated tools such as Hydra, Medusa, or Patator.",
+      "threat_description": "This alert indicates a SSH brute force login attempt using automated tools such as Hydra, Medusa, or Patator. The attacker is repeatedly attempting authentication with different credential combinations by establishing short-lived connections to port 22 and completing an SSH authentication exchange before disconnecting.",
       "severity": "Medium",
-      "rationale": "The alert contains several indicators that suggest an SSH brute force attack. The flow profile shows many short connections to port 22 with balanced byte ratios and regular timing consistent with an automated tool. The detection rule also mentions the use of automated tools for SSH brute force attacks. Additionally, the severity level is set to medium based on the CVE and MITRE ATT&CK references.",
+      "rationale": "The alert meets the conditions for a SSH brute force login attempt: many short connections to port 22, balanced byte ratio per connection, short flow duration, regular inter-arrival time between connections, and standard TCP window. The absence of SYN rules out normal connection initiation.",
       "mitigation_steps": [
-        "Block IP addresses associated with the source of the traffic.",
-        "Implement rate limiting or other measures to prevent excessive login attempts.",
-        "Monitor network traffic for additional signs of SSH brute force attacks.",
-        "Update SSH configurations and implement stronger authentication methods."
+        "Block IP addresses associated with the attacker's source IP address",
+        "Implement rate limiting on SSH login attempts",
+        "Monitor SSH authentication logs for suspicious activity",
+        "Update SSH server configurations to use stronger authentication methods"
       ],
       "retrieved_context_ids": [
         "BHR-010_c0",
@@ -606,11 +602,11 @@
       "hallucination_flag": false,
       "context_diversity": "none",
       "hallucination_rate": 1.0,
-      "answer_relevancy": 0.553,
-      "answer_correctness": 0.479,
+      "answer_relevancy": 0.557,
+      "answer_correctness": 0.674,
       "context_precision": 0.833,
       "context_recall": null,
-      "response_latency_s": 38.828
+      "response_latency_s": 40.902
     }
   },
   {
@@ -619,13 +615,13 @@
     "input": "TCP flow on port 80/HTTP Volume: 7 packets total (3 forward / 4 backward), 1246 bytes total (311 B sent, 935 B received). Byte ratio received/sent: 3.01x (server-dominant). Duration: 1.3 ms. Inter-arrival time (IAT): mean 0.2 ms, std 0.3 ms, max 0.7 ms. Forward IAT: mean 0.5 ms, max 0.7 ms. Forward packet sizes: min 0 B, max 311 B, std 179.6 B. Backward packet sizes: min 0 B, max 935 B, std 467.5 B. TCP flags: PSHx1, RSTx1, ECEx1. TCP window: client init window 65535 B (Windows); server init window 219 B. Minimum forward segment size: 20 B. Analysis hints: SYN flood: NOT possible (SYN count = 0); Flow Byts/s: 982649.8423 (>p95, z=55166.7).",
     "reference": "1.3 ms HTTP/80 burst of 7 packets returning a server-dominant ~935 B response from a Windows source (init window 65535 B), terminated by PSH+RST+ECE. The very high computed byte rate, Windows client fingerprint, and rapid PSH-then-RST pattern are characteristic of HOIC (High Orbit Ion Cannon) — a Windows-based DDoS tool that fires concurrent HTTP requests as fast as possible against target URLs using booster scripts.\nHOIC traffic at this rate aggregated across the typical attack swarm rapidly saturates web server capacity and upstream bandwidth; the campaign label and Windows fingerprint indicate an active DDoS in progress.",
     "output": {
-      "threat_description": "The alert indicates a TCP flow on port 80/HTTP with a volume of 7 packets total and 1246 bytes total. The byte ratio received/sent is 3.01x, which is server-dominant but has low volume. The duration of the flow is 1.3 ms and the inter-arrival time (IAT) is mean 0.2 ms, std 0.3 ms, max 0.7 ms. Forward packet sizes are min 0 B, max 311 B, std 179.6 B, while backward packet sizes are min 0 B, max 935 B, std 467.5 B. The TCP flags are PSHx1, RSTx1, ECEx1 and the TCP window is client init window 65535 B (Windows) and server init window 219 B.",
+      "threat_description": "The alert indicates a potential Slowloris DoS attack on port 80/HTTP. The TCP flow has a very long duration of minutes to hours and a very low packet rate, with small forward packets containing incomplete HTTP headers sent in fragments. The connection is kept alive with minimal traffic.",
       "severity": "Medium",
-      "rationale": "The alert does not meet the conditions for a SYN flood attack as SYN Flag Cnt must be > 0 AND ACK Flag Cnt near 0. The packet rate is not abnormally high or the duration is not very long. However, the alert matches the behavioral rule for Slowloris Partial HTTP Connection DoS, which indicates that the flow is a slow-and-low attack using minimal bandwidth. The severity is medium as Slowloris holds HTTP connections open by sending partial HTTP request headers very slowly, occupying server threads until the server's connection pool is exhausted.",
+      "rationale": "The alert meets the conditions for a Slowloris DoS attack as described in the behavioral rules source. The flow profile matches the expected pattern of a Slowloris attack, including the very long duration and low packet rate. The TCP flags are also consistent with a legitimate OS stack.",
       "mitigation_steps": [
-        "Block port 80/HTTP traffic from the source IP address of the alert.",
-        "Implement rate limiting on port 80/HTTP to prevent similar attacks in the future.",
-        "Monitor network traffic for other signs of Slowloris attacks and take appropriate action if detected."
+        "Block port 80/HTTP traffic from the source IP address",
+        "Increase monitoring for similar patterns of behavior",
+        "Implement rate limiting or other traffic control mechanisms on port 80/HTTP"
       ],
       "retrieved_context_ids": [
         "BHR-006_c0",
@@ -648,11 +644,11 @@
       "hallucination_flag": false,
       "context_diversity": "none",
       "hallucination_rate": 1.0,
-      "answer_relevancy": 0.53,
-      "answer_correctness": 0.728,
+      "answer_relevancy": 0.558,
+      "answer_correctness": 0.623,
       "context_precision": 0.583,
-      "context_recall": 1.0,
-      "response_latency_s": 80.416
+      "context_recall": 0.8,
+      "response_latency_s": 39.869
     }
   }
 ]
