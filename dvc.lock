@@ -3,99 +3,93 @@ stages:
   clean_data:
     cmd: python src/data_process/clean_data.py
     deps:
-    - path: data/raw/CICIDS2017/
-      hash: md5
-      md5: acf928b43f089e74039fc8dba08e4dd7.dir
-      size: 884645759
-      nfiles: 8
-    - path: data/raw/CVE/
-      hash: md5
-      md5: 97b4849f9e3ffbabc7a0b676a7c8f87d.dir
-      size: 257383380
-      nfiles: 16
-    - path: data/raw/MITRE/
-      hash: md5
-      md5: e48002c9a1bf602552f3b26f038ccbb5.dir
-      size: 1144350358
-      nfiles: 39
     - path: src/data_process/clean_data.py
       hash: md5
-      md5: d56eb044202ad8d3ad2fd7148a8110f7
-      size: 3801
+      md5: d25719a020111470dc0b3768428ab6cd
+      size: 13661
     outs:
-    - path: data/processed/CICIDS2017/cicids_cleaned.parquet
-      hash: md5
-      md5: 9c8dabb0c55e5b5b38d06f9956746ee9
-      size: 13675498
-    - path: data/processed/CVE/cve_cleaned.parquet
-      hash: md5
-      md5: ea179b17323f547edb3132f8c72199a2
-      size: 56570453
     - path: data/processed/MITRE/mitre_cleaned.parquet
       hash: md5
-      md5: 9e24ea4e4807abec646c439b27a10b7a
-      size: 554887
+      md5: efd8ae34d56789c9d0b115bccd0c89b7
+      size: 602916
+    - path: data/processed/behavioral_rules/chunks.parquet
+      hash: md5
+      md5: 738d72ca984d67f0c82edfa7a98cbe9e
+      size: 27365
+    - path: data/processed/emerging_threats/et_rules_cleaned.parquet
+      hash: md5
+      md5: f5f21b30a1b5cc3d532b4c377f10550d
+      size: 348212
+    - path: data/processed/sigma/sigma_cleaned.parquet
+      hash: md5
+      md5: d832760c8c30c612c12815ae60fe81f6
+      size: 24319
   chunk_data:
     cmd: python src/data_process/chunk_data.py
     deps:
-    - path: data/processed/CVE/cve_cleaned.parquet
-      hash: md5
-      md5: ea179b17323f547edb3132f8c72199a2
-      size: 56570453
     - path: data/processed/MITRE/mitre_cleaned.parquet
       hash: md5
-      md5: 9e24ea4e4807abec646c439b27a10b7a
-      size: 554887
+      md5: efd8ae34d56789c9d0b115bccd0c89b7
+      size: 602916
+    - path: data/processed/emerging_threats/et_rules_cleaned.parquet
+      hash: md5
+      md5: f5f21b30a1b5cc3d532b4c377f10550d
+      size: 348212
+    - path: data/processed/sigma/sigma_cleaned.parquet
+      hash: md5
+      md5: d832760c8c30c612c12815ae60fe81f6
+      size: 24319
     - path: src/data_process/chunk_data.py
       hash: md5
-      md5: 964f8a82075f2add6659038ec20c0e3e
-      size: 4205
+      md5: 980e1222da5297196e42a5504ffb9796
+      size: 4895
+    params:
+      params.yaml:
+        chunking.chunk_overlap: 100
+        chunking.chunk_size: 400
+        chunking.tokenizer_model: BAAI/bge-base-en-v1.5
     outs:
-    - path: data/processed/CVE/chunks.parquet
-      hash: md5
-      md5: 95da64ac9000c576726e1c92b39ca9a9
-      size: 62986833
     - path: data/processed/MITRE/chunks.parquet
       hash: md5
-      md5: da3a978e20e658ca3b0a01cf74dbe60d
-      size: 596719
-  embed_cve:
-    cmd: python src/embed_chunks.py --source cve
-    deps:
-    - path: data/processed/CVE/chunks.parquet
+      md5: 6d65b4088c812f41f646250f4a27669b
+      size: 645462
+    - path: data/processed/emerging_threats/chunks.parquet
       hash: md5
-      md5: 95da64ac9000c576726e1c92b39ca9a9
-      size: 62986833
-    - path: src/embed_chunks.py
+      md5: a5afada5ab595c4dbe5a1abe41019ccb
+      size: 404026
+    - path: data/processed/sigma/chunks.parquet
       hash: md5
-      md5: f728546587d424210ff90d4cbe8c42f8
-      size: 3424
-    outs:
-    - path: data/embeddings/cve/chunk_ids.csv
-      hash: md5
-      md5: cc77139ccc126312c060fb1549d0fc6a
-      size: 5507010
-    - path: data/embeddings/cve/embeddings.npy
-      hash: md5
-      md5: d0115fa3cf9085ff2ef9df1f46b1be8a
-      size: 227264384
-  embed_mitre:
-    cmd: python src/embed_chunks.py --source mitre
+      md5: 99e2aaf2d1f68c06b8beb4bb81eafe07
+      size: 23278
+  embed_chunks:
+    cmd: python src/data_process/embed_chunks.py --recreate
     deps:
     - path: data/processed/MITRE/chunks.parquet
       hash: md5
-      md5: da3a978e20e658ca3b0a01cf74dbe60d
-      size: 596719
-    - path: src/embed_chunks.py
+      md5: 6d65b4088c812f41f646250f4a27669b
+      size: 645462
+    - path: data/processed/behavioral_rules/chunks.parquet
       hash: md5
-      md5: f728546587d424210ff90d4cbe8c42f8
-      size: 3424
+      md5: 738d72ca984d67f0c82edfa7a98cbe9e
+      size: 27365
+    - path: data/processed/emerging_threats/chunks.parquet
+      hash: md5
+      md5: a5afada5ab595c4dbe5a1abe41019ccb
+      size: 404026
+    - path: data/processed/sigma/chunks.parquet
+      hash: md5
+      md5: 99e2aaf2d1f68c06b8beb4bb81eafe07
+      size: 23278
+    - path: src/data_process/embed_chunks.py
+      hash: md5
+      md5: 9f59af38178bd0814dfe796fd37e8247
+      size: 7259
+    params:
+      params.yaml:
+        embedding.dim: 768
+        embedding.model_name: BAAI/bge-base-en-v1.5
     outs:
-    - path: data/embeddings/mitre/chunk_ids.csv
+    - path: data/embeddings/completed.txt
       hash: md5
-      md5: b8e693f46db5b40eb46f62286a7e55c9
-      size: 13448
-    - path: data/embeddings/mitre/embeddings.npy
-      hash: md5
-      md5: 3c22098fba0a877e850448115b576f7e
-      size: 837248
+      md5: 06eea44f6dbb8f679c94e5141d8b8efd
+      size: 178

@@ -1,0 +1,331 @@
+import argparse
+import json
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+import yaml
+
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+from src.rag.service import RagService
+from src.mlops.tracking import log_rag_experiment
+from tests.eval.eval_latency import evaluate_latency
+from tests.eval.eval_retrieval import evaluate_retrieval
+from tests.eval.eval_generation import evaluate_generation
+
+DEFAULT_TEMPLATES = ["basic", "cot", "few_shot"]
+GROUND_TRUTH_FILE = project_root / "baselines" / "ground_truth.json"
+RESULTS_DIR = project_root / "results"
+PARAMS_FILE = project_root / "params.yaml"
+
+
+def get_git_sha():
+    try:
+        import subprocess
+        return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
+    except Exception:
+        return "unknown"
+
+
+def sample_balanced(gt_data: list, n: int) -> list:
+    seen = set()
+    out = []
+    for r in gt_data:
+        if r["label"] not in seen:
+            seen.add(r["label"])
+            out.append(r)
+            if len(out) >= n:
+                return out
+    for r in gt_data:
+        if r not in out:
+            out.append(r)
+            if len(out) >= n:
+                return out
+    return out
+
+
+def _save_ckpt(ckpt_file: Path, state: dict):
+    ckpt_file.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+
+
+def run_template(
+    template: str,
+    sampled: list,
+    rag_service: RagService,
+    retrieval_k: int,
+    version: str,
+    reset: bool,
+) -> tuple[dict, Path, bool]:
+    """Run benchmark for one template. Returns (summary, json_file, was_resumed_done)."""
+    ckpt_dir = RESULTS_DIR / "checkpoints"
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+    ckpt_file = ckpt_dir / f"checkpoint_{template}_{version}.json"
+
+    if reset and ckpt_file.exists():
+        print(f"  [Reset] Deleting checkpoint: {ckpt_file.name}")
+        ckpt_file.unlink()
+
+    state = {"samples_data": [], "phase": "inference", "next_idx": 0}
+    if ckpt_file.exists():
+        try:
+            state = json.loads(ckpt_file.read_text(encoding="utf-8"))
+            print(f"  Resumed from checkpoint: phase={state['phase']}, next_idx={state['next_idx']}/{len(sampled)}")
+        except Exception as e:
+            print(f"  Failed to load checkpoint: {e}. Starting fresh.")
+            state = {"samples_data": [], "phase": "inference", "next_idx": 0}
+
+    samples_data = state["samples_data"]
+    already_done = state["phase"] == "done"
+
+    # Pass 1: RAG inference
+    if state["phase"] == "inference":
+        print(f"\n  [Pass 1/2] RAG inference (template={template})")
+        for i in range(state["next_idx"], len(sampled)):
+            entry = sampled[i]
+            print(f"  [{template}] {i+1}/{len(sampled)} | Inference | {entry['label']}")
+            t0 = time.perf_counter()
+            rag_out = rag_service.analyze(
+                alert_text=entry["alert_text"],
+                k=retrieval_k,
+                source=None,
+                template_name=template,
+            )
+            latency = time.perf_counter() - t0
+
+            gt_output = entry["output"]
+            reference = gt_output["threat_description"] + "\n" + gt_output["rationale"]
+            output_text = rag_out.get("threat_description", "") + "\n" + rag_out.get("rationale", "")
+
+            llm_meta = rag_out.get("llm_metadata", {})
+            samples_data.append({
+                "alert_text": entry["alert_text"],
+                "label": entry["label"],
+                "output_text": output_text,
+                "retrieved_contexts": rag_out.get("retrieved_contexts_text", []),
+                "context_ids": rag_out.get("retrieved_context_ids", []),
+                "reference": reference,
+                "severity": rag_out.get("severity", "Unknown"),
+                "latency_s": round(latency, 3),
+                "total_duration": llm_meta.get("total_duration"),
+                "load_duration": llm_meta.get("load_duration"),
+                "prompt_eval_count": llm_meta.get("prompt_eval_count"),
+                "prompt_eval_duration": llm_meta.get("prompt_eval_duration"),
+                "eval_count": llm_meta.get("eval_count"),
+                "eval_duration": llm_meta.get("eval_duration"),
+            })
+            state["next_idx"] = i + 1
+            _save_ckpt(ckpt_file, state)
+        state["phase"] = "eval"
+        state["next_idx"] = 0
+        _save_ckpt(ckpt_file, state)
+
+    # Pass 2: Per-sample judge eval (retrieval + generation), checkpoint after each
+    if state["phase"] == "eval":
+        print(f"\n  [Pass 2/2] Judge evaluation (template={template})")
+        for i in range(state["next_idx"], len(samples_data)):
+            s = samples_data[i]
+            print(f"  [{template}] {i+1}/{len(samples_data)} | Eval | {s['label']}")
+            retr = evaluate_retrieval([s])[0]
+            gen = evaluate_generation([s])[0]
+            s.update(retr)
+            s.update(gen)
+            state["next_idx"] = i + 1
+            _save_ckpt(ckpt_file, state)
+        state["phase"] = "done"
+        _save_ckpt(ckpt_file, state)
+
+    # Compute summary
+    latencies = [s["latency_s"] for s in samples_data if "latency_s" in s]
+    latency_metrics = evaluate_latency(latencies)
+
+    def nanmean(key):
+        vals = [d[key] for d in samples_data if d.get(key) is not None]
+        return round(sum(vals) / len(vals), 3) if vals else None
+
+    total = len(samples_data)
+    summary = {
+        "template": template,
+        "total": total,
+        **latency_metrics,
+        "avg_context_precision": nanmean("context_precision"),
+        "avg_context_recall": nanmean("context_recall"),
+        "avg_faithfulness": nanmean("faithfulness"),
+        "avg_answer_relevancy": nanmean("answer_relevancy"),
+        "avg_answer_correctness": nanmean("answer_correctness"),
+        "avg_hallucination_intrinsic": nanmean("hallucination_intrinsic"),
+        "avg_hallucination_extrinsic": nanmean("hallucination_extrinsic"),
+        "severity_correct_count": sum(1 for d in samples_data if d.get("severity_verdict") == "correct"),
+        "attack_hit_count": sum(1 for d in samples_data if d.get("attack_semantic_hit")),
+        "hallucination_pattern_hit_count": sum(1 for d in samples_data if d.get("hallucination_pattern_hit")),
+        "avg_total_duration": nanmean("total_duration"),
+        "avg_load_duration": nanmean("load_duration"),
+        "avg_prompt_eval_count": nanmean("prompt_eval_count"),
+        "avg_prompt_eval_duration": nanmean("prompt_eval_duration"),
+        "avg_eval_count": nanmean("eval_count"),
+        "avg_eval_duration": nanmean("eval_duration"),
+    }
+
+    # Save final per-template JSON
+    out_dir = RESULTS_DIR / template
+    out_dir.mkdir(parents=True, exist_ok=True)
+    json_file = out_dir / f"benchmark_{template}_{version}.json"
+    json_file.write_text(
+        json.dumps({"summary": summary, "samples": samples_data}, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    print(f"\n  [{template.upper()}] Summary:")
+    print(f"    p50/p95 latency (s)         : {summary.get('p50_latency_s')} / {summary.get('p95_latency_s')}")
+    print(f"    Severity correct            : {summary['severity_correct_count']}/{total}")
+    print(f"    Attack hit                  : {summary['attack_hit_count']}/{total}")
+    print(f"    Hallu pattern hit           : {summary['hallucination_pattern_hit_count']}/{total}")
+    print(f"    Avg hallu intrinsic         : {summary['avg_hallucination_intrinsic']}")
+    print(f"    Avg hallu extrinsic         : {summary['avg_hallucination_extrinsic']}")
+    print(f"    Avg answer_correctness      : {summary['avg_answer_correctness']}")
+    print(f"  JSON: {json_file}")
+
+    return summary, json_file, already_done
+
+
+COMPARISON_METRICS = [
+    ("p50_latency_s",                   "p50 latency (s)"),
+    ("p95_latency_s",                   "p95 latency (s)"),
+    ("avg_context_precision",           "Avg context precision"),
+    ("avg_context_recall",              "Avg context recall"),
+    ("avg_faithfulness",                "Avg faithfulness"),
+    ("avg_answer_relevancy",            "Avg answer relevancy"),
+    ("avg_answer_correctness",          "Avg answer correctness"),
+    ("avg_hallucination_intrinsic",     "Avg hallu intrinsic"),
+    ("avg_hallucination_extrinsic",     "Avg hallu extrinsic"),
+    ("severity_correct_count",          "Severity correct (count)"),
+    ("attack_hit_count",                "Attack hit (count)"),
+    ("hallucination_pattern_hit_count", "Hallu pattern hit (count)"),
+    ("avg_total_duration",              "Avg total duration"),
+    ("avg_load_duration",               "Avg load duration"),
+    ("avg_prompt_eval_count",           "Avg prompt eval count"),
+    ("avg_prompt_eval_duration",        "Avg prompt eval duration"),
+    ("avg_eval_count",                  "Avg eval count"),
+    ("avg_eval_duration",               "Avg eval duration"),
+]
+
+
+def write_comparison(summaries: list[dict], templates: list[str], version: str, git_sha: str, n_samples: int):
+    comp_dir = RESULTS_DIR / "comparison"
+    comp_dir.mkdir(parents=True, exist_ok=True)
+
+    json_path = comp_dir / f"comparison_{version}.json"
+    json_path.write_text(json.dumps(summaries, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    header = "| Metric | " + " | ".join(templates) + " |"
+    sep = "|--------|" + "|".join(["-----:"] * len(templates)) + "|"
+    rows = [header, sep]
+    for key, label in COMPARISON_METRICS:
+        vals = " | ".join(str(s.get(key)) for s in summaries)
+        rows.append(f"| {label} | {vals} |")
+
+    md = "\n".join([
+        f"# Benchmark Comparison ({version})",
+        "",
+        f"**Git SHA**: `{git_sha}` | **Samples per template**: {n_samples} | **Templates**: {', '.join(templates)}",
+        "",
+        "## Summary",
+        "",
+        *rows,
+    ])
+    md_path = comp_dir / f"comparison_{version}.md"
+    md_path.write_text(md, encoding="utf-8")
+    print(f"\nComparison saved:")
+    print(f"  JSON: {json_path}")
+    print(f"  MD:   {md_path}")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Unified RAG benchmark — runs one or more prompt templates with checkpointing and MLflow logging.")
+    parser.add_argument("--samples", type=int, default=135, help="Sample size per template (default: 135)")
+    parser.add_argument("--templates", type=str, default=",".join(DEFAULT_TEMPLATES),
+                        help=f"Comma-separated templates (default: {','.join(DEFAULT_TEMPLATES)})")
+    parser.add_argument("--reset", action="store_true", help="Delete existing checkpoints and start fresh")
+    parser.add_argument("--version", type=str, default="v1", help="Version tag (default: v1). Used in output paths and checkpoint names.")
+    args = parser.parse_args()
+
+    templates = [t.strip() for t in args.templates.split(",") if t.strip()]
+    invalid = [t for t in templates if t not in DEFAULT_TEMPLATES]
+    if invalid:
+        print(f"Error: unknown template(s): {invalid}. Valid: {DEFAULT_TEMPLATES}")
+        sys.exit(1)
+
+    if not GROUND_TRUTH_FILE.exists():
+        print(f"Error: ground truth not found at {GROUND_TRUTH_FILE}")
+        sys.exit(1)
+    if not PARAMS_FILE.exists():
+        print(f"Error: params.yaml not found at {PARAMS_FILE}")
+        sys.exit(1)
+
+    with open(PARAMS_FILE, "r", encoding="utf-8") as f:
+        params = yaml.safe_load(f)
+    retrieval_k = params["retrieval"]["k"]
+
+    gt_data = json.loads(GROUND_TRUTH_FILE.read_text(encoding="utf-8"))
+    sampled = sample_balanced(gt_data, args.samples)
+    print(f"Evaluating {len(sampled)} samples × {len(templates)} template(s): {templates}")
+
+    rag_service = RagService()
+    git_sha = get_git_sha()
+
+    base_params = {
+        "embed_model": params["embedding"]["model_name"],
+        "embed_dim": params["embedding"]["dim"],
+        "chunk_size": params["chunking"]["chunk_size"],
+        "retrieval_k": retrieval_k,
+        "llm_model": params["llm"]["model"],
+        "llm_temp": params["llm"]["temperature"],
+        "git_sha": git_sha,
+        "num_samples": len(sampled),
+    }
+
+    all_summaries = []
+    for template in templates:
+        print(f"\n{'='*60}\n  Template: {template.upper()}\n{'='*60}")
+        summary, json_file, already_done = run_template(
+            template=template,
+            sampled=sampled,
+            rag_service=rag_service,
+            retrieval_k=retrieval_k,
+            version=args.version,
+            reset=args.reset,
+        )
+        all_summaries.append(summary)
+
+        if already_done:
+            print(f"  [MLflow] Skipped (checkpoint phase=done). Use --reset to re-log.")
+            continue
+
+        mlflow_metrics = {
+            k: v for k, v in summary.items()
+            if isinstance(v, (int, float)) and v is not None and k != "total"
+        }
+        log_rag_experiment(
+            run_name=f"benchmark_{template}_{args.version}",
+            params={**base_params, "template": template},
+            metrics=mlflow_metrics,
+            artifacts=[str(json_file)],
+            tags={
+                "type": "benchmark",
+                "template": template,
+                "git_sha": git_sha,
+                "version": args.version,
+            },
+        )
+
+    if len(templates) > 1:
+        write_comparison(all_summaries, templates, args.version, git_sha, len(sampled))
+
+    print(f"\n[+] Benchmark completed.")
+
+
+if __name__ == "__main__":
+    main()

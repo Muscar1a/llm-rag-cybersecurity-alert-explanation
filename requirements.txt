@@ -54,3 +54,8 @@ langchain-google-genai
 # Compatibility Fixes
 typing_extensions==4.15.0
 fsspec==2026.2.0
+
+# MLOps
+mlflow
+prometheus-client
+structlog

@@ -89,6 +89,24 @@ def main():
         print(f"  {lbl}: {cnt}")
     print(f"{'='*80}")
 
+    try:
+        from src.mlops.tracking import log_rag_experiment
+        log_rag_experiment(
+            run_name="manual_test_run",
+            params={
+                "retrieval.k": 5,
+                "max_per_label": MAX_PER_LABEL
+            },
+            metrics={
+                "total_records": len(results)
+            },
+            artifacts=[str(output_file)],
+            tags={"type": "manual_test"}
+        )
+        print("Logged run to MLflow.")
+    except Exception as e:
+        print(f"Failed to log to MLflow: {e}")
+
 
 if __name__ == "__main__":
     main()

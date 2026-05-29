@@ -364,4 +364,4 @@ Rules should be added to:
 - `data/behavioral_rules/` - YAML format behavioral rules
 - Ingested via `src/data_process/ingest_behavioral_rules.py`
 
-Embedding model: `Alibaba-NLP/gte-base-en-v1.5` (as per upgrade plan)
+Embedding model: `BAAI/bge-base-en-v1.5` (as per upgrade plan)

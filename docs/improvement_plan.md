@@ -232,12 +232,12 @@ if hints:
 
 ```python
 # Trước
-model=settings.ollama_model or "mistral:7b-instruct-q4_K_M"
+model=settings.ollama_model or "qwen2.5:7b-instruct-q4_K_M"
 
 # Sau (chọn theo VRAM)
 # 8GB VRAM  → "qwen2.5:7b-instruct"
 # 16GB VRAM → "qwen2.5:14b-instruct"
-# Hoặc đổi sang "mistral:7b-instruct" nếu muốn thử
+# Hoặc đổi sang "qwen2.5:7b-instruct-q4_K_M" nếu muốn thử
 ```
 
 Nên làm **sau** khi 3 bước trên đã hoàn tất, để phân biệt được improvement đến từ prompt/retrieval hay model.

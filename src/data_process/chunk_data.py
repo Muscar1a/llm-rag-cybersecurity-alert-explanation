@@ -4,10 +4,19 @@ import re
 import pandas as pd
 from transformers import AutoTokenizer
 
-# TOKENIZER_MODEL = "intfloat/e5-small-v2"
-TOKENIZER_MODEL = "BAAI/bge-base-en-v1.5"
-CHUNK_SIZE      = 400
-CHUNK_OVERLAP   = 100
+import yaml
+
+try:
+    with open("params.yaml", "r", encoding="utf-8") as f:
+        _params = yaml.safe_load(f)
+    TOKENIZER_MODEL = _params["chunking"]["tokenizer_model"]
+    CHUNK_SIZE      = _params["chunking"]["chunk_size"]
+    CHUNK_OVERLAP   = _params["chunking"]["chunk_overlap"]
+except Exception as e:
+    print(f"Warning: Failed to load params.yaml, using defaults. Error: {e}")
+    TOKENIZER_MODEL = "BAAI/bge-base-en-v1.5"
+    CHUNK_SIZE      = 400
+    CHUNK_OVERLAP   = 100
 
 SOURCES = [
     {

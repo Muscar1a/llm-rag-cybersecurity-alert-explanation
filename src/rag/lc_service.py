@@ -38,7 +38,21 @@ def _parse_output(raw: str) -> dict:
             "mitigation_steps":   [],
         }
         
-        
+from langchain_core.callbacks import BaseCallbackHandler
+
+class MetadataCallbackHandler(BaseCallbackHandler):
+    def __init__(self):
+        self.metadata = {}
+
+    def on_llm_end(self, response, **kwargs):
+        if response.generations and response.generations[0]:
+            try:
+                # Ollama sets response_metadata on the message
+                self.metadata.update(response.generations[0][0].message.response_metadata)
+            except Exception:
+                pass
+
+
 class ChatService:
     def chat(
         self, 
@@ -48,10 +62,14 @@ class ChatService:
         k: int = 5,
         template_name: str = "basic", 
     ):
+        cb = MetadataCallbackHandler()
         chain = build_chat_chain(source=source, k=k, template_name=template_name)
         result = chain.invoke(
             {"input": message},
-            config={"configurable": {"session_id": session_id}},
+            config={
+                "configurable": {"session_id": session_id},
+                "callbacks": [cb]
+            },
         )
         return {
             **_parse_output(result["answer"]),
@@ -63,7 +81,8 @@ class ChatService:
             "retrieved_contexts_text": [
                 doc.page_content
                 for doc in result.get("context", [])
-            ]
+            ],
+            "llm_metadata": cb.metadata
         }
         
     def get_history(self, session_id: str) -> list[dict]:

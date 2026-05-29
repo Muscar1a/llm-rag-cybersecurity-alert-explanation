@@ -10,10 +10,19 @@ import numpy as np
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue, FilterSelector
 
-# EMBED_MODEL = "intfloat/e5-small-v2"
-EMBED_MODEL = "BAAI/bge-base-en-v1.5"
+import yaml
+
+try:
+    with open("params.yaml", "r", encoding="utf-8") as f:
+        _params = yaml.safe_load(f)
+    EMBED_MODEL = _params["embedding"]["model_name"]
+    VECTOR_SIZE = _params["embedding"]["dim"]
+except Exception as e:
+    print(f"Warning: Failed to load params.yaml, using defaults. Error: {e}")
+    EMBED_MODEL = "BAAI/bge-base-en-v1.5"
+    VECTOR_SIZE = 768
+
 COLLECTION  = "cyber_chunks"
-VECTOR_SIZE = 768
 SOURCES = {
     "mitre":            Path("data/processed/MITRE/chunks.parquet"),
     "sigma":            Path("data/processed/sigma/chunks.parquet"),
@@ -180,6 +189,17 @@ def main():
         embed_and_upsert(source, chunks_path, model, client, args.batch)
 
     print(f"\n[+] All done. Collection: '{COLLECTION}'")
+
+    # Write completion file for DVC tracking
+    import datetime
+    out_dir = Path("data/embeddings")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    with open(out_dir / "completed.txt", "w", encoding="utf-8") as f:
+        f.write(f"Completed: {datetime.datetime.now().isoformat()}\n")
+        f.write(f"Model: {EMBED_MODEL}\n")
+        f.write(f"Collection: {COLLECTION}\n")
+        f.write(f"Vector size: {VECTOR_SIZE}\n")
+        f.write(f"Sources run: {list(sources_to_run.keys())}\n")
 
 
 if __name__ == "__main__":

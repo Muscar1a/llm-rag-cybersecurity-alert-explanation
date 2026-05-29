@@ -26,10 +26,28 @@ def build_chat_chain(
     k: int = 5,
     template_name: str = "basic",
 ) -> RunnableWithMessageHistory:
+    model = settings.ollama_model or "qwen2.5:7b-instruct-q4_K_M"
+    temperature = 0.1
+    num_ctx = settings.ollama_num_ctx
+    try:
+        import yaml
+        import os
+        if os.path.exists("params.yaml"):
+            with open("params.yaml", "r", encoding="utf-8") as f:
+                p = yaml.safe_load(f)
+            llm_p = p.get("llm", {})
+            if not settings.ollama_model:
+                model = llm_p.get("model", model)
+            temperature = llm_p.get("temperature", temperature)
+            num_ctx = llm_p.get("num_ctx", num_ctx)
+    except Exception:
+        pass
+
     llm = ChatOllama(
-        model=settings.ollama_model or "mistral:7b-instruct-q4_K_M",
+        model=model,
         base_url=settings.ollama_host,
-        temperature=0.1,
+        temperature=temperature,
+        num_ctx=num_ctx,
     )
     
     history_aware_retriever = create_history_aware_retriever(

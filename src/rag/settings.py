@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
 
 
 class Settings(BaseSettings):
@@ -15,7 +16,12 @@ class Settings(BaseSettings):
     
     ollama_host: str = "http://localhost:11434"
     ollama_model: str | None = None
-    ollama_judge_model: str = "qwen2.5:3b"
+    groq_judge_model: str = "llama-3.1-8b-instant"
+    groq_api_key: str | None = None
+    ollama_num_ctx: int = 5120
+    
+    # Hugging Face Token for API access
+    hf_token: str | None = None
     
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -24,3 +30,8 @@ class Settings(BaseSettings):
     )
     
 settings = Settings()
+
+# Export HF_TOKEN to environment variables for Hugging Face libraries to access
+if settings.hf_token:
+    os.environ["HF_TOKEN"] = settings.hf_token
+
