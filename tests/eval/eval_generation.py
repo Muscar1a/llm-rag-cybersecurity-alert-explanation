@@ -3,14 +3,13 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from ragas import EvaluationDataset, SingleTurnSample, evaluate, RunConfig
-from ragas.metrics import faithfulness, answer_relevancy, answer_correctness
+from ragas.metrics import faithfulness, answer_relevancy
 from .utils import (
     get_judge_llm,
     get_judge_emb,
     safe_val,
     get_severity_verdict,
     get_hallucination_pattern_hit,
-    judge_attack_type,
     _is_rate_limit,
 )
 
@@ -35,7 +34,7 @@ def evaluate_generation(samples_data: list[dict]) -> list[dict]:
             try:
                 ragas_result = evaluate(
                     EvaluationDataset(samples=[sample]),
-                    metrics=[faithfulness, answer_relevancy, answer_correctness],
+                    metrics=[faithfulness, answer_relevancy],
                     llm=get_judge_llm(),
                     embeddings=get_judge_emb(),
                     run_config=_RAGAS_RUN_CONFIG,
@@ -57,20 +56,15 @@ def evaluate_generation(samples_data: list[dict]) -> list[dict]:
 
         severity_verdict = get_severity_verdict(entry["severity"], entry["label"])
         pattern_hit = get_hallucination_pattern_hit(entry["alert_text"], entry["output_text"])
-        attack_hit = judge_attack_type(entry["label"], entry["output_text"])
 
         faith = safe_val(scores.get("faithfulness"))
-        correctness = safe_val(scores.get("answer_correctness"))
 
         results.append({
             "faithfulness": faith,
             "answer_relevancy": safe_val(scores.get("answer_relevancy")),
-            "answer_correctness": correctness,
+            "hallucination_rate": round(1.0 - faith, 3) if faith is not None else None,
             "severity_verdict": severity_verdict,
-            "hallucination_intrinsic": round(1.0 - faith, 3) if faith is not None else None,
-            "hallucination_extrinsic": round(1.0 - correctness, 3) if correctness is not None else None,
             "hallucination_pattern_hit": pattern_hit,
-            "attack_semantic_hit": attack_hit
         })
 
     return results

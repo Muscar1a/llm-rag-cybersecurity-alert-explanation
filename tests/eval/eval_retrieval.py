@@ -4,7 +4,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from ragas import EvaluationDataset, SingleTurnSample, evaluate, RunConfig
 from ragas.metrics import context_precision, context_recall
-from .utils import get_judge_llm, get_judge_emb, safe_val, get_context_diversity
+from .utils import get_judge_llm, get_judge_emb, safe_val, get_context_diversity, _is_rate_limit
 
 _RAGAS_RUN_CONFIG = RunConfig(timeout=180, max_retries=2, max_workers=1)
 
@@ -36,7 +36,10 @@ def evaluate_retrieval(samples_data: list[dict]) -> list[dict]:
             except Exception as e:
                 if attempt == 2:
                     print(f"  [Error] Retrieval eval failed: {e}")
-                time.sleep(5)
+                    break
+                wait = 5 * (2 ** attempt) if _is_rate_limit(e) else 5
+                print(f"  [eval_retrieval] attempt {attempt+1} failed ({e}), retrying in {wait}s...")
+                time.sleep(wait)
                 
         diversity = get_context_diversity(entry["context_ids"])
         

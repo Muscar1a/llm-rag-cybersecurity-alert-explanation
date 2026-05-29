@@ -155,11 +155,8 @@ def run_template(
         "avg_context_recall": nanmean("context_recall"),
         "avg_faithfulness": nanmean("faithfulness"),
         "avg_answer_relevancy": nanmean("answer_relevancy"),
-        "avg_answer_correctness": nanmean("answer_correctness"),
-        "avg_hallucination_intrinsic": nanmean("hallucination_intrinsic"),
-        "avg_hallucination_extrinsic": nanmean("hallucination_extrinsic"),
+        "avg_hallucination_rate": nanmean("hallucination_rate"),
         "severity_correct_count": sum(1 for d in samples_data if d.get("severity_verdict") == "correct"),
-        "attack_hit_count": sum(1 for d in samples_data if d.get("attack_semantic_hit")),
         "hallucination_pattern_hit_count": sum(1 for d in samples_data if d.get("hallucination_pattern_hit")),
         "avg_total_duration": nanmean("total_duration"),
         "avg_load_duration": nanmean("load_duration"),
@@ -180,12 +177,11 @@ def run_template(
 
     print(f"\n  [{template.upper()}] Summary:")
     print(f"    p50/p95 latency (s)         : {summary.get('p50_latency_s')} / {summary.get('p95_latency_s')}")
-    print(f"    Severity correct            : {summary['severity_correct_count']}/{total}")
-    print(f"    Attack hit                  : {summary['attack_hit_count']}/{total}")
+    print(f"    Retrieval recall            : {summary['avg_context_recall']}")
+    print(f"    Answer relevancy            : {summary['avg_answer_relevancy']}")
+    print(f"    Hallucination rate          : {summary['avg_hallucination_rate']}")
     print(f"    Hallu pattern hit           : {summary['hallucination_pattern_hit_count']}/{total}")
-    print(f"    Avg hallu intrinsic         : {summary['avg_hallucination_intrinsic']}")
-    print(f"    Avg hallu extrinsic         : {summary['avg_hallucination_extrinsic']}")
-    print(f"    Avg answer_correctness      : {summary['avg_answer_correctness']}")
+    print(f"    Severity correct            : {summary['severity_correct_count']}/{total}")
     print(f"  JSON: {json_file}")
 
     return summary, json_file, already_done
@@ -194,15 +190,12 @@ def run_template(
 COMPARISON_METRICS = [
     ("p50_latency_s",                   "p50 latency (s)"),
     ("p95_latency_s",                   "p95 latency (s)"),
-    ("avg_context_precision",           "Avg context precision"),
-    ("avg_context_recall",              "Avg context recall"),
-    ("avg_faithfulness",                "Avg faithfulness"),
-    ("avg_answer_relevancy",            "Avg answer relevancy"),
-    ("avg_answer_correctness",          "Avg answer correctness"),
-    ("avg_hallucination_intrinsic",     "Avg hallu intrinsic"),
-    ("avg_hallucination_extrinsic",     "Avg hallu extrinsic"),
+    ("avg_context_precision",           "Context Precision"),
+    ("avg_context_recall",              "Retrieval Recall"),
+    ("avg_answer_relevancy",            "Answer Relevance"),
+    ("avg_hallucination_rate",          "Hallucination Rate"),
+    ("avg_faithfulness",                "Avg faithfulness (raw)"),
     ("severity_correct_count",          "Severity correct (count)"),
-    ("attack_hit_count",                "Attack hit (count)"),
     ("hallucination_pattern_hit_count", "Hallu pattern hit (count)"),
     ("avg_total_duration",              "Avg total duration"),
     ("avg_load_duration",               "Avg load duration"),
