@@ -91,5 +91,5 @@ stages:
     outs:
     - path: data/embeddings/completed.txt
       hash: md5
-      md5: 06eea44f6dbb8f679c94e5141d8b8efd
+      md5: 8ef54afbef09cdd97b043210adea97cd
       size: 178

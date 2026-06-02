@@ -112,7 +112,10 @@ class BalancedRetriever(BaseRetriever):
         reranker = _get_reranker(self.reranker_model)
         scores = reranker.predict([(query, doc.page_content) for doc in filtered])
         ranked = sorted(zip(scores, filtered), key=lambda x: x[0], reverse=True)
-        return [doc for _, doc in ranked[:self.k]]
+        top = ranked[:self.k]
+        for score, doc in top:
+            doc.metadata["rerank_score"] = float(score)
+        return [doc for _, doc in top]
 
 
 def build_retriever(source: str | None = None, k: int = 5) -> BaseRetriever:

@@ -1,4 +1,4 @@
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 
 DOCUMENT_PROMPT = PromptTemplate(
     input_variables=["page_content", "source"],
@@ -6,12 +6,6 @@ DOCUMENT_PROMPT = PromptTemplate(
 )
 
 DOCUMENT_SEPARATOR = "\n\n"
-
-CONTEXTUALIZE_SYSTEM = (
-    "Given the chat history and the latest user question which may reference "
-    "prior context, reformulate the question as a self-contained question. "
-    "Do NOT answer it. If it is already standalone, return it unchanged."
-)
 
 _OUTPUT_SCHEMA = """\
 Output ONLY a valid JSON object. No markdown, no explanations, no extra text
@@ -40,14 +34,6 @@ Before naming any specific attack type, verify the required conditions are prese
 If the required conditions are NOT in the alert, do NOT name that attack.
 """
 
-# == contextualize_prompt ======================================================
-
-contextualize_prompt = ChatPromptTemplate.from_messages([
-    ("system", CONTEXTUALIZE_SYSTEM),
-    MessagesPlaceholder("chat_history"),
-    ("human", "{input}")
-])
-
 # == BASIC ======================================================================
 
 _BASIC_SYSTEM = f"""\
@@ -75,7 +61,6 @@ Retrieved Knowledge:
 
 basic_prompt = ChatPromptTemplate.from_messages([
     ("system", _BASIC_SYSTEM),
-    MessagesPlaceholder("chat_history"),
     ("human", "{input}"),
 ])
 
@@ -107,7 +92,6 @@ Retrieved Knowledge:
 
 cot_prompt = ChatPromptTemplate.from_messages([
     ("system", _COT_SYSTEM),
-    MessagesPlaceholder("chat_history"),
     ("human", "{input}"),
 ])
 
@@ -164,7 +148,6 @@ Retrieved Knowledge:
 
 few_shot_prompt = ChatPromptTemplate.from_messages([
     ("system", FEW_SHOT_SYSTEM),
-    MessagesPlaceholder("chat_history"),
     ("human", "{input}"),
 ])
 

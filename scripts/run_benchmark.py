@@ -12,7 +12,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from src.rag.service import RagService
-from src.mlops.tracking import log_rag_experiment
+from src.mlops.tracking import log_rag_experiment, register_rag_pipeline
 from tests.eval.eval_latency import evaluate_latency
 from tests.eval.eval_retrieval import evaluate_retrieval
 from tests.eval.eval_generation import evaluate_generation
@@ -301,7 +301,7 @@ def main():
             k: v for k, v in summary.items()
             if isinstance(v, (int, float)) and v is not None and k != "total"
         }
-        log_rag_experiment(
+        run_id = log_rag_experiment(
             run_name=f"benchmark_{template}_{args.version}",
             params={**base_params, "template": template},
             metrics=mlflow_metrics,
@@ -313,6 +313,7 @@ def main():
                 "version": args.version,
             },
         )
+        register_rag_pipeline(run_id)
 
     if len(templates) > 1:
         write_comparison(all_summaries, templates, args.version, git_sha, len(sampled))

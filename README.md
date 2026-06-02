@@ -1,40 +1,116 @@
-# Installation and Run Guide
+# Cyber-RAG — Hướng dẫn vận hành
 
-## 1. Start infrastructure (Docker)
-Make sure Docker Desktop is running, then start MinIO (data storage), Qdrant (vector database), and MLflow (tracking server):
+## Yêu cầu trước khi bắt đầu
+
+- Docker Desktop đang chạy
+- Ollama đang chạy trên máy host (port 11434) với model đã được pull sẵn
+- Python virtual environment đã được cài đặt tại `.venv`
+
+---
+
+## 1. Khởi động hạ tầng
+
+Khởi động MinIO (lưu trữ data), Qdrant (vector database) và MLflow (tracking server):
 
 ```bash
 make up
 ```
 
-## 2. Initialize DVC
-Initialize Data Version Control (DVC) for the project:
+Để dừng toàn bộ:
+
+```bash
+make down
+```
+
+---
+
+## 2. Khởi tạo DVC (chỉ lần đầu)
 
 ```bash
 .venv\Scripts\dvc init
 ```
 
-## 3. Configure DVC remote (store data on MinIO)
-Declare the local MinIO instance as the DVC remote storage and set credentials:
+Cấu hình remote lưu trữ trên MinIO:
 
 ```bash
-# Add a new remote named minio_remote
 .venv\Scripts\dvc remote add -d minio_remote s3://minio-processed
-
-# Set the endpoint URL
 .venv\Scripts\dvc remote modify minio_remote endpointurl http://localhost:9000
-
-# Configure credentials (from docker-compose env vars; defaults: admin/admin123)
-.venv\Scripts\dvc remote modify minio_remote access_key_id admin
-.venv\Scripts\dvc remote modify minio_remote secret_access_key admin123
-
-# Disable SSL since MinIO runs on localhost over HTTP
+.venv\Scripts\dvc remote modify minio_remote access_key_id minioadmin
+.venv\Scripts\dvc remote modify minio_remote secret_access_key minioadmin123
 .venv\Scripts\dvc remote modify minio_remote use_ssl false
 ```
 
-## 4. Run the data pipeline
-The following command will read `dvc.yaml` (if present) and parameters from `params.yaml`, then execute the pipeline steps in order: `clean` → `chunk` → `embed` and push vectors to Qdrant:
+---
+
+## 3. Chạy data pipeline
+
+Đọc `dvc.yaml` và thông số từ `params.yaml`, thực thi tuần tự: `clean_data` → `chunk_data` → `embed_chunks`:
 
 ```bash
 .venv\Scripts\dvc repro
 ```
+
+Sau khi pipeline chạy xong, commit thay đổi vào git:
+
+```bash
+git add dvc.yaml dvc.lock params.yaml .dvc/config
+git commit -m "chore: repro pipeline"
+```
+
+---
+
+## 4. Chạy benchmark đánh giá
+
+Đảm bảo hạ tầng đang chạy (`make up`), sau đó:
+
+```bash
+.venv\Scripts\python scripts/run_benchmark.py
+```
+
+Kết quả JSON được lưu tại `results/benchmark_<timestamp>.json`. Các metrics (latency, faithfulness, context recall, ...) được tự động log lên MLflow tại [http://localhost:5000](http://localhost:5000).
+
+Để chạy nhanh với số lượng mẫu ít hơn (ví dụ 15 mẫu):
+
+```bash
+.venv\Scripts\python scripts/run_benchmark.py --samples 15
+```
+
+---
+
+## 5. Chạy API service (Production / Demo)
+
+Build Docker image và khởi động toàn bộ stack bao gồm API:
+
+```bash
+make build-api
+make up-api
+```
+
+Kiểm tra API:
+
+```bash
+# Kiểm tra trạng thái Qdrant và Ollama
+curl http://localhost:8000/health
+
+# Xem phiên bản model và cấu hình đang chạy
+curl http://localhost:8000/version
+```
+
+---
+
+## Tổng quan các lệnh `make`
+
+| Lệnh | Mô tả |
+|---|---|
+| `make up` | Khởi động minio, qdrant, mlflow |
+| `make up-api` | Khởi động toàn bộ stack (bao gồm rag-api) |
+| `make build-api` | Build Docker image cho rag-api |
+| `make down` | Dừng toàn bộ containers |
+| `make ps` | Xem trạng thái các containers |
+| `make logs` | Xem log của MLflow |
+
+---
+
+## Cấu trúc tham số
+
+Toàn bộ tham số (embedding model, chunk size, LLM, retrieval) được quản lý tập trung tại [`params.yaml`](params.yaml). Thay đổi bất kỳ tham số nào tại đây rồi chạy `dvc repro` để DVC tự động phát hiện và re-run các stage bị ảnh hưởng.
