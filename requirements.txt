@@ -34,6 +34,7 @@ dvc-s3==3.3.0
 # Web Framework
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
+httpx
 
 # LLM Inference
 ollama
@@ -54,3 +55,11 @@ langchain-google-genai
 # Compatibility Fixes
 typing_extensions==4.15.0
 fsspec==2026.2.0
+
+# MLOps
+mlflow
+prometheus-client
+structlog
+
+# Demo
+streamlit

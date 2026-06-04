@@ -3,50 +3,38 @@ stages:
     cmd: python src/data_process/clean_data.py
     deps:
       - src/data_process/clean_data.py
-      - data/raw/CICIDS2017/
-      - data/raw/CVE/
-      - data/raw/MITRE/
     outs:
-      - data/processed/CVE/cve_cleaned.parquet:
-          remote: minio-processed
-      - data/processed/MITRE/mitre_cleaned.parquet:
-          remote: minio-processed
-      - data/processed/CICIDS2017/cicids_cleaned.parquet:
-          remote: minio-processed
+      - data/processed/MITRE/mitre_cleaned.parquet
+      - data/processed/sigma/sigma_cleaned.parquet
+      - data/processed/emerging_threats/et_rules_cleaned.parquet
+      - data/processed/behavioral_rules/chunks.parquet
 
   chunk_data:
     cmd: python src/data_process/chunk_data.py
     deps:
       - src/data_process/chunk_data.py
-      - data/processed/CVE/cve_cleaned.parquet
       - data/processed/MITRE/mitre_cleaned.parquet
-      # - data/processed/CICIDS2017/cicids_cleaned.parquet
+      - data/processed/sigma/sigma_cleaned.parquet
+      - data/processed/emerging_threats/et_rules_cleaned.parquet
+    params:
+      - chunking.tokenizer_model
+      - chunking.chunk_size
+      - chunking.chunk_overlap
     outs:
-      - data/processed/CVE/chunks.parquet:
-          remote: minio-processed
-      - data/processed/MITRE/chunks.parquet:
-          remote: minio-processed
-      # - data/processed/CICIDS2017/chunks.parquet:
-      #     remote: minio-processed
-
-  embed_cve:
-    cmd: python src/embed_chunks.py --source cve
-    deps:
-      - src/embed_chunks.py
-      - data/processed/CVE/chunks.parquet
-    outs:
-      - data/embeddings/cve/embeddings.npy:
-          remote: minio-processed
-      - data/embeddings/cve/chunk_ids.csv:
-          remote: minio-processed
-
-  embed_mitre:
-    cmd: python src/embed_chunks.py --source mitre
-    deps:
-      - src/embed_chunks.py
       - data/processed/MITRE/chunks.parquet
+      - data/processed/sigma/chunks.parquet
+      - data/processed/emerging_threats/chunks.parquet
+
+  embed_chunks:
+    cmd: python src/data_process/embed_chunks.py --recreate
+    deps:
+      - src/data_process/embed_chunks.py
+      - data/processed/MITRE/chunks.parquet
+      - data/processed/sigma/chunks.parquet
+      - data/processed/emerging_threats/chunks.parquet
+      - data/processed/behavioral_rules/chunks.parquet
+    params:
+      - embedding.model_name
+      - embedding.dim
     outs:
-      - data/embeddings/mitre/embeddings.npy:
-          remote: minio-processed
-      - data/embeddings/mitre/chunk_ids.csv:
-          remote: minio-processed
+      - data/embeddings/completed.txt

@@ -98,17 +98,17 @@ Current focus:
 - evaluate output quality before changing architecture
 
 Recommended model for current hardware:
-- `mistral:7b-instruct-q4_K_M`
+- `qwen2.5:7b-instruct-q4_K_M`
 
 Recommended `.env`:
 ```env
 OLLAMA_HOST=http://localhost:11434
-OLLAMA_MODEL=mistral:7b-instruct-q4_K_M
+OLLAMA_MODEL=qwen2.5:7b-instruct-q4_K_M
 ```
 
 Pull command:
 ```powershell
-ollama pull mistral:7b-instruct-q4_K_M
+ollama pull qwen2.5:7b-instruct-q4_K_M
 ```
 
 ## 5. Experiment Order

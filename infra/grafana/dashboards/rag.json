@@ -1,0 +1,96 @@
+{
+  "title": "Cyber-RAG API",
+  "uid": "cyber-rag",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Request Rate (QPS)",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+      "targets": [{
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "expr": "sum(rate(rag_request_total[1m])) by (endpoint)",
+        "legendFormat": "{{endpoint}}"
+      }]
+    },
+    {
+      "id": 2,
+      "title": "Error Rate (%)",
+      "type": "timeseries",
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+      "targets": [{
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "expr": "sum(rate(rag_request_total{status_code!~\"2..\"}[5m])) / sum(rate(rag_request_total[5m])) * 100",
+        "legendFormat": "error %"
+      }]
+    },
+    {
+      "id": 3,
+      "title": "HTTP Latency p50 / p95 (full round-trip)",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "expr": "histogram_quantile(0.50, sum(rate(rag_request_duration_seconds_bucket[5m])) by (le, endpoint))",
+          "legendFormat": "p50 {{endpoint}}"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "expr": "histogram_quantile(0.95, sum(rate(rag_request_duration_seconds_bucket[5m])) by (le, endpoint))",
+          "legendFormat": "p95 {{endpoint}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Request Count by Status Code",
+      "type": "timeseries",
+      "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "expr": "sum(rate(rag_request_total{status_code=~\"2..\"}[1m])) by (endpoint)",
+          "legendFormat": "2xx {{endpoint}}"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "expr": "sum(rate(rag_request_total{status_code=~\"5..\"}[1m])) by (endpoint)",
+          "legendFormat": "5xx {{endpoint}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "LLM Generation Speed (tokens/sec)",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "expr": "histogram_quantile(0.50, sum(rate(rag_llm_tokens_per_second_bucket[5m])) by (le))",
+          "legendFormat": "p50 tok/s"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "expr": "histogram_quantile(0.95, sum(rate(rag_llm_tokens_per_second_bucket[5m])) by (le))",
+          "legendFormat": "p95 tok/s"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Total Tokens Generated",
+      "type": "timeseries",
+      "gridPos": {"x": 12, "y": 16, "w": 12, "h": 8},
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "expr": "rate(rag_llm_tokens_generated_total[1m])",
+          "legendFormat": "tokens/sec (rate)"
+        }
+      ]
+    }
+  ]
+}

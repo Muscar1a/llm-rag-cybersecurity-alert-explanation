@@ -54,6 +54,21 @@ class BalancedRetriever(BaseRetriever):
     min_score: float = 0.60 # original was 0.82
     reranker_model: str | None = "cross-encoder/ms-marco-MiniLM-L-6-v2"  # C: None to disable
 
+    def __init__(self, **data):
+        try:
+            import yaml
+            import os
+            if os.path.exists("params.yaml"):
+                with open("params.yaml", "r", encoding="utf-8") as f:
+                    p = yaml.safe_load(f)
+                ret_p = p.get("retrieval", {})
+                data.setdefault("k", ret_p.get("k", 5))
+                data.setdefault("lambda_mult", ret_p.get("lambda_mult", 0.5))
+                data.setdefault("min_score", ret_p.get("score_threshold", 0.60))
+        except Exception:
+            pass
+        super().__init__(**data)
+
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> list[Document]:
@@ -97,16 +112,34 @@ class BalancedRetriever(BaseRetriever):
         reranker = _get_reranker(self.reranker_model)
         scores = reranker.predict([(query, doc.page_content) for doc in filtered])
         ranked = sorted(zip(scores, filtered), key=lambda x: x[0], reverse=True)
-        return [doc for _, doc in ranked[:self.k]]
+        top = ranked[:self.k]
+        for score, doc in top:
+            doc.metadata["rerank_score"] = float(score)
+        return [doc for _, doc in top]
 
 
 def build_retriever(source: str | None = None, k: int = 5) -> BaseRetriever:
+    lambda_mult = 0.6
+    score_threshold = 0.60
+    try:
+        import yaml
+        import os
+        if os.path.exists("params.yaml"):
+            with open("params.yaml", "r", encoding="utf-8") as f:
+                p = yaml.safe_load(f)
+            ret_p = p.get("retrieval", {})
+            k = ret_p.get("k", k)
+            lambda_mult = ret_p.get("lambda_mult", 0.6)
+            score_threshold = ret_p.get("score_threshold", 0.60)
+    except Exception:
+        pass
+
     if source:
         search_kwargs: dict = {
             "k": k,
             "fetch_k": k * 4,
-            "lambda_mult": 0.6,
-            "score_threshold": 0.60, # original was 0.82
+            "lambda_mult": lambda_mult,
+            "score_threshold": score_threshold,
             "filter": Filter(must=[
                 FieldCondition(key="metadata.source", match=MatchValue(value=source))
             ]),

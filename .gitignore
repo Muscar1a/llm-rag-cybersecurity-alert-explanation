@@ -19,3 +19,6 @@ GEMINI.md
 
 docs/gemini_summarize.md
 docs/claude_summarize.md
+
+results/
+scripts/draw_mlops_diagram.py

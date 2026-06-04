@@ -1,7 +1,10 @@
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.exceptions import ResponseHandlingException
 from urllib.parse import urlparse
+import warnings
 from .settings import settings
+
+warnings.filterwarnings("ignore", message="Api key is used with an insecure connection.")
 
 def build_client() -> QdrantClient:
     if settings.qdrant_url:
