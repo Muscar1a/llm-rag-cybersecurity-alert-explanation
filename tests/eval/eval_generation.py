@@ -1,4 +1,3 @@
-import time
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -14,9 +13,6 @@ from .utils import (
 )
 
 _RAGAS_RUN_CONFIG = RunConfig(timeout=180, max_retries=5, max_workers=1)
-
-# Groq API only supports n=1. Set strictness to 1 to prevent n=3 requests in answer_relevancy
-answer_relevancy.strictness = 1
 
 def evaluate_generation(samples_data: list[dict]) -> list[dict]:
     results = []
@@ -50,9 +46,6 @@ def evaluate_generation(samples_data: list[dict]) -> list[dict]:
                 wait = 5 * (2 ** attempt) if _is_rate_limit(e) else 5
                 print(f"  [eval_generation] attempt {attempt+1} failed ({e}), retrying in {wait}s...")
                 time.sleep(wait)
-
-        # Courtesy delay to avoid bursting the Groq rate limit
-        time.sleep(3)
 
         severity_verdict = get_severity_verdict(entry["severity"], entry["label_tactic"])
         pattern_hit = get_hallucination_pattern_hit(entry["alert_text"], entry["output_text"])

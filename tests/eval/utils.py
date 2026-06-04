@@ -1,9 +1,8 @@
 import time
 from functools import lru_cache
-from langchain_ollama import ChatOllama
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
-from langchain_groq import ChatGroq
 import os
 
 SEVERITY_ORDER = {"Low": 0, "Medium": 1, "High": 2, "Critical": 3, "Unknown": -1}
@@ -27,10 +26,10 @@ HALLUCINATION_PATTERNS = [
 @lru_cache(maxsize=1)
 def get_judge_llm():
     from src.rag.settings import settings
-    # Make sure to set GROQ_API_KEY in your .env file
-    return ChatGroq(
-        api_key=settings.groq_api_key,
-        model_name=settings.groq_judge_model,
+    return ChatOpenAI(
+        model=settings.deepseek_model,
+        api_key=settings.deepseek_api_key,
+        base_url="https://api.deepseek.com",
         temperature=0,
     )
 

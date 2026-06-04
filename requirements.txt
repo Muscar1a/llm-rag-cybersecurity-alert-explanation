@@ -50,6 +50,7 @@ langchain-qdrant
 langchain-ollama
 langchain-core
 langchain-huggingface
+langchain-openai
 langchain-google-genai
 
 # Compatibility Fixes

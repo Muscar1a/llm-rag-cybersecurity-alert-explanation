@@ -16,9 +16,10 @@ class Settings(BaseSettings):
     
     ollama_host: str = "http://localhost:11434"
     ollama_model: str | None = None
-    groq_judge_model: str = "llama-3.1-8b-instant"
-    groq_api_key: str | None = None
     ollama_num_ctx: int = 5120
+
+    deepseek_api_key: str | None = None
+    deepseek_model: str = "deepseek-chat"
     
     # Hugging Face Token for API access
     hf_token: str | None = None

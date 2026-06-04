@@ -129,7 +129,7 @@ def run_template(
         print(f"\n  [Pass 2/2] Judge evaluation (template={template})")
         for i in range(state["next_idx"], len(samples_data)):
             s = samples_data[i]
-            print(f"  [{template}] {i+1}/{len(samples_data)} | Eval | {s['label']}")
+            print(f"  [{template}] {i+1}/{len(samples_data)} | Eval | {s['label_tactic']}")
             retr = evaluate_retrieval([s])[0]
             gen = evaluate_generation([s])[0]
             s.update(retr)
