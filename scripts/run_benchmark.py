@@ -35,8 +35,8 @@ def sample_balanced(gt_data: list, n: int) -> list:
     seen = set()
     out = []
     for r in gt_data:
-        if r["label"] not in seen:
-            seen.add(r["label"])
+        if r["label_tactic"] not in seen:
+            seen.add(r["label_tactic"])
             out.append(r)
             if len(out) >= n:
                 return out
@@ -86,7 +86,7 @@ def run_template(
         print(f"\n  [Pass 1/2] RAG inference (template={template})")
         for i in range(state["next_idx"], len(sampled)):
             entry = sampled[i]
-            print(f"  [{template}] {i+1}/{len(sampled)} | Inference | {entry['label']}")
+            print(f"  [{template}] {i+1}/{len(sampled)} | Inference | {entry['label_tactic']} / {entry.get('label_technique', '')}")
             t0 = time.perf_counter()
             rag_out = rag_service.analyze(
                 alert_text=entry["alert_text"],
@@ -103,7 +103,8 @@ def run_template(
             llm_meta = rag_out.get("llm_metadata", {})
             samples_data.append({
                 "alert_text": entry["alert_text"],
-                "label": entry["label"],
+                "label_tactic": entry["label_tactic"],
+                "label_technique": entry.get("label_technique", ""),
                 "output_text": output_text,
                 "retrieved_contexts": rag_out.get("retrieved_contexts_text", []),
                 "context_ids": rag_out.get("retrieved_context_ids", []),

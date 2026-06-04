@@ -8,18 +8,13 @@ import os
 
 SEVERITY_ORDER = {"Low": 0, "Medium": 1, "High": 2, "Critical": 3, "Unknown": -1}
 SEVERITY_MIN = {
-    "DDOS attack-HOIC":          "High",
-    "DoS attacks-GoldenEye":     "High",
-    "DoS attacks-Hulk":          "High",
-    "SQL Injection":             "High",
-    "Infilteration":             "High",
-    "DoS attacks-Slowloris":     "Medium",
-    "DoS attacks-SlowHTTPTest":  "Medium",
-    "FTP-BruteForce":            "Medium",
-    "SSH-Bruteforce":            "Medium",
-    "Brute Force -Web":          "Medium",
-    "Brute Force -XSS":          "Medium",
-    "Bot":                       "Medium",
+    "Credential_Access":    "High",
+    "Exfiltration":         "High",
+    "Initial_Access":       "High",
+    "Privilege_Escalation": "High",
+    "Defense_Evasion":      "Medium",
+    "Persistence":          "Medium",
+    "Reconnaissance":       "Low",
 }
 
 HALLUCINATION_PATTERNS = [
@@ -71,10 +66,10 @@ def get_hallucination_pattern_hit(alert_text: str, output_text: str) -> bool:
     return any(cond in alert_lower and viol in output_lower for cond, viol in HALLUCINATION_PATTERNS)
 
 def get_context_diversity(context_ids: list) -> str:
-    has_cve   = any(cid.startswith("CVE") for cid in context_ids)
     has_mitre = any(cid.startswith("T")   for cid in context_ids)
     has_sigma = any("sigma" in cid        for cid in context_ids)
-    parts = [s for s, flag in [("cve", has_cve), ("mitre", has_mitre), ("sigma", has_sigma)] if flag]
+    has_et    = any("et_rule" in cid      for cid in context_ids)
+    parts = [s for s, flag in [("mitre", has_mitre), ("sigma", has_sigma), ("et", has_et)] if flag]
     return "+".join(parts) if parts else "none"
 
 _BACKOFF_BASE = 5  # seconds; doubles each retry on 429 → 5s, 10s, 20s

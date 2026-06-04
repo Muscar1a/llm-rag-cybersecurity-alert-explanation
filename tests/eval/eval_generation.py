@@ -54,7 +54,7 @@ def evaluate_generation(samples_data: list[dict]) -> list[dict]:
         # Courtesy delay to avoid bursting the Groq rate limit
         time.sleep(3)
 
-        severity_verdict = get_severity_verdict(entry["severity"], entry["label"])
+        severity_verdict = get_severity_verdict(entry["severity"], entry["label_tactic"])
         pattern_hit = get_hallucination_pattern_hit(entry["alert_text"], entry["output_text"])
 
         faith = safe_val(scores.get("faithfulness"))
