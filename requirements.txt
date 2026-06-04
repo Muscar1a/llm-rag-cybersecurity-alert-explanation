@@ -25,7 +25,7 @@ torchvision
 
 # Vector DB & RAG
 qdrant-client
-ragas
+ragas>=0.2.6
 
 # DVC
 dvc[s3]==3.67.1

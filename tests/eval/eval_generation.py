@@ -1,3 +1,4 @@
+import time
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -13,6 +14,9 @@ from .utils import (
 )
 
 _RAGAS_RUN_CONFIG = RunConfig(timeout=180, max_retries=5, max_workers=1)
+
+# DeepSeek (and most providers) only support n=1
+answer_relevancy.strictness = 1
 
 def evaluate_generation(samples_data: list[dict]) -> list[dict]:
     results = []
