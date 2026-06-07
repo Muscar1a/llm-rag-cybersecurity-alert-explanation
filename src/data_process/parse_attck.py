@@ -38,7 +38,7 @@ def load_attack_techniques() -> list[dict]:
             "platforms": platforms,
             "detection": detection,
             "url": url,
-            "source": "mitre_attck"
+            "source": "mitre"
         })
         
     print(f"Loaded {len(techniques)} techniques")

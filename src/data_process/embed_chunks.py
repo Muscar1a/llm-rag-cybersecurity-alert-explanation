@@ -24,10 +24,9 @@ except Exception as e:
 
 COLLECTION  = "cyber_chunks"
 SOURCES = {
-    "mitre":            Path("data/processed/MITRE/chunks.parquet"),
-    "sigma":            Path("data/processed/sigma/chunks.parquet"),
-    "et_rules":         Path("data/processed/emerging_threats/chunks.parquet"),
-    "behavioral_rules": Path("data/processed/behavioral_rules/chunks.parquet"),
+    "mitre":    Path("data/processed/MITRE/chunks.parquet"),
+    "sigma":    Path("data/processed/sigma/chunks.parquet"),
+    "et_rules": Path("data/processed/emerging_threats/chunks.parquet"),
 }
 
 
@@ -74,10 +73,10 @@ def _build_points(df: pd.DataFrame, embeddings: np.ndarray) -> list[PointStruct]
             "source":   row["source"],
             "text":     row["text"],
             "metadata": {
+                **meta,
                 "chunk_id": row["chunk_id"],
                 "doc_id":   row["doc_id"],
                 "source":   row["source"],
-                **meta,
             },
         }
 
@@ -98,14 +97,6 @@ def _build_points(df: pd.DataFrame, embeddings: np.ndarray) -> list[PointStruct]
                 "severity":  meta.get("severity", ""),
                 "sid":       meta.get("sid", ""),
             })
-        elif source == "behavioral_rules":
-            payload.update({
-                "classtype":          meta.get("classtype", ""),
-                "severity":           meta.get("severity", ""),
-                "rule_id":            meta.get("rule_id", ""),
-                "mitre_technique_id": meta.get("mitre_technique_id", ""),
-            })
-
         points.append(PointStruct(
             id=str(uuid.uuid4()),
             vector=embeddings[i].tolist(),

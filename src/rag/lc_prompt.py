@@ -45,9 +45,8 @@ whether to escalate.
 {_GROUNDING_RULES}
 Rules:
 - threat_description must explain WHAT the alert means, not repeat its raw text.
-- Use retrieved knowledge (CVE, MITRE ATT&CK, Sigma) to support your analysis.
-- Do not invent CVE IDs, techniques IDs, or details absent from the alert or context.
-- If retrieved knowledge is insufficient, state that clearly in rationale.
+- Ground every claim in Retrieved Knowledge: only cite technique IDs, rule names, or CVEs that appear verbatim in the retrieved context. Do not supply from training-data memory.
+- If retrieved knowledge does not support a claim, omit it or flag it as "not confirmed by retrieved context" in rationale.
 - severity must be exactly one of: Low, Medium, High, Unknown. Base this on the threat_description and rationale. If you can't determine, say Unknown.
 - mitigation_steps must be 2-5 short actionable strings.
 
@@ -99,25 +98,28 @@ cot_prompt = ChatPromptTemplate.from_messages([
 # == Few-shot ==========================================================================
 
 _EXAMPLE_ALERT = (
-    "ET SCAN Nmap Scripting Engine User-Agent Detected — "
-    "src=10.0.0.42:54321 dst=192.168.1.1:80"
+    "TCP connection to port 443 (HTTPS). Connection state: Connection rejected (REJ). "
+    "Behavioral meaning: RST received in response to SYN — port closed or firewall ACL drop. "
+    "Traffic volume: 4 packets sent / 4 packets received, 0 bytes sent / 0 bytes received (0 bytes total). "
+    "Duration: 2.8 ms. TCP sequence: SYN(client) → RST(server)."
 )
 _EXAMPLE_CONTEXT = """\
-[source=sigma | doc_id=proc_creation_win_nmap]
-Detects Nmap usage via its default user-agent string. Commonly used for reconnaissance.
+[source=mitre | doc_id=T1595]
+Active Scanning: Adversaries may execute active reconnaissance scans to gather information \
+that can be used during targeting. SYN scanning is a common technique where a SYN packet \
+is sent and the response (SYN-ACK or RST) reveals port status without completing the handshake.
 
-[source=mitre | doc_id=T1046]
-Network Service Discovery: Adversaries may attempt to get a listing of services \
-running on remote hosts to identify attack surface."""
+[source=sigma | doc_id=zeek_conn_scan]
+Zeek Conn Log Port Scan Detection. Detects potential port scanning: conn_state is REJ or S0, \
+resp_bytes equals 0, duration under 100 ms. Classtype: network-scan. Severity: Low."""
 _EXAMPLE_OUTPUT = """\
 {{
-"threat_description": "The alert indicates active network reconnaissance using Nmap. The source host is scanning the target to enumerate open ports and services — a typical pre-exploitation step.",
-"severity": "Medium",
-"rationale": "Nmap scanning maps to T1046 (Network Service Discovery). The Sigma rule confirms the user-agent fingerprint. Scanning alone is not an exploit but signals intent and warrants investigation.",
+"threat_description": "A SYN packet to port 443 (HTTPS) was immediately rejected by the server (conn_state: REJ), indicating an active port probe. Zero bytes were exchanged in 2.8 ms — no data was transferred and no session was established.",
+"severity": "Low",
+"rationale": "The Sigma rule [zeek_conn_scan] identifies REJ state with zero resp_bytes and sub-100ms duration as a port scan indicator. MITRE T1595 (Active Scanning) describes this SYN-then-RST pattern as reconnaissance. A single probe with no payload warrants Low severity; escalate if the same source targets multiple ports or hosts.",
 "mitigation_steps": [
-    "Block or isolate source IP 10.0.0.42 pending investigation.",
-    "Verify whether 10.0.0.42 is an authorized scanner.",
-    "Review firewall rules to limit unnecessary port exposure.",
+    "Correlate source IP across all REJ/S0 flows to detect systematic scanning.",
+    "Block source at perimeter if multiple ports or hosts are targeted.",
     "Monitor for follow-on exploitation attempts from the same source."
 ]
 }}"""
@@ -128,7 +130,7 @@ You are a senior SOC analyst explaining an IDS alert.
 {_GROUNDING_RULES}
 
 Follow the example format exactly. Output only the JSON object, no markdown or explanations.
-Do not invent unsupported facts.
+Only cite technique IDs, rule names, or CVEs that appear in the retrieved context. Do not invent or recall from training data.
 
 --- EXAMPLE ---
 Alert:

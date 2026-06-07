@@ -7,7 +7,6 @@ stages:
       - data/processed/MITRE/mitre_cleaned.parquet
       - data/processed/sigma/sigma_cleaned.parquet
       - data/processed/emerging_threats/et_rules_cleaned.parquet
-      - data/processed/behavioral_rules/chunks.parquet
 
   chunk_data:
     cmd: python src/data_process/chunk_data.py
@@ -32,7 +31,6 @@ stages:
       - data/processed/MITRE/chunks.parquet
       - data/processed/sigma/chunks.parquet
       - data/processed/emerging_threats/chunks.parquet
-      - data/processed/behavioral_rules/chunks.parquet
     params:
       - embedding.model_name
       - embedding.dim

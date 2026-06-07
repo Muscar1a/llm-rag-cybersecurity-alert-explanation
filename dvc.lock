@@ -5,17 +5,13 @@ stages:
     deps:
     - path: src/data_process/clean_data.py
       hash: md5
-      md5: d25719a020111470dc0b3768428ab6cd
-      size: 13661
+      md5: 7346121441c8b2be4da7c1cf718fa4aa
+      size: 9920
     outs:
     - path: data/processed/MITRE/mitre_cleaned.parquet
       hash: md5
       md5: efd8ae34d56789c9d0b115bccd0c89b7
       size: 602916
-    - path: data/processed/behavioral_rules/chunks.parquet
-      hash: md5
-      md5: 738d72ca984d67f0c82edfa7a98cbe9e
-      size: 27365
     - path: data/processed/emerging_threats/et_rules_cleaned.parquet
       hash: md5
       md5: f5f21b30a1b5cc3d532b4c377f10550d
@@ -68,10 +64,6 @@ stages:
       hash: md5
       md5: 6d65b4088c812f41f646250f4a27669b
       size: 645462
-    - path: data/processed/behavioral_rules/chunks.parquet
-      hash: md5
-      md5: 738d72ca984d67f0c82edfa7a98cbe9e
-      size: 27365
     - path: data/processed/emerging_threats/chunks.parquet
       hash: md5
       md5: a5afada5ab595c4dbe5a1abe41019ccb
@@ -82,8 +74,8 @@ stages:
       size: 23278
     - path: src/data_process/embed_chunks.py
       hash: md5
-      md5: 9f59af38178bd0814dfe796fd37e8247
-      size: 7259
+      md5: e4822c5c32cc24b988c3f1b4bbd1ed48
+      size: 6801
     params:
       params.yaml:
         embedding.dim: 768
@@ -91,5 +83,5 @@ stages:
     outs:
     - path: data/embeddings/completed.txt
       hash: md5
-      md5: af9feb1e0e359c6a0c1991337c46365d
-      size: 178
+      md5: bf93edcdda3bee85beed61ad52845daf
+      size: 158

@@ -33,7 +33,7 @@ from src.data_process.parse_attck import load_attack_techniques
 COLLECTION  = "cyber_chunks"
 EMBED_MODEL = "BAAI/bge-base-en-v1.5"
 VECTOR_SIZE = 768
-SOURCE_TAG  = "mitre_attck"
+SOURCE_TAG  = "mitre"
 
 
 # ---------------------------------------------------------------------------

@@ -263,115 +263,15 @@ def run_et_rules():
     print("\n--- Sample rule_text ---")
     print(df.iloc[0]["rule_text"])
 
-
-# ---------------------------------------------------------------------------
-# Behavioral rules (flow-level detection, v3 schema)
-# ---------------------------------------------------------------------------
-
-def _render_behavioral_rule_text(rule: dict) -> str:
-    """Render a v3 behavioral rule to embedding text. Mirrors ingest_behavioral_rules.render_text."""
-    lines = [f"Behavioral Rule: {rule['name']}"]
-
-    proto = rule.get("proto", "TCP")
-    ports = rule.get("dst_ports", [])
-    port_str = f"dst_port:{','.join(str(p) for p in ports)}" if ports else ""
-    lines.append(f"Protocol: {proto}" + (f" | Ports: {port_str}" if port_str else ""))
-
-    keywords = rule.get("keywords", [])
-    if keywords:
-        lines.append(f"Keywords: {', '.join(keywords)}")
-
-    mitre = rule.get("mitre_attack", {})
-    if mitre:
-        technique_id = mitre.get("technique_id", "")
-        technique    = mitre.get("technique", "")
-        tactic       = mitre.get("tactic", "")
-        sub          = mitre.get("sub_technique") or ""
-        mitre_str    = f"{technique_id} — {technique}"
-        if sub:
-            mitre_str += f" ({sub})"
-        lines.append(f"MITRE ATT&CK: {tactic} | {mitre_str}")
-
-    indicators = rule.get("indicators", [])
-    if indicators:
-        lines.append("Detection: " + "; ".join(indicators))
-
-    fp = rule.get("flow_profile", {})
-    if fp:
-        fp_parts = [
-            f"{k}={v}" for k, v in fp.items()
-            if v and str(v).lower() not in ("varies", "")
-        ]
-        if fp_parts:
-            lines.append("Flow profile: " + "; ".join(fp_parts))
-
-    if rule.get("classtype"):
-        lines.append(f"Classtype: {rule['classtype']}")
-    if rule.get("severity"):
-        lines.append(f"Severity: {rule['severity']}")
-    if rule.get("context"):
-        lines.append(f"Context: {rule['context']}")
-
-    dd = rule.get("differential_diagnosis", {})
-    if dd.get("distinguishing_factor"):
-        lines.append(f"Differential diagnosis: {dd['distinguishing_factor']}")
-
-    return "\n".join(lines)
-
-
-def run_behavioral_rules():
-    print("=== Behavioral Rules ===")
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    rules_file   = os.path.join(project_root, "data", "raw", "behavioral_rules", "behavioral_rules_v3.json")
-
-    if not os.path.isfile(rules_file):
-        print(f"  No behavioral rules file at {rules_file} — skipping.")
-        return
-
-    with open(rules_file, encoding="utf-8") as f:
-        rules = json.load(f)
-
-    if not rules:
-        print("  Empty rules file — skipping.")
-        return
-
-    # Each rule is rendered directly as one chunk — no further splitting needed
-    records = []
-    for rule in rules:
-        rule_id  = rule.get("id", "BHR-XXX")
-        chunk_id = f"{rule_id}_c0"
-        text     = _render_behavioral_rule_text(rule)
-        metadata = json.dumps({
-            "rule_id":   rule_id,
-            "classtype": rule.get("classtype", ""),
-            "severity":  rule.get("severity", ""),
-            "mitre_technique_id": (rule.get("mitre_attack") or {}).get("technique_id", ""),
-        })
-        records.append({
-            "chunk_id": chunk_id,
-            "doc_id":   rule_id,
-            "source":   "behavioral_rules",
-            "text":     text,
-            "metadata": metadata,
-        })
-
-    out_dir = os.path.join("data", "processed", "behavioral_rules")
-    os.makedirs(out_dir, exist_ok=True)
-    out = os.path.join(out_dir, "chunks.parquet")
-    pd.DataFrame(records).to_parquet(out, index=False)
-    print(f"  Saved {len(records)} behavioral rules → {out}")
-
-
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
 SOURCE_MAP = {
-    "cve":              run_cve,
-    "mitre":            run_mitre,
-    "sigma":            run_sigma,
-    "et_rules":         run_et_rules,
-    "behavioral_rules": run_behavioral_rules,
+    "cve":      run_cve,
+    "mitre":    run_mitre,
+    "sigma":    run_sigma,
+    "et_rules": run_et_rules,
 }
 
 
@@ -386,8 +286,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--source", nargs="+",
         choices=list(SOURCE_MAP),
-        default=["mitre", "sigma", "et_rules", "behavioral_rules"],
-        help="Sources to process (default: mitre sigma et_rules behavioral_rules). Use 'cve' to also re-download CVEs.",
+        default=["mitre", "sigma", "et_rules"],
+        help="Sources to process (default: mitre sigma et_rules). Use 'cve' to also re-download CVEs.",
     )
     args = parser.parse_args()
     run_pipeline(args.source)
