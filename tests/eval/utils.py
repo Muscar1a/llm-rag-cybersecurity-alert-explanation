@@ -65,10 +65,13 @@ def get_hallucination_pattern_hit(alert_text: str, output_text: str) -> bool:
     return any(cond in alert_lower and viol in output_lower for cond, viol in HALLUCINATION_PATTERNS)
 
 def get_context_diversity(context_ids: list) -> str:
-    has_mitre = any(cid.startswith("T")   for cid in context_ids)
-    has_sigma = any("sigma" in cid        for cid in context_ids)
-    has_et    = any("et_rule" in cid      for cid in context_ids)
-    parts = [s for s, flag in [("mitre", has_mitre), ("sigma", has_sigma), ("et", has_et)] if flag]
+    checks = [
+        ("port",    lambda cid: cid.startswith("port_profile_")),
+        ("state",   lambda cid: cid.startswith("conn_state_")),
+        ("pattern", lambda cid: cid.startswith("traffic_pattern_")),
+        ("tactic",  lambda cid: cid.startswith("tactic_")),
+    ]
+    parts = [label for label, fn in checks if any(fn(cid) for cid in context_ids)]
     return "+".join(parts) if parts else "none"
 
 _BACKOFF_BASE = 5  # seconds; doubles each retry on 429 → 5s, 10s, 20s
