@@ -1,11 +1,12 @@
 """
 generate_alerts.py
 ------------------
-Read UWF-ZeekData24 CSVs, build alert texts, save to tests/alerts.json.
+Read UWF-ZeekData24 directory (one subdir per tactic), build alert texts,
+save to tests/alerts.json.
 No LLM calls. Run once to produce a stable, reusable evaluation dataset.
 
 Usage:
-    python tests/generate_alerts.py [--max-per-tactic N] [--out PATH]
+    python tests/generate_alerts.py [--input-dir PATH] [--max-per-tactic N] [--max-total N] [--out PATH]
 """
 
 import argparse
@@ -22,28 +23,77 @@ if str(project_root) not in sys.path:
 
 from src.data_process.zeek_alert_builder import build_alert_text, build_metadata
 
-DATA_DIR    = project_root / "data" / "raw" / "uwf-zeekdata24"
-DEFAULT_OUT = Path(__file__).parent / "alerts.json"
+DEFAULT_INPUT_DIR = project_root / "data" / "test_data" / "uwf-zeekdata24"
+DEFAULT_OUT       = Path(__file__).parent / "alerts.json"
 
-# Skip rows with ambiguous/duplicate technique labels
 _SKIP_TECHNIQUES = {"Duplicate", "duplicate", ""}
+
+
+def _filter_rows(df: pd.DataFrame) -> pd.DataFrame:
+    if "label_technique" not in df.columns:
+        return df
+    df = df[~df["label_technique"].isin(_SKIP_TECHNIQUES)]
+    return df[df["label_technique"].notna()]
+
+
+def _sample_rows(df: pd.DataFrame, max_rows: int) -> pd.DataFrame:
+    if max_rows <= 0 or len(df) <= max_rows:
+        return df.head(max(0, max_rows))
+
+    if "label_technique" in df.columns and df["label_technique"].nunique() > 1:
+        per_technique = max(1, max_rows // df["label_technique"].nunique())
+        df = (
+            df.groupby("label_technique", group_keys=False)
+            .apply(lambda g: g.sample(min(len(g), per_technique), random_state=42))
+        )
+        if len(df) > max_rows:
+            df = df.sample(max_rows, random_state=42)
+        return df
+
+    return df.sample(max_rows, random_state=42)
+
+
+def _append_alerts(records, tactic_counts, df: pd.DataFrame, tactic_name=None, max_total=None):
+    for _, row in df.iterrows():
+        if max_total is not None and len(records) >= max_total:
+            break
+
+        row_dict = row.to_dict()
+        label_tactic = tactic_name or str(row_dict.get("label_tactic", ""))
+        alert_text = build_alert_text(row_dict)
+        meta = build_metadata(row_dict)
+
+        records.append({
+            "label_tactic":    label_tactic,
+            "label_technique": str(row_dict.get("label_technique", "")),
+            "alert_text":      alert_text,
+            "metadata":        meta,
+        })
+        tactic_counts[label_tactic] += 1
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max-per-tactic", type=int, default=50,
-                        help="Max rows to sample per tactic (default: 50)")
+    parser.add_argument("--input-dir", type=str, default=str(DEFAULT_INPUT_DIR),
+                        help=f"Directory with one subdir per tactic (default: {DEFAULT_INPUT_DIR})")
+    parser.add_argument("--max-per-tactic", type=int, default=27,
+                        help="Max rows to sample per tactic (default: 27)")
+    parser.add_argument("--max-total", type=int, default=9999,
+                        help="Max total alerts to write (default: unlimited)")
     parser.add_argument("--out", type=str, default=str(DEFAULT_OUT))
     args = parser.parse_args()
 
-    if not DATA_DIR.exists():
-        print(f"Error: data directory not found: {DATA_DIR}")
+    input_dir = Path(args.input_dir)
+    if not input_dir.exists():
+        print(f"Error: input directory not found: {input_dir}")
         sys.exit(1)
 
-    records: list[dict]       = []
-    tactic_counts: dict       = defaultdict(int)
+    records: list[dict] = []
+    tactic_counts: dict = defaultdict(int)
 
-    for tactic_dir in sorted(DATA_DIR.iterdir()):
+    for tactic_dir in sorted(input_dir.iterdir()):
+        if len(records) >= args.max_total:
+            break
         if not tactic_dir.is_dir():
             continue
         csvs = list(tactic_dir.glob("*.csv"))
@@ -51,35 +101,13 @@ def main():
             continue
 
         df = pd.read_csv(csvs[0], low_memory=False)
+        df = _filter_rows(df)
 
-        # Filter out Duplicate technique rows
-        if "label_technique" in df.columns:
-            df = df[~df["label_technique"].isin(_SKIP_TECHNIQUES)]
-            df = df[df["label_technique"].notna()]
-
-        # Sample up to --max-per-tactic rows, balanced by technique if multiple
-        if len(df) > args.max_per_tactic:
-            if "label_technique" in df.columns and df["label_technique"].nunique() > 1:
-                df = (
-                    df.groupby("label_technique", group_keys=False)
-                    .apply(lambda g: g.sample(min(len(g), args.max_per_tactic // df["label_technique"].nunique())))
-                )
-            else:
-                df = df.sample(args.max_per_tactic, random_state=42)
+        remaining = args.max_total - len(records)
+        df = _sample_rows(df, min(args.max_per_tactic, remaining))
 
         tactic = tactic_dir.name
-        for _, row in df.iterrows():
-            row_dict = row.to_dict()
-            alert_text = build_alert_text(row_dict)
-            meta       = build_metadata(row_dict)
-
-            records.append({
-                "label_tactic":    tactic,
-                "label_technique": str(row_dict.get("label_technique", "")),
-                "alert_text":      alert_text,
-                "metadata":        meta,
-            })
-            tactic_counts[tactic] += 1
+        _append_alerts(records, tactic_counts, df, tactic_name=tactic, max_total=args.max_total)
 
     out_path = Path(args.out)
     out_path.write_text(json.dumps(records, indent=2, ensure_ascii=False), encoding="utf-8")
