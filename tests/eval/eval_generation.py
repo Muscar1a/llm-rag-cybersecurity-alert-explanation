@@ -4,14 +4,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from ragas import EvaluationDataset, SingleTurnSample, evaluate, RunConfig
 from ragas.metrics import faithfulness, answer_relevancy
-from .utils import (
-    get_judge_llm,
-    get_judge_emb,
-    safe_val,
-    get_severity_verdict,
-    get_hallucination_pattern_hit,
-    _is_rate_limit,
-)
+from .utils import get_judge_llm, get_judge_emb, safe_val, _is_rate_limit
 
 _RAGAS_RUN_CONFIG = RunConfig(timeout=180, max_retries=5, max_workers=1)
 
@@ -51,17 +44,12 @@ def evaluate_generation(samples_data: list[dict]) -> list[dict]:
                 print(f"  [eval_generation] attempt {attempt+1} failed ({e}), retrying in {wait}s...")
                 time.sleep(wait)
 
-        severity_verdict = get_severity_verdict(entry["severity"], entry["label_tactic"])
-        pattern_hit = get_hallucination_pattern_hit(entry["alert_text"], entry["output_text"])
-
         faith = safe_val(scores.get("faithfulness"))
 
         results.append({
             "faithfulness": faith,
             "answer_relevancy": safe_val(scores.get("answer_relevancy")),
             "hallucination_rate": round(1.0 - faith, 3) if faith is not None else None,
-            "severity_verdict": severity_verdict,
-            "hallucination_pattern_hit": pattern_hit,
         })
 
     return results

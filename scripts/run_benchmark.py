@@ -96,26 +96,16 @@ def run_template(
             )
             latency = time.perf_counter() - t0
 
-            reference = entry["reference"]
             output_text = rag_out.get("threat_description", "") + "\n" + rag_out.get("rationale", "")
 
-            llm_meta = rag_out.get("llm_metadata", {})
             samples_data.append({
                 "alert_text": entry["user_input"],
                 "label_tactic": entry["label_tactic"],
                 "label_technique": entry.get("label_technique", ""),
                 "output_text": output_text,
                 "retrieved_contexts": rag_out.get("retrieved_contexts_text", []),
-                "context_ids": rag_out.get("retrieved_context_ids", []),
-                "reference": reference,
-                "severity": rag_out.get("severity", "Unknown"),
+                "reference": entry["reference"],
                 "latency_s": round(latency, 3),
-                "total_duration": llm_meta.get("total_duration"),
-                "load_duration": llm_meta.get("load_duration"),
-                "prompt_eval_count": llm_meta.get("prompt_eval_count"),
-                "prompt_eval_duration": llm_meta.get("prompt_eval_duration"),
-                "eval_count": llm_meta.get("eval_count"),
-                "eval_duration": llm_meta.get("eval_duration"),
             })
             state["next_idx"] = i + 1
             _save_ckpt(ckpt_file, state)
@@ -151,19 +141,9 @@ def run_template(
         "template": template,
         "total": total,
         **latency_metrics,
-        "avg_context_precision": nanmean("context_precision"),
         "avg_context_recall": nanmean("context_recall"),
-        "avg_faithfulness": nanmean("faithfulness"),
         "avg_answer_relevancy": nanmean("answer_relevancy"),
         "avg_hallucination_rate": nanmean("hallucination_rate"),
-        "severity_correct_count": sum(1 for d in samples_data if d.get("severity_verdict") == "correct"),
-        "hallucination_pattern_hit_count": sum(1 for d in samples_data if d.get("hallucination_pattern_hit")),
-        "avg_total_duration": nanmean("total_duration"),
-        "avg_load_duration": nanmean("load_duration"),
-        "avg_prompt_eval_count": nanmean("prompt_eval_count"),
-        "avg_prompt_eval_duration": nanmean("prompt_eval_duration"),
-        "avg_eval_count": nanmean("eval_count"),
-        "avg_eval_duration": nanmean("eval_duration"),
     }
 
     # Save final per-template JSON
@@ -176,33 +156,21 @@ def run_template(
     )
 
     print(f"\n  [{template.upper()}] Summary:")
-    print(f"    p50/p95 latency (s)         : {summary.get('p50_latency_s')} / {summary.get('p95_latency_s')}")
+    print(f"    p50 / avg latency (s)       : {summary.get('p50_latency_s')} / {summary.get('avg_latency_s')}")
     print(f"    Retrieval recall            : {summary['avg_context_recall']}")
     print(f"    Answer relevancy            : {summary['avg_answer_relevancy']}")
     print(f"    Hallucination rate          : {summary['avg_hallucination_rate']}")
-    print(f"    Hallu pattern hit           : {summary['hallucination_pattern_hit_count']}/{total}")
-    print(f"    Severity correct            : {summary['severity_correct_count']}/{total}")
     print(f"  JSON: {json_file}")
 
     return summary, json_file, already_done
 
 
 COMPARISON_METRICS = [
-    ("p50_latency_s",                   "p50 latency (s)"),
-    ("p95_latency_s",                   "p95 latency (s)"),
-    ("avg_context_precision",           "Context Precision"),
-    ("avg_context_recall",              "Retrieval Recall"),
-    ("avg_answer_relevancy",            "Answer Relevance"),
-    ("avg_hallucination_rate",          "Hallucination Rate"),
-    ("avg_faithfulness",                "Avg faithfulness (raw)"),
-    ("severity_correct_count",          "Severity correct (count)"),
-    ("hallucination_pattern_hit_count", "Hallu pattern hit (count)"),
-    ("avg_total_duration",              "Avg total duration"),
-    ("avg_load_duration",               "Avg load duration"),
-    ("avg_prompt_eval_count",           "Avg prompt eval count"),
-    ("avg_prompt_eval_duration",        "Avg prompt eval duration"),
-    ("avg_eval_count",                  "Avg eval count"),
-    ("avg_eval_duration",               "Avg eval duration"),
+    ("p50_latency_s",        "p50 latency (s)"),
+    ("avg_latency_s",        "avg latency (s)"),
+    ("avg_context_recall",   "Retrieval Recall"),
+    ("avg_answer_relevancy", "Answer Relevance"),
+    ("avg_hallucination_rate", "Hallucination Rate"),
 ]
 
 
