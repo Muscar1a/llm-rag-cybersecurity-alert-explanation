@@ -1,36 +1,46 @@
 import functools
 import re
-from collections import defaultdict
 
 from langchain_qdrant import QdrantVectorStore
-from langchain_core.vectorstores import VectorStoreRetriever
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.documents import Document
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict
 from .qdrant_store import build_client
 from .embeddings import get_embeddings
 from .settings import settings
 
-# A1: Detect kernel stack trace chunks (hex offsets, addresses, kernel log timestamps)
-_STACK_TRACE_RE = re.compile(
-    r'(?:0x[0-9a-f]{4,}'            # hex addresses: 0xffff88816d2c0400
-    r'|\+0x[0-9a-f]+/0x[0-9a-f]+'   # offset notation: +0x2a2/0x770
-    r'|\[\s*\d{4,}\.\d+\])',         # kernel timestamps: [47200.376770]
-    re.IGNORECASE,
-)
-_NOISE_MATCH_THRESHOLD = 8
+_PORT_RE  = re.compile(r'\bport (\d+)\b')
+_STATE_RE = re.compile(r'\bConnection state (\w+)[:\s]')
 
-
-def _is_noise_chunk(text: str) -> bool:
-    return len(_STACK_TRACE_RE.findall(text)) > _NOISE_MATCH_THRESHOLD
+SOURCE = "kb_v2"
 
 
 @functools.lru_cache(maxsize=1)
 def _get_reranker(model_name: str):
     from sentence_transformers import CrossEncoder
     return CrossEncoder(model_name)
+
+
+def _record_to_doc(record) -> Document:
+    payload = record.payload or {}
+    text    = payload.get("text", "")
+    meta    = dict(payload.get("metadata", {}))
+    for k in ("chunk_id", "doc_id", "source", "kb_type"):
+        meta.setdefault(k, payload.get(k, ""))
+    return Document(page_content=text, metadata=meta)
+
+
+def _kb_filter(kb_type: str, extra: list | None = None) -> Filter:
+    must = [
+        FieldCondition(key="metadata.source",  match=MatchValue(value=SOURCE)),
+        FieldCondition(key="metadata.kb_type", match=MatchValue(value=kb_type)),
+    ]
+    if extra:
+        must.extend(extra)
+    return Filter(must=must)
 
 
 def get_vectorstore() -> QdrantVectorStore:
@@ -43,117 +53,94 @@ def get_vectorstore() -> QdrantVectorStore:
     )
 
 
-class BalancedRetriever(BaseRetriever):
+class KBRetriever(BaseRetriever):
+    """Hybrid retriever for kb_v2.
+
+    - port_profile / conn_state: exact filter match (no vector needed)
+    - traffic_pattern / tactic:  semantic similarity search
+    """
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    vectorstore: QdrantVectorStore
-    k: int = 5
-    max_per_source: int = 2  # A2: cap per source instead of fixed allocation
-    lambda_mult: float = 0.5
-    fetch_k_mult: int = 10
-    min_score: float = 0.60 # original was 0.82
-    reranker_model: str | None = "cross-encoder/ms-marco-MiniLM-L-6-v2"  # C: None to disable
+    vectorstore:    QdrantVectorStore
+    qdrant_client:  QdrantClient
+    collection:     str
+    k_semantic:     int = 2
+    reranker_model: str | None = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
-    def __init__(self, **data):
-        try:
-            import yaml
-            import os
-            if os.path.exists("params.yaml"):
-                with open("params.yaml", "r", encoding="utf-8") as f:
-                    p = yaml.safe_load(f)
-                ret_p = p.get("retrieval", {})
-                data.setdefault("k", ret_p.get("k", 5))
-                data.setdefault("lambda_mult", ret_p.get("lambda_mult", 0.5))
-                data.setdefault("min_score", ret_p.get("score_threshold", 0.60))
-        except Exception:
-            pass
-        super().__init__(**data)
+    def _exact_fetch(self, kb_type: str, extra: list) -> list[Document]:
+        records, _ = self.qdrant_client.scroll(
+            collection_name=self.collection,
+            scroll_filter=_kb_filter(kb_type, extra),
+            limit=1,
+            with_payload=True,
+        )
+        return [_record_to_doc(r) for r in records]
+
+    def _semantic_fetch(self, query: str, kb_type: str) -> list[Document]:
+        return self.vectorstore.similarity_search(
+            query,
+            k=self.k_semantic,
+            filter=_kb_filter(kb_type),
+        )
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> list[Document]:
-        sources = ["mitre", "sigma", "et_rules"]
+        port_m  = _PORT_RE.search(query)
+        state_m = _STATE_RE.search(query)
+        dest_port  = int(port_m.group(1))  if port_m  else None
+        conn_state = state_m.group(1)       if state_m else None
 
-        # Per-source DENSE retrieval (no MMR): MMR-diversity demotes the
-        # correct chunk when a false-friend (e.g. T1499.001) ranks above it.
-        per_source: dict[str, list[Document]] = {}
+        docs: list[Document] = []
         seen: set[str] = set()
-        for source in sources:
-            source_filter = Filter(must=[
-                FieldCondition(key="metadata.source", match=MatchValue(value=source))
-            ])
-            candidates = self.vectorstore.similarity_search(
-                query,
-                k=self.max_per_source * 3,
-                filter=source_filter,
-            )
-            kept: list[Document] = []
-            for doc in candidates:
-                uid = doc.metadata.get("chunk_id") or doc.metadata.get("_id", "")
-                if uid in seen:
-                    continue
-                # A1: skip kernel stack trace chunks
-                if _is_noise_chunk(doc.page_content):
-                    continue
+
+        def add(d: Document) -> None:
+            uid = d.metadata.get("chunk_id") or d.page_content[:40]
+            if uid not in seen:
                 seen.add(uid)
-                kept.append(doc)
-                if len(kept) >= self.max_per_source:
-                    break
-            per_source[source] = kept
+                docs.append(d)
 
-        # Round-robin merge: guarantees each source keeps representation in
-        # the final k, so the reranker can no longer drop a whole source.
-        merged: list[Document] = []
-        idx = 0
-        while len(merged) < self.k and any(idx < len(per_source[s]) for s in sources):
-            for s in sources:
-                if idx < len(per_source[s]):
-                    merged.append(per_source[s][idx])
-                    if len(merged) >= self.k:
-                        break
-            idx += 1
+        if dest_port is not None:
+            for d in self._exact_fetch("port_profile", [
+                FieldCondition(key="port", match=MatchValue(value=dest_port))
+            ]):
+                add(d)
 
-        if not self.reranker_model or len(merged) <= 1:
-            return merged
+        if conn_state:
+            for d in self._exact_fetch("conn_state", [
+                FieldCondition(key="state_code", match=MatchValue(value=conn_state))
+            ]):
+                add(d)
 
-        # C: rerank for ORDERING only (no truncation below k -> no source dropped)
+        for d in self._semantic_fetch(query, "traffic_pattern"):
+            add(d)
+
+        for d in self._semantic_fetch(query, "tactic"):
+            add(d)
+
+        if not self.reranker_model or len(docs) <= 1:
+            return docs
+
         reranker = _get_reranker(self.reranker_model)
-        scores = reranker.predict([(query, doc.page_content) for doc in merged])
-        ranked = sorted(zip(scores, merged), key=lambda x: x[0], reverse=True)
-        for score, doc in ranked:
-            doc.metadata["rerank_score"] = float(score)
-        return [doc for _, doc in ranked]
+        scores   = reranker.predict([(query, d.page_content) for d in docs])
+        ranked   = sorted(zip(scores, docs), key=lambda x: x[0], reverse=True)
+        for score, d in ranked:
+            d.metadata["rerank_score"] = float(score)
+        return [d for _, d in ranked]
 
 
 def build_retriever(source: str | None = None, k: int = 5) -> BaseRetriever:
-    lambda_mult = 0.6
-    score_threshold = 0.60
-    try:
-        import yaml
-        import os
-        if os.path.exists("params.yaml"):
-            with open("params.yaml", "r", encoding="utf-8") as f:
-                p = yaml.safe_load(f)
-            ret_p = p.get("retrieval", {})
-            k = ret_p.get("k", k)
-            lambda_mult = ret_p.get("lambda_mult", 0.6)
-            score_threshold = ret_p.get("score_threshold", 0.60)
-    except Exception:
-        pass
-
-    if source:
-        search_kwargs: dict = {
-            "k": k,
-            "fetch_k": k * 4,
-            "lambda_mult": lambda_mult,
-            "score_threshold": score_threshold,
-            "filter": Filter(must=[
-                FieldCondition(key="metadata.source", match=MatchValue(value=source))
-            ]),
-        }
-        return get_vectorstore().as_retriever(
-            search_type="mmr",
-            search_kwargs=search_kwargs,
-        )
-
-    return BalancedRetriever(vectorstore=get_vectorstore(), k=k)
+    client = build_client()
+    vs = QdrantVectorStore(
+        client=client,
+        collection_name=settings.qdrant_collection,
+        embedding=get_embeddings(),
+        content_payload_key="text",
+        metadata_payload_key="metadata",
+    )
+    return KBRetriever(
+        vectorstore=vs,
+        qdrant_client=client,
+        collection=settings.qdrant_collection,
+        k_semantic=k // 2 or 2,
+    )

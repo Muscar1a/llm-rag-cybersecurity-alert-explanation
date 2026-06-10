@@ -308,9 +308,8 @@ buộc khớp technique-level chính xác.
 - [x] Đóng băng Nhóm 4
 
 ### Ingest & retrieval
-- [ ] Quyết định: 4 nhóm chung 1 collection hay tách riêng (ảnh hưởng `where` filter)
-- [ ] Script ingest ChromaDB
-- [ ] Logic dedup chunk (vd 20&21, 110&143 trùng CVE — điểm Gemini nêu)
-- [ ] Hybrid retrieval: Nhóm 1 filter port, Nhóm 2 filter state_code, Nhóm 3 semantic top-3,
-      Nhóm 4 filter tactic (eval) hoặc semantic top-2 (production)
-- [ ] Rerank (cross-encoder)
+- [x] Quyết định: chung 1 collection `cyber_chunks`, phân biệt bằng `metadata.kb_type` + `source=kb_v2`
+- [x] Script ingest Qdrant (`src/data_process/ingest_kb.py`) — 41 points, idempotent, warn truncation
+- [x] Dedup không cần — KB đã review thủ công, mỗi entry độc lập
+- [x] Hybrid retrieval: `KBRetriever` trong `lc_vectorstore.py` — exact filter port/state_code + semantic traffic_pattern/tactic
+- [x] Rerank (cross-encoder ms-marco-MiniLM-L-6-v2, optional — built-in KBRetriever)

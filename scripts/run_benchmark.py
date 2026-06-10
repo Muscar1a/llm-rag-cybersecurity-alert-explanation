@@ -89,20 +89,19 @@ def run_template(
             print(f"  [{template}] {i+1}/{len(sampled)} | Inference | {entry['label_tactic']} / {entry.get('label_technique', '')}")
             t0 = time.perf_counter()
             rag_out = rag_service.analyze(
-                alert_text=entry["alert_text"],
+                alert_text=entry["user_input"],
                 k=retrieval_k,
                 source=None,
                 template_name=template,
             )
             latency = time.perf_counter() - t0
 
-            gt_output = entry["output"]
-            reference = gt_output["threat_description"] + "\n" + gt_output["rationale"]
+            reference = entry["reference"]
             output_text = rag_out.get("threat_description", "") + "\n" + rag_out.get("rationale", "")
 
             llm_meta = rag_out.get("llm_metadata", {})
             samples_data.append({
-                "alert_text": entry["alert_text"],
+                "alert_text": entry["user_input"],
                 "label_tactic": entry["label_tactic"],
                 "label_technique": entry.get("label_technique", ""),
                 "output_text": output_text,
