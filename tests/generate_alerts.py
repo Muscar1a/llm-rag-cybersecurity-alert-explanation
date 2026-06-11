@@ -53,7 +53,7 @@ def _sample_rows(df: pd.DataFrame, max_rows: int) -> pd.DataFrame:
     return df.sample(max_rows, random_state=42)
 
 
-def _append_alerts(records, tactic_counts, df: pd.DataFrame, tactic_name=None, max_total=None):
+def _append_alerts(records, tactic_counts, df: pd.DataFrame, tactic_name=None, max_total=None, seen_texts: set = None):
     for _, row in df.iterrows():
         if max_total is not None and len(records) >= max_total:
             break
@@ -61,6 +61,12 @@ def _append_alerts(records, tactic_counts, df: pd.DataFrame, tactic_name=None, m
         row_dict = row.to_dict()
         label_tactic = tactic_name or str(row_dict.get("label_tactic", ""))
         alert_text = build_alert_text(row_dict)
+
+        if seen_texts is not None:
+            if alert_text in seen_texts:
+                continue
+            seen_texts.add(alert_text)
+
         meta = build_metadata(row_dict)
 
         records.append({
@@ -76,8 +82,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-dir", type=str, default=str(DEFAULT_INPUT_DIR),
                         help=f"Directory with one subdir per tactic (default: {DEFAULT_INPUT_DIR})")
-    parser.add_argument("--max-per-tactic", type=int, default=27,
-                        help="Max rows to sample per tactic (default: 27)")
+    parser.add_argument("--max-per-tactic", type=int, default=35,
+                        help="Max rows to sample per tactic (default: 35)")
     parser.add_argument("--max-total", type=int, default=9999,
                         help="Max total alerts to write (default: unlimited)")
     parser.add_argument("--out", type=str, default=str(DEFAULT_OUT))
@@ -90,6 +96,7 @@ def main():
 
     records: list[dict] = []
     tactic_counts: dict = defaultdict(int)
+    seen_texts: set = set()
 
     for tactic_dir in sorted(input_dir.iterdir()):
         if len(records) >= args.max_total:
@@ -107,7 +114,7 @@ def main():
         df = _sample_rows(df, min(args.max_per_tactic, remaining))
 
         tactic = tactic_dir.name
-        _append_alerts(records, tactic_counts, df, tactic_name=tactic, max_total=args.max_total)
+        _append_alerts(records, tactic_counts, df, tactic_name=tactic, max_total=args.max_total, seen_texts=seen_texts)
 
     out_path = Path(args.out)
     out_path.write_text(json.dumps(records, indent=2, ensure_ascii=False), encoding="utf-8")
