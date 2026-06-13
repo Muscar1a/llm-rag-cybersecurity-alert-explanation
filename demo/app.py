@@ -1,6 +1,6 @@
 import json
-import streamlit as st
 import requests
+import streamlit as st
 
 API_URL = "http://localhost:8000"
 
@@ -97,6 +97,49 @@ def _render_result(res: dict, container):
                 st.markdown(f"**{idx}.** {step}")
 
 
+def _parse_upload(content: str, filename: str) -> list[str]:
+    """Parse uploaded file into a list of alert texts.
+
+    Supports:
+    - JSON array of objects with 'alert_text' or 'user_input' key
+    - JSON array of strings
+    - Plain text (single alert)
+    """
+    if filename.lower().endswith(".json"):
+        try:
+            data = json.loads(content)
+            if isinstance(data, list):
+                alerts = []
+                for item in data:
+                    if isinstance(item, str):
+                        alerts.append(item)
+                    elif isinstance(item, dict):
+                        text = item.get("alert_text") or item.get("user_input") or item.get("text")
+                        if text:
+                            alerts.append(str(text))
+                return alerts if alerts else [content]
+            elif isinstance(data, dict):
+                text = data.get("alert_text") or data.get("user_input") or data.get("text")
+                return [str(text)] if text else [content]
+        except Exception:
+            pass
+    return [content]
+
+
+def _render_batch_entry(i: int, entry: dict):
+    if entry["ok"]:
+        result = entry["result"]
+        severity = result.get("severity", "Unknown")
+        icon = SEVERITY_STYLE.get(severity.capitalize(), SEVERITY_STYLE["Unknown"])[1]
+        with st.expander(f"Alert #{i + 1} — {icon} {severity.upper()}", expanded=False):
+            col_l, col_r = st.columns([3, 2])
+            _render_result(result, col_l)
+            _render_contexts(result.get("contexts", []), col_r)
+    else:
+        with st.expander(f"Alert #{i + 1} — ⚠️ Error", expanded=False):
+            st.error(entry["error"])
+
+
 # ── Header ───────────────────────────────────────────────────────────────────
 st.title("🛡️ Cyber Threat Analyzer")
 st.caption("RAG-based cybersecurity threat analysis system")
@@ -124,6 +167,8 @@ st.subheader("Alert Input")
 paste_tab, upload_tab = st.tabs(["📋 Paste Text", "📁 Upload File"])
 
 alert_text = ""
+batch_alerts: list[str] = []
+
 with paste_tab:
     pasted = st.text_area(
         "alert",
@@ -133,59 +178,100 @@ with paste_tab:
             "syslog entry, or incident description…"
         ),
         label_visibility="collapsed",
+        key="paste_input",
     )
     alert_text = pasted
 
 with upload_tab:
+    st.markdown(
+        "<small style='color:#6b7280'>"
+        "📦 <b>.json</b> — array of objects with <code>alert_text</code> or <code>user_input</code> key, "
+        "or array of strings — supports multiple alerts (batch)<br>"
+        "📄 <b>.txt / .log</b> — entire file treated as a single alert"
+        "</small>",
+        unsafe_allow_html=True,
+    )
     uploaded = st.file_uploader(
-        "file", type=["txt", "log", "json"], label_visibility="collapsed"
+        "file", type=["txt", "log", "json"], label_visibility="collapsed",
+        key="upload_input",
     )
     if uploaded:
         file_content = uploaded.read().decode("utf-8", errors="replace")
-        st.text_area(
-            "preview",
-            value=file_content[:600] + ("…" if len(file_content) > 600 else ""),
-            height=150,
-            disabled=True,
-            label_visibility="collapsed",
-        )
-        alert_text = file_content
+        alerts = _parse_upload(file_content, uploaded.name)
+        if len(alerts) == 1:
+            alert_text = alerts[0]
+            st.caption("1 alert found")
+        elif len(alerts) > 1:
+            batch_alerts = alerts
+            st.caption(f"{len(alerts)} alerts found — batch mode")
+        else:
+            st.warning("No alerts found in file")
 
-c1, c2, c3 = st.columns([2, 2, 3])
-with c1:
-    source_choice = st.selectbox("Knowledge source", ["All", "CVE", "MITRE", "Sigma"])
-with c2:
-    k = st.slider("Top-k sources", min_value=1, max_value=10, value=5)
-with c3:
-    analyze_btn = st.button(
-        "🔍 Analyze Threat",
-        type="primary",
-        use_container_width=True,
-        disabled=not bool(alert_text.strip()),
-    )
-
-source_map = {"All": None, "CVE": "cve", "MITRE": "mitre", "Sigma": "sigma"}
+is_single = bool(alert_text.strip())
+is_batch = bool(batch_alerts)
 
 # ── State ────────────────────────────────────────────────────────────────────
 if "result" not in st.session_state:
     st.session_state.result = None
     st.session_state.err = None
+if "batch_results" not in st.session_state:
+    st.session_state.batch_results = []
+if "running" not in st.session_state:
+    st.session_state.running = False
 
-# ── Streaming analyze ─────────────────────────────────────────────────────────
-if analyze_btn and alert_text.strip():
+is_running = st.session_state.running
+
+# ── Controls ─────────────────────────────────────────────────────────────────
+c1, c2, c3 = st.columns([2, 3, 1])
+with c1:
+    k = st.slider("Top-k sources", min_value=1, max_value=10, value=5)
+with c2:
+    if is_running:
+        st.button("⏳ Analyzing…", disabled=True, type="primary", use_container_width=True)
+        analyze_btn = False
+    else:
+        analyze_btn = st.button(
+            "🔍 Analyze Threat",
+            type="primary",
+            use_container_width=True,
+            disabled=not (is_single or is_batch),
+        )
+with c3:
+    clear_btn = st.button("🗑️ Clear", use_container_width=True, disabled=is_running)
+
+if clear_btn:
     st.session_state.result = None
     st.session_state.err = None
+    st.session_state.batch_results = []
+    st.session_state.running = False
+    st.rerun()
+
+# Button click → snapshot input, clear widgets, rerun to show disabled button
+if analyze_btn and (is_single or is_batch):
+    st.session_state.running = True
+    st.session_state._pending_alert = alert_text
+    st.session_state._pending_batch = list(batch_alerts)
+    st.session_state._pending_k = k
+    st.session_state["paste_input"] = ""
+    st.session_state.pop("upload_input", None)
+    st.rerun()
+
+# ── Single alert: streaming ───────────────────────────────────────────────────
+_pending_alert = st.session_state.get("_pending_alert", "")
+_pending_batch = st.session_state.get("_pending_batch", [])
+_pending_k     = st.session_state.get("_pending_k", k)
+
+if is_running and _pending_alert.strip():
+    st.session_state.result = None
+    st.session_state.err = None
+    st.session_state.batch_results = []
     st.divider()
 
     left, right = st.columns([3, 2])
     result_box   = left.empty()
     contexts_box = right.empty()
 
-    payload = {
-        "alert_text": alert_text,
-        "k": k,
-        "source": source_map[source_choice],
-    }
+    payload = {"alert_text": _pending_alert, "k": _pending_k}
 
     try:
         streamed_text = ""
@@ -218,20 +304,58 @@ if analyze_btn and alert_text.strip():
                     st.session_state.result = {**event, "contexts": contexts}
                     st.session_state.err = None
 
+        st.session_state.running = False
         st.rerun()
 
     except Exception as exc:
         st.session_state.err = str(exc)
         st.session_state.result = None
+        st.session_state.running = False
 
+# ── Batch: sequential analyze ─────────────────────────────────────────────────
+if is_running and _pending_batch:
+    st.session_state.result = None
+    st.session_state.err = None
+    st.session_state.batch_results = []
+    st.divider()
+
+    n = len(_pending_batch)
+    progress = st.progress(0, text=f"Analyzing 0 / {n}…")
+
+    for i, alert in enumerate(_pending_batch):
+        try:
+            resp = requests.post(
+                f"{API_URL}/analyze",
+                json={"alert_text": alert, "k": _pending_k},
+                timeout=300,
+            )
+            resp.raise_for_status()
+            entry = {"ok": True, "result": resp.json()}
+        except Exception as exc:
+            entry = {"ok": False, "error": str(exc)}
+
+        st.session_state.batch_results.append(entry)
+        _render_batch_entry(i, entry)
+        progress.progress((i + 1) / n, text=f"Analyzing {i + 1} / {n}…")
+
+    progress.progress(1.0, text=f"Done — {n} alerts analyzed")
+    st.session_state.running = False
+    st.rerun()
+
+# ── Single result re-render ───────────────────────────────────────────────────
 if st.session_state.err:
     st.error(f"API error: {st.session_state.err}")
 
-# ── Results (sau khi stream xong) ────────────────────────────────────────────
 if st.session_state.result:
     res = st.session_state.result
     st.divider()
-
     left, right = st.columns([3, 2])
     _render_result(res, left)
     _render_contexts(res.get("contexts", []), right)
+
+# ── Batch results re-render ───────────────────────────────────────────────────
+if not is_running and st.session_state.batch_results:
+    st.divider()
+    st.caption(f"{len(st.session_state.batch_results)} alerts analyzed")
+    for i, entry in enumerate(st.session_state.batch_results):
+        _render_batch_entry(i, entry)
