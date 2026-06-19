@@ -3,7 +3,7 @@ services:
     image: qdrant/qdrant:v1-gpu-nvidia
     container_name: qdrant
     restart: unless-stopped
-    
+
     ports:
       - "6333:6333"
       - "6334:6334"
@@ -13,7 +13,7 @@ services:
 
     environment:
       QDRANT_API_KEY: ${QDRANT_API_KEY}
-    
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6333/"]
       interval: 30s
@@ -57,8 +57,91 @@ services:
       - ./infra/grafana/provisioning:/etc/grafana/provisioning
       - ./infra/grafana/dashboards:/var/lib/grafana/dashboards
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 3
+
+  suricata:
+    image: jasonish/suricata:latest
+    container_name: suricata
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - SYS_NICE
+    volumes:
+      - suricata_logs:/var/log/suricata
+      - ./suricata/suricata.yaml:/etc/suricata/suricata.yaml:ro
+    # Live sniff: đổi eth0 thành interface thực (ip link show)
+    # Demo replay: command: suricata -r /data/attack.pcap -c /etc/suricata/suricata.yaml
+    command: suricata -c /etc/suricata/suricata.yaml -i eth0
+
+  zeek:
+    image: zeekurity/zeek:latest
+    container_name: zeek
+    network_mode: host
+    volumes:
+      - zeek_logs:/opt/zeek/logs
+      - ./zeek/local.zeek:/opt/zeek/share/zeek/site/local.zeek:ro
+    # Live sniff: đổi eth0 thành interface thực (ip link show)
+    # Demo replay: command: zeek -r /data/attack.pcap local.zeek
+    command: zeek -i eth0 local.zeek
+
+  watcher-suricata:
+    build:
+      context: .
+      dockerfile: Dockerfile.watcher-suricata
+    container_name: watcher-suricata
+    restart: unless-stopped
+    volumes:
+      - suricata_logs:/var/log/suricata:ro
+    environment:
+      REDIS_HOST: redis
+      SURICATA_EVE_LOG: /var/log/suricata/eve.json
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  watcher-zeek:
+    build:
+      context: .
+      dockerfile: Dockerfile.watcher-zeek
+    container_name: watcher-zeek
+    restart: unless-stopped
+    volumes:
+      - zeek_logs:/opt/zeek/logs:ro
+    environment:
+      REDIS_HOST: redis
+      ZEEK_CONN_LOG: /opt/zeek/logs/current/conn.log
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    container_name: consumer
+    restart: unless-stopped
+    environment:
+      REDIS_HOST: redis
+      # Windows/Mac Docker Desktop: host.docker.internal trỏ tới host machine
+      # Linux: đổi thành http://172.17.0.1:8000/analyze hoặc dùng --network host
+      API_URL: http://host.docker.internal:8000/analyze
+      API_TIMEOUT: "60"
+    depends_on:
+      redis:
+        condition: service_healthy
 
 volumes:
   qdrant_storage:
   grafana_data:
   prometheus_data:
+  zeek_logs:
+  suricata_logs:

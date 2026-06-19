@@ -1,0 +1,7 @@
+FROM python:3.11-slim
+COPY requirements.txt /app/requirements.txt
+RUN pip install -r /app/requirements.txt --no-cache-dir
+COPY src/ /app/src/
+ENV PYTHONPATH=/app
+WORKDIR /app
+CMD ["python", "src/realtime/consumer.py"]
