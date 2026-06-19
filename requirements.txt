@@ -64,3 +64,4 @@ structlog
 
 # Demo
 streamlit
+redis
