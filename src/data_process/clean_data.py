@@ -11,7 +11,6 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 os.chdir(PROJECT_ROOT)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from ingest_cve import get_cves_for_year
 from parse_attck import load_attack_techniques
 
 SIGMA_CATEGORIES = ["network"]
@@ -186,24 +185,6 @@ def _parse_et_rules(raw_dir: str) -> list[dict]:
 # Individual source runners
 # ---------------------------------------------------------------------------
 
-def run_cve():
-    print("=== CVE ===")
-    out_dir = os.path.join("data", "processed", "CVE")
-    os.makedirs(out_dir, exist_ok=True)
-
-    all_cves = []
-    for year in range(2010, 2026):
-        print(f"  Fetching {year}...")
-        all_cves.extend(get_cves_for_year(year))
-
-    df = pd.DataFrame(all_cves)
-    df["products"]   = df["products"].apply(lambda x: json.dumps(x) if isinstance(x, list) else x)
-    df["references"] = df["references"].apply(lambda x: json.dumps(x) if isinstance(x, list) else x)
-    out = os.path.join(out_dir, "cve_cleaned.parquet")
-    df.to_parquet(out, index=False)
-    print(f"  Saved {len(df)} CVE records → {out}")
-
-
 def run_mitre():
     print("=== MITRE ===")
     techniques = load_attack_techniques()
@@ -268,7 +249,6 @@ def run_et_rules():
 # ---------------------------------------------------------------------------
 
 SOURCE_MAP = {
-    "cve":      run_cve,
     "mitre":    run_mitre,
     "sigma":    run_sigma,
     "et_rules": run_et_rules,

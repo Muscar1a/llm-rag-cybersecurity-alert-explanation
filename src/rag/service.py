@@ -2,6 +2,8 @@ import json
 import re
 from langchain_core.callbacks import BaseCallbackHandler
 from .lc_chain import build_analyze_chain
+from .response_actions import ResponseActionEngine, detect_tactic, SEVERITY_RANK
+from .settings import settings
 
 
 def _get_llm_metrics():
@@ -76,16 +78,51 @@ def _doc_to_chunk(doc) -> dict:
     }
 
 
+_engine = ResponseActionEngine()
+
+
 class RagService:
+    def _build_remediation(
+        self,
+        parsed: dict,
+        raw_docs: list,
+        metadata: dict | None,
+        auto_response: bool | None,
+    ) -> tuple[list[dict], bool, list[str]]:
+        meta = metadata or {}
+        tactic = detect_tactic(
+            meta.get("label_tactic"),
+            raw_docs,
+            parsed,
+        )
+        commands = _engine.generate(
+            severity=parsed["severity"],
+            tactic=tactic,
+            metadata=meta,
+        )
+
+        enabled = auto_response if auto_response is not None else settings.auto_response_enabled
+        sev_rank = SEVERITY_RANK.get(parsed["severity"], 0)
+        threshold_rank = SEVERITY_RANK.get(settings.auto_response_severity_threshold, 0)
+
+        auto_triggered = False
+        auto_log: list[str] = []
+        if enabled and sev_rank >= threshold_rank:
+            auto_log = _engine.execute(commands, mode=settings.auto_response_mode)
+            auto_triggered = bool(auto_log)
+
+        return commands, auto_triggered, auto_log
+
     def stream_analyze(
         self,
         alert_text: str,
         k: int = 5,
-        source: str | None = None,
         template_name: str = "basic",
+        metadata: dict | None = None,
+        auto_response: bool | None = None,
     ):
         """Generator yielding SSE-style dicts: contexts → tokens → done."""
-        chain = build_analyze_chain(source=source, k=k, template_name=template_name)
+        chain = build_analyze_chain(k=k, template_name=template_name)
 
         raw_docs = []
         contexts_sent = False
@@ -103,18 +140,28 @@ class RagService:
                 full_answer += chunk["answer"]
                 yield {"type": "token", "token": chunk["answer"]}
 
-        yield {"type": "done", **_parse_output(full_answer)}
-
+        parsed = _parse_output(full_answer)
+        commands, auto_triggered, auto_log = self._build_remediation(
+            parsed, raw_docs, metadata, auto_response,
+        )
+        yield {
+            "type": "done",
+            **parsed,
+            "remediation_commands": commands,
+            "auto_response_triggered": auto_triggered,
+            "auto_response_log": auto_log,
+        }
 
     def analyze(
         self,
         alert_text: str,
         k: int = 5,
-        source: str | None = None,
         template_name: str = "basic",
+        metadata: dict | None = None,
+        auto_response: bool | None = None,
     ) -> dict:
         cb = _OllamaMetaCB()
-        chain = build_analyze_chain(source=source, k=k, template_name=template_name)
+        chain = build_analyze_chain(k=k, template_name=template_name)
         result = chain.invoke({"input": alert_text}, config={"callbacks": [cb]})
 
         # Record LLM speed metrics from Ollama response metadata
@@ -127,8 +174,15 @@ class RagService:
             tok_counter.inc(eval_count)
 
         raw_docs = result.get("context", [])
+        parsed = _parse_output(result["answer"])
+        commands, auto_triggered, auto_log = self._build_remediation(
+            parsed, raw_docs, metadata, auto_response,
+        )
         return {
-            **_parse_output(result["answer"]),
+            **parsed,
+            "remediation_commands":    commands,
+            "auto_response_triggered": auto_triggered,
+            "auto_response_log":       auto_log,
             "retrieved_context_ids":   [
                 doc.metadata.get("chunk_id") or doc.metadata.get("_id", "")
                 for doc in raw_docs

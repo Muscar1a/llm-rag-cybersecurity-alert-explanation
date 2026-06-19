@@ -23,7 +23,7 @@ import torch
 import yaml
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
-    Distance, VectorParams, PointStruct,
+    PointStruct,
     Filter, FieldCondition, MatchValue, FilterSelector,
 )
 from sentence_transformers import SentenceTransformer
@@ -108,13 +108,8 @@ def warn_truncation(model: SentenceTransformer, entries: list[dict], texts: list
 
 
 def ensure_collection(client: QdrantClient) -> None:
-    existing = [c.name for c in client.get_collections().collections]
-    if COLLECTION not in existing:
-        client.create_collection(
-            collection_name=COLLECTION,
-            vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
-        )
-        print(f"[+] Created collection '{COLLECTION}'")
+    from src.rag.qdrant_store import ensure_collection as _ensure
+    _ensure(client, VECTOR_SIZE)
 
 
 def delete_kb_group(client: QdrantClient, kb_type: str) -> None:

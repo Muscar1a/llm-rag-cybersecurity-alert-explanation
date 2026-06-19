@@ -9,9 +9,8 @@ class Settings(BaseSettings):
     qdrant_https: bool = False
     qdrant_api_key: str | None = None
     qdrant_collection: str = "cyber_chunks"
-    qdrant_timeout: int = 69
-    
-    # embedding_model: str = "intfloat/e5-small-v2"
+    qdrant_timeout: int = 60
+
     embedding_model: str = "BAAI/bge-base-en-v1.5"
     
     ollama_host: str = "http://localhost:11434"
@@ -23,6 +22,11 @@ class Settings(BaseSettings):
     
     # Hugging Face Token for API access
     hf_token: str | None = None
+
+    # Auto-response
+    auto_response_enabled: bool = False
+    auto_response_mode: str = "dry_run"
+    auto_response_severity_threshold: str = "Critical"
     
     model_config = SettingsConfigDict(
         env_file=".env",

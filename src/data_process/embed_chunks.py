@@ -8,7 +8,7 @@ from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 import numpy as np
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue, FilterSelector
+from qdrant_client.models import PointStruct, Filter, FieldCondition, MatchValue, FilterSelector
 
 import yaml
 
@@ -50,13 +50,8 @@ def load_chunks(parquet_path: Path) -> pd.DataFrame:
 
 
 def ensure_collection(client: QdrantClient) -> None:
-    existing = [c.name for c in client.get_collections().collections]
-    if COLLECTION not in existing:
-        client.create_collection(
-            collection_name=COLLECTION,
-            vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
-        )
-        print(f"[+] Created collection '{COLLECTION}'")
+    from src.rag.qdrant_store import ensure_collection as _ensure
+    _ensure(client, VECTOR_SIZE)
 
 
 def _build_points(df: pd.DataFrame, embeddings: np.ndarray) -> list[PointStruct]:
@@ -125,7 +120,6 @@ def embed_and_upsert(source: str, chunks_path: Path, model: SentenceTransformer,
     print(f"[{source.upper()}] {len(df)} chunks loaded.")
 
     print(f"[{source.upper()}] Encoding...")
-    # texts = [f"passage: {t}" for t in df["text"].tolist()]
     texts = df["text"].tolist()
     embeddings = model.encode(
         texts,

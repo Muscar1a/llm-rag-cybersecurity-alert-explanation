@@ -83,6 +83,55 @@ def _render_contexts(contexts: list, container):
                     st.caption(f"{mk}: {mv}")
 
 
+RISK_COLOR = {"low": "#16a34a", "medium": "#d97706", "high": "#dc2626"}
+
+
+def _render_remediation(res: dict, container):
+    commands = res.get("remediation_commands", [])
+    if not commands:
+        return
+    with container:
+        if res.get("auto_response_triggered"):
+            st.markdown(
+                '<div style="background:#dc2626;color:white;padding:10px 16px;'
+                'border-radius:8px;font-weight:700;margin-bottom:12px">'
+                '⚡ AUTO-RESPONSE TRIGGERED</div>',
+                unsafe_allow_html=True,
+            )
+            for log_line in res.get("auto_response_log", []):
+                st.caption(log_line)
+
+        st.subheader("Remediation Commands")
+        for cmd in commands:
+            risk_bg = RISK_COLOR.get(cmd.get("risk", "low"), "#6b7280")
+            auto_badge = (
+                ' <span style="background:#2563eb;color:white;padding:1px 8px;'
+                'border-radius:8px;font-size:0.72rem">Auto-executable</span>'
+                if cmd.get("auto_executable") else ""
+            )
+            status = cmd.get("execution_status")
+            status_badge = ""
+            if status:
+                s_color = {"success": "#16a34a", "dry_run": "#2563eb", "failed": "#dc2626"}
+                status_badge = (
+                    f' <span style="background:{s_color.get(status, "#6b7280")};color:white;'
+                    f'padding:1px 8px;border-radius:8px;font-size:0.72rem">{status}</span>'
+                )
+
+            header = (
+                f'<span style="background:{risk_bg};color:white;padding:1px 8px;'
+                f'border-radius:8px;font-size:0.72rem">risk: {cmd.get("risk","low")}</span>'
+                f'{auto_badge}{status_badge}'
+            )
+
+            with st.expander(cmd.get("description", "Command")):
+                st.markdown(header, unsafe_allow_html=True)
+                st.code(cmd.get("command", ""), language="bash")
+                if cmd.get("undo_command"):
+                    st.caption("Undo:")
+                    st.code(cmd["undo_command"], language="bash")
+
+
 def _render_result(res: dict, container):
     with container:
         st.markdown(_severity_badge(res.get("severity", "Unknown")), unsafe_allow_html=True)
@@ -95,6 +144,7 @@ def _render_result(res: dict, container):
             st.subheader("Mitigation Steps")
             for idx, step in enumerate(steps, 1):
                 st.markdown(f"**{idx}.** {step}")
+        _render_remediation(res, container)
 
 
 def _parse_upload(content: str, filename: str) -> list[str]:
@@ -139,6 +189,16 @@ def _render_batch_entry(i: int, entry: dict):
         with st.expander(f"Alert #{i + 1} — ⚠️ Error", expanded=False):
             st.error(entry["error"])
 
+
+# ── Sidebar — metadata & auto-response ────────────────────────────────────────
+with st.sidebar:
+    st.header("Alert Metadata")
+    meta_src_ip = st.text_input("Source IP", placeholder="e.g. 192.168.1.100")
+    meta_dest_ip = st.text_input("Destination IP", placeholder="e.g. 10.0.0.5")
+    meta_dest_port = st.number_input("Destination Port", min_value=0, max_value=65535, value=0, step=1)
+    st.divider()
+    st.header("Auto-Response")
+    auto_response_on = st.toggle("Enable auto-response", value=False)
 
 # ── Header ───────────────────────────────────────────────────────────────────
 st.title("🛡️ Cyber Threat Analyzer")
@@ -271,7 +331,19 @@ if is_running and _pending_alert.strip():
     result_box   = left.empty()
     contexts_box = right.empty()
 
-    payload = {"alert_text": _pending_alert, "k": _pending_k}
+    _meta = {}
+    if meta_src_ip.strip():
+        _meta["src_ip"] = meta_src_ip.strip()
+    if meta_dest_ip.strip():
+        _meta["dest_ip"] = meta_dest_ip.strip()
+    if meta_dest_port > 0:
+        _meta["dest_port"] = meta_dest_port
+    payload = {
+        "alert_text": _pending_alert,
+        "k": _pending_k,
+        "metadata": _meta or None,
+        "auto_response": auto_response_on,
+    }
 
     try:
         streamed_text = ""
@@ -322,11 +394,24 @@ if is_running and _pending_batch:
     n = len(_pending_batch)
     progress = st.progress(0, text=f"Analyzing 0 / {n}…")
 
+    _bmeta = {}
+    if meta_src_ip.strip():
+        _bmeta["src_ip"] = meta_src_ip.strip()
+    if meta_dest_ip.strip():
+        _bmeta["dest_ip"] = meta_dest_ip.strip()
+    if meta_dest_port > 0:
+        _bmeta["dest_port"] = meta_dest_port
+
     for i, alert in enumerate(_pending_batch):
         try:
             resp = requests.post(
                 f"{API_URL}/analyze",
-                json={"alert_text": alert, "k": _pending_k},
+                json={
+                    "alert_text": alert,
+                    "k": _pending_k,
+                    "metadata": _bmeta or None,
+                    "auto_response": auto_response_on,
+                },
                 timeout=300,
             )
             resp.raise_for_status()

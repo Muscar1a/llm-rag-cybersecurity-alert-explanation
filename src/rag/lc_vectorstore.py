@@ -14,6 +14,7 @@ from .settings import settings
 
 _PORT_RE  = re.compile(r'\bport (\d+)\b')
 _STATE_RE = re.compile(r'\bConnection state (\w+)[:\s]')
+_CAT_RE   = re.compile(r'Suricata alert: .+?\(severity \d+, (.+?)\)\.')
 
 SOURCE = "kb_v2"
 
@@ -88,8 +89,10 @@ class KBRetriever(BaseRetriever):
     ) -> list[Document]:
         port_m  = _PORT_RE.search(query)
         state_m = _STATE_RE.search(query)
+        cat_m   = _CAT_RE.search(query)
         dest_port  = int(port_m.group(1))  if port_m  else None
         conn_state = state_m.group(1)       if state_m else None
+        category   = cat_m.group(1)         if cat_m   else None
 
         docs: list[Document] = []
         seen: set[str] = set()
@@ -112,6 +115,12 @@ class KBRetriever(BaseRetriever):
             ]):
                 add(d)
 
+        if category:
+            for d in self._exact_fetch("suricata_category", [
+                FieldCondition(key="category", match=MatchValue(value=category))
+            ]):
+                add(d)
+
         for d in self._semantic_fetch(query, "traffic_pattern"):
             add(d)
 
@@ -129,7 +138,7 @@ class KBRetriever(BaseRetriever):
         return [d for _, d in ranked]
 
 
-def build_retriever(source: str | None = None, k: int = 5) -> BaseRetriever:
+def build_retriever(k: int = 5) -> BaseRetriever:
     client = build_client()
     vs = QdrantVectorStore(
         client=client,

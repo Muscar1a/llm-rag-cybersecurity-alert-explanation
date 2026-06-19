@@ -1,6 +1,5 @@
-import json 
+import json
 import os
-from pathlib import Path
 
 
 def load_attack_techniques() -> list[dict]:

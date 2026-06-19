@@ -9,7 +9,6 @@ from .settings import settings
 
 
 def build_analyze_chain(
-    source: str | None = None,
     k: int = 5,
     template_name: str = "basic",
 ):
@@ -42,4 +41,4 @@ def build_analyze_chain(
         document_separator=DOCUMENT_SEPARATOR,
     )
 
-    return create_retrieval_chain(build_retriever(source=source, k=k), qa_chain)
+    return create_retrieval_chain(build_retriever(k=k), qa_chain)

@@ -73,20 +73,25 @@ def version():
 
 @app.post("/analyze", response_model=AnalyzeResponse)
 def analyze(request: AnalyzeRequest):
+    meta = request.metadata.model_dump() if request.metadata else None
     return rag.analyze(
         alert_text=request.alert_text,
         k=request.k,
-        source=request.source,
+        metadata=meta,
+        auto_response=request.auto_response,
     )
 
 
 @app.post("/analyze/stream")
 def analyze_stream(request: AnalyzeRequest):
+    meta = request.metadata.model_dump() if request.metadata else None
+
     def generate():
         for event in rag.stream_analyze(
             alert_text=request.alert_text,
             k=request.k,
-            source=request.source,
+            metadata=meta,
+            auto_response=request.auto_response,
         ):
             yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
