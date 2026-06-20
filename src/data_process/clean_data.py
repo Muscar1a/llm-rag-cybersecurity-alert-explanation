@@ -3,15 +3,13 @@ import json
 import os
 import glob
 import re
-import sys
 import pandas as pd
 import yaml
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 os.chdir(PROJECT_ROOT)
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from parse_attck import load_attack_techniques
+from src.data_process.parse_attck import load_attack_techniques
 
 SIGMA_CATEGORIES = ["network"]
 

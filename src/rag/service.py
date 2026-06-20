@@ -1,14 +1,9 @@
 import json
 import re
-import sys
 from langchain_core.callbacks import BaseCallbackHandler
 from .lc_chain import build_analyze_chain
 from .response_actions import ResponseActionEngine, detect_tactic, SEVERITY_RANK
 from .settings import settings
-from pathlib import Path
-project_root = Path(__file__).resolve().parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
 
 def _get_llm_metrics():
     try:

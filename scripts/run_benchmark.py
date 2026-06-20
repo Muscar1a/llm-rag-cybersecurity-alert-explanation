@@ -7,10 +7,6 @@ from pathlib import Path
 
 import yaml
 
-project_root = Path(__file__).resolve().parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-
 from src.rag.service import RagService
 from src.mlops.tracking import log_rag_experiment, register_rag_pipeline
 from tests.eval.eval_latency import evaluate_latency

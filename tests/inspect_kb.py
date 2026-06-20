@@ -10,13 +10,7 @@ Chạy:
 """
 
 import argparse
-import sys
-from pathlib import Path
 from collections import Counter
-
-project_root = Path(__file__).resolve().parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue

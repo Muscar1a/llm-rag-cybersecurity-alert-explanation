@@ -18,11 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
-project_root = Path(__file__).resolve().parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-
-DEFAULT_INPUT_DIR = project_root / "data" / "test_data" / "uwf-zeekdata24"
+DEFAULT_INPUT_DIR = Path("data") / "test_data" / "uwf-zeekdata24"
 DEFAULT_OUT       = Path(__file__).parent / "zeek_rows.json"
 
 _SKIP_TECHNIQUES = {"Duplicate", "duplicate", ""}

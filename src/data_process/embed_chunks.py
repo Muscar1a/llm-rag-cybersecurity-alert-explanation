@@ -1,6 +1,5 @@
 import argparse
 import json
-import sys
 import uuid
 from pathlib import Path
 import pandas as pd
@@ -11,10 +10,6 @@ import numpy as np
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct, Filter, FieldCondition, MatchValue, FilterSelector
 
-project_root = Path(__file__).resolve().parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-    
 from src.rag.qdrant_store import ensure_collection as _ensure
     
 import yaml

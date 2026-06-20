@@ -1,17 +1,11 @@
 import json
-import sys
 from collections import defaultdict
 from pathlib import Path
-
-# Add root to sys.path to import src
-project_root = Path(__file__).resolve().parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
 
 from src.rag.lc_vectorstore import get_vectorstore
 
 def main():
-    gt_file = project_root / "baselines" / "ground_truth.json"
+    gt_file = Path("baselines") / "ground_truth.json"
     if not gt_file.exists():
         print(f"Error: Not found {gt_file}")
         return

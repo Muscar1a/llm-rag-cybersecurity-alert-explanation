@@ -1,10 +1,6 @@
 import glob
-import sys
 import pandas as pd
-from pathlib import Path
-project_root = Path(__file__).resolve().parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+
 from src.monitoring.baseline import PortBaseline
 
 CSV_DIR = "data/raw/cse-cic-ids2018"

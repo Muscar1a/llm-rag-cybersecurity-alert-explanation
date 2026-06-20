@@ -1,13 +1,7 @@
 from functools import lru_cache
-import sys
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
-from pathlib import Path
 
-project_root = Path(__file__).resolve().parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
-    
 @lru_cache(maxsize=1)
 def get_judge_llm():
     from src.rag.settings import settings
