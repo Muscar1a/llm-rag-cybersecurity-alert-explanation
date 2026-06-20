@@ -30,7 +30,7 @@ class _OllamaMetaCB(BaseCallbackHandler):
 
 
 def _extract_json(text: str) -> str:
-    text = text.strip()
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
     if text.startswith("{") and text.endswith("}"):
         return text
     if m := re.search(r"<answer>\s*(\{.*?\})\s*</answer>", text, re.DOTALL):

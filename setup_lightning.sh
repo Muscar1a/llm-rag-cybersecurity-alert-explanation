@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-OLLAMA_MODEL="qwen2.5:7b-instruct-q4_K_M"
+OLLAMA_MODEL="deepseek-r1:14b"
 QDRANT_STORAGE="/tmp/qdrant_data"
 
 echo "=== [1/4] Installing Qdrant ==="

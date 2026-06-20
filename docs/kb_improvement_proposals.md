@@ -227,19 +227,111 @@ Không overfit về kiến trúc, nhưng (a) thêm LLM call có thể bịa sai 
 - **VĐ2 (T1078/T1190/T1595):** chunk ngoài top-50 MITRE-only → **embedding hỏng thật** → cần hybrid/đổi embedding.
 - N3/H2 vẫn KHÔNG đẩy lên: H2 overfit MEDIUM; N3 chỉ 60 sigma points.
 
+---
+
+## N5 — Signature profiles (Suricata alert → KB bridge)
+
+### Bối cảnh
+
+Kiến trúc đã chuyển từ Zeek-only sang **Suricata + Zeek telemetry**. Alert text giờ bắt đầu bằng `"Suricata alert: {signature} (severity {sev}, {category})."` — nhưng retriever không có cơ chế khai thác thông tin này. Signature name chứa intent keywords ("SCAN", "Exploitation", "Probe") mà port/conn_state không có → **cầu nối tự nhiên giữa wire observables và MITRE tactics**.
+
+### Mục tiêu
+
+Thêm `signature_profiles.jsonl` làm KB source thứ 5, lookup bằng regex (deterministic, như port/conn_state). Mỗi entry mô tả signature detect gì, hành vi nào trigger, và **associated MITRE tactics** — giải quyết trực tiếp VĐ2 (tactic retrieval gap) bằng structured bridge thay vì semantic search.
+
+### Overfit risk: LOW
+
+- Signature descriptions dựa trên ET Open ruleset conventions, không hand-craft theo eval set
+- Tactic associations là kiến thức an ninh mạng chuẩn (SCAN → Reconnaissance, SMB Exploitation → Defense_Evasion/Credential_Access)
+- Deterministic lookup (regex) — không tune threshold hay scoring
+
+### Plan
+
+#### Step 1 — Tạo `data/kb/signature_profile/signature_profiles.jsonl`
+
+23 entries (1 per unique signature) + 1 fallback template. Format:
+
+```jsonl
+{
+  "id": "sig_scan_possible_smb_probe",
+  "document": "Suricata rule 'ET SCAN Possible SMB Connection Probe' fires when a TCP SYN is sent to port 445/SMB but no SYN-ACK is received (conn_state S0). This pattern is consistent with port scanning or host discovery targeting the SMB service. Associated MITRE tactics: Reconnaissance (T1595 — Active Scanning), Discovery. Common false positives: firewall blocking legitimate SMB, transient network issues. Severity guidance: medium — investigate if source IP repeats across multiple targets.",
+  "metadata": {
+    "source": "kb_v2",
+    "kb_type": "signature_profile",
+    "signature": "ET SCAN Possible SMB Connection Probe",
+    "category": "Attempted Information Leak",
+    "associated_tactics": ["reconnaissance", "discovery"]
+  }
+}
+```
+
+Nội dung mỗi entry gồm 5 phần:
+1. **Trigger condition** — hành vi mạng nào kích rule
+2. **Security meaning** — pattern này có ý nghĩa gì trong threat landscape
+3. **Associated MITRE tactics** — danh sách tactics liên quan (structured bridge)
+4. **Common false positives** — khi nào alert là noise
+5. **Severity guidance** — mức độ ưu tiên xử lý
+
+#### Step 2 — Cập nhật retriever (`lc_vectorstore.py`)
+
+Thêm regex + exact fetch:
+
+```python
+_SIG_RE = re.compile(r'Suricata alert: (.+?) \(severity')
+```
+
+Trong `KBRetriever._get_relevant_documents()`, thêm signature lookup trước semantic search:
+
+```python
+sig_m = _SIG_RE.search(query)
+if sig_m:
+    sig_name = sig_m.group(1)
+    for d in self._exact_fetch("signature_profile", [
+        FieldCondition(key="signature", match=MatchValue(value=sig_name))
+    ]):
+        add(d)
+```
+
+#### Step 3 — Upload lên Qdrant
+
+Dùng pipeline hiện có (`embed_chunks.py` hoặc script upload riêng) để index signature_profiles vào collection `cyber_chunks` với `metadata.source = "kb_v2"`.
+
+#### Step 4 — Cập nhật ground truth prompt
+
+Thêm SIGNATURE_KB vào `prompt_ground_truth.md` Part 1 (KB lookups):
+- Extract signature name từ `alert_text`
+- Lookup trong `signature_profiles.jsonl`
+- Thêm vào reference (sentence 3 giờ cite từ KB thay vì tự suy)
+
+### Tác động kỳ vọng
+
+| Metric | Trước | Kỳ vọng |
+|---|---|---|
+| Tactic retrieval | Semantic search thường miss (VĐ2) | Signature profile chứa associated_tactics → reranker có thêm tín hiệu |
+| Context recall | Thiếu IDS context | +1 relevant chunk per alert (signature description) |
+| Faithfulness | LLM thiếu grounding cho IDS analysis | Signature KB cung cấp grounding text |
+
+### Không giải quyết
+
+- Không thay thế semantic tactic search — bổ sung thêm tín hiệu
+- Không fix embedding quality (VĐ2 nhóm T1078/T1190) — cần H1 kèm theo
+- Fallback signature ("ET POLICY Unusual...") sẽ có entry chung, không specific
+
+---
+
 ## Thứ tự thực thi đề xuất (cập nhật sau kiểm chứng lần 2)
 
 ```
 1. [XONG] Sửa BalancedRetriever: dense per-source + round-robin, reranker chỉ
    sắp xếp → recall@5 0.000→0.210, Credential_Access 0→100% (vá VĐ1)
 2. [BÁC BỎ] N2 Hybrid BM25+RRF → net-negative (0.210→0.154, Cred 1.0→0.73).
-   Giả định "technique nằm thẳng trong alert" SAI; BM25 collapse về T1499 như dense
-3. [BÁC BỎ] N4 focused-query → nhích @20/@50 nhưng @5 (production) KHÔNG đổi (0.210).
-   Lộ "trần tín hiệu": behavioral-hint thường lệch nhãn technique (T1190 = "normal flow")
-4. H1 Embedding upgrade (gte/e5)          (zero-overfit) — lever zero-overfit cuối cho VĐ2
-   → đo lại recall@k per-tactic (per-source). Kỳ vọng: kéo tín hiệu yếu (Exfil) lên @5,
-     KHÔNG cứu nhóm thiếu tín hiệu (T1190)
-5. Sửa measure_recall_k.py → đo per-source; Dedup MITRE = vệ sinh, ưu tiên thấp
-6. Chỉ khi trên vẫn thiếu → N3; TUYỆT ĐỐI tránh H2 viết tay; H3 (HyDE) để cuối
-— Lưu ý: VĐ2 bị giới hạn bởi TÍN HIỆU trong alert_text (đã chứng minh qua N4); ép quá tay = overfit
+3. [BÁC BỎ] N4 focused-query → @5 KHÔNG đổi (0.210).
+4. [TIẾP THEO] N5 Signature profiles — thêm KB source thứ 5: Suricata signature
+   → regex lookup, mỗi entry chứa associated_tactics (structured tactic bridge)
+   → kỳ vọng: +1 relevant chunk/alert, cải thiện context_recall & tactic grounding
+5. H1 Embedding upgrade (gte/e5) — lever zero-overfit cho VĐ2
+6. Sửa measure_recall_k.py → đo per-source; Dedup MITRE = vệ sinh, ưu tiên thấp
+7. Chỉ khi trên vẫn thiếu → N3; TUYỆT ĐỐI tránh H2 viết tay; H3 (HyDE) để cuối
+— Lưu ý: VĐ2 bị giới hạn bởi TÍN HIỆU trong alert_text; N5 bổ sung tín hiệu
+   structured (tactic association) thay vì ép semantic search
 ```

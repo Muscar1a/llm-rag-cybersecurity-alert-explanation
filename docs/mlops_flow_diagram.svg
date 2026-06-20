@@ -1,0 +1,196 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="620" font-family="Inter, Segoe UI, sans-serif">
+
+  <!-- Background -->
+  <rect width="960" height="620" fill="#f0f4f8" rx="12"/>
+
+  <!-- Title -->
+  <text x="480" y="38" text-anchor="middle" font-size="18" font-weight="700" fill="#1a1a2e">MLOps Workflow — Cyber RAG System</text>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- LANE LABELS -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <!-- Lane: Config -->
+  <rect x="16" y="58" width="130" height="68" fill="#dbe4ff" rx="8" opacity="0.7"/>
+  <text x="81" y="79" text-anchor="middle" font-size="11" font-weight="700" fill="#3b5bdb">CONFIG</text>
+  <text x="81" y="96" text-anchor="middle" font-size="10" fill="#4263eb">params.yaml</text>
+  <text x="81" y="110" text-anchor="middle" font-size="10" fill="#4263eb">DVC tracked</text>
+
+  <!-- Lane: Experiment -->
+  <rect x="16" y="138" width="130" height="68" fill="#d3f9d8" rx="8" opacity="0.7"/>
+  <text x="81" y="159" text-anchor="middle" font-size="11" font-weight="700" fill="#2f9e44">EXPERIMENT</text>
+  <text x="81" y="176" text-anchor="middle" font-size="10" fill="#40c057">run_benchmark.py</text>
+  <text x="81" y="190" text-anchor="middle" font-size="10" fill="#40c057">3 templates</text>
+
+  <!-- Lane: Tracking -->
+  <rect x="16" y="218" width="130" height="68" fill="#fff3bf" rx="8" opacity="0.7"/>
+  <text x="81" y="239" text-anchor="middle" font-size="11" font-weight="700" fill="#e67700">TRACKING</text>
+  <text x="81" y="256" text-anchor="middle" font-size="10" fill="#f08c00">MLflow</text>
+  <text x="81" y="270" text-anchor="middle" font-size="10" fill="#f08c00">port 5000</text>
+
+  <!-- Lane: Serving -->
+  <rect x="16" y="298" width="130" height="68" fill="#ffe8cc" rx="8" opacity="0.7"/>
+  <text x="81" y="319" text-anchor="middle" font-size="11" font-weight="700" fill="#d9480f">SERVING</text>
+  <text x="81" y="336" text-anchor="middle" font-size="10" fill="#e8590c">FastAPI</text>
+  <text x="81" y="350" text-anchor="middle" font-size="10" fill="#e8590c">port 8000</text>
+
+  <!-- Lane: Monitoring -->
+  <rect x="16" y="378" width="130" height="68" fill="#fce4ec" rx="8" opacity="0.7"/>
+  <text x="81" y="399" text-anchor="middle" font-size="11" font-weight="700" fill="#c2255c">MONITORING</text>
+  <text x="81" y="416" text-anchor="middle" font-size="10" fill="#e64980">Prometheus / Grafana</text>
+  <text x="81" y="430" text-anchor="middle" font-size="10" fill="#e64980">port 9090 / 3000</text>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- NODES -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <!-- params.yaml -->
+  <rect x="170" y="62" width="130" height="56" fill="#4263eb" rx="8"/>
+  <text x="235" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="white">params.yaml</text>
+  <text x="235" y="103" text-anchor="middle" font-size="10" fill="#bac8ff">embedding · llm · retrieval</text>
+
+  <!-- ground_truth.json -->
+  <rect x="340" y="62" width="140" height="56" fill="#4263eb" rx="8"/>
+  <text x="410" y="83" text-anchor="middle" font-size="13" font-weight="700" fill="white">ground_truth</text>
+  <text x="410" y="100" text-anchor="middle" font-size="10" fill="#bac8ff">.json  ·  DVC versioned</text>
+
+  <!-- Qdrant KB -->
+  <rect x="520" y="62" width="130" height="56" fill="#4263eb" rx="8"/>
+  <text x="585" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="white">Qdrant KB</text>
+  <text x="585" y="103" text-anchor="middle" font-size="10" fill="#bac8ff">kb_v2  ·  port 6333</text>
+
+  <!-- run_benchmark.py -->
+  <rect x="170" y="148" width="150" height="56" fill="#2f9e44" rx="8"/>
+  <text x="245" y="172" text-anchor="middle" font-size="13" font-weight="700" fill="white">run_benchmark.py</text>
+  <text x="245" y="189" text-anchor="middle" font-size="10" fill="#b2f2bb">--samples 135  --version v1</text>
+
+  <!-- Pass 1: RAG Inference -->
+  <rect x="360" y="148" width="140" height="56" fill="#40c057" rx="8"/>
+  <text x="430" y="169" text-anchor="middle" font-size="12" font-weight="700" fill="white">Pass 1</text>
+  <text x="430" y="185" text-anchor="middle" font-size="10" fill="#d3f9d8">RAG Inference</text>
+  <text x="430" y="198" text-anchor="middle" font-size="9" fill="#d3f9d8">RagService.analyze()</text>
+
+  <!-- Pass 2: Evaluation -->
+  <rect x="540" y="148" width="140" height="56" fill="#40c057" rx="8"/>
+  <text x="610" y="169" text-anchor="middle" font-size="12" font-weight="700" fill="white">Pass 2</text>
+  <text x="610" y="185" text-anchor="middle" font-size="10" fill="#d3f9d8">Judge Evaluation</text>
+  <text x="610" y="198" text-anchor="middle" font-size="9" fill="#d3f9d8">recall · relevancy · halluc.</text>
+
+  <!-- checkpoint -->
+  <rect x="720" y="148" width="120" height="56" fill="#74c0fc" rx="8"/>
+  <text x="780" y="172" text-anchor="middle" font-size="12" font-weight="700" fill="#1a1a2e">Checkpoint</text>
+  <text x="780" y="189" text-anchor="middle" font-size="10" fill="#1a1a2e">results/checkpoints/</text>
+
+  <!-- MLflow log_experiment -->
+  <rect x="170" y="228" width="160" height="56" fill="#f08c00" rx="8"/>
+  <text x="250" y="249" text-anchor="middle" font-size="12" font-weight="700" fill="white">log_rag_experiment()</text>
+  <text x="250" y="266" text-anchor="middle" font-size="10" fill="#fff3bf">params · metrics · artifacts</text>
+
+  <!-- MLflow Model Registry -->
+  <rect x="370" y="228" width="150" height="56" fill="#f08c00" rx="8"/>
+  <text x="445" y="249" text-anchor="middle" font-size="12" font-weight="700" fill="white">Model Registry</text>
+  <text x="445" y="266" text-anchor="middle" font-size="10" fill="#fff3bf">RAGPipeline  vN</text>
+
+  <!-- Comparison report -->
+  <rect x="560" y="228" width="150" height="56" fill="#e67700" rx="8"/>
+  <text x="635" y="249" text-anchor="middle" font-size="12" font-weight="700" fill="white">Comparison Report</text>
+  <text x="635" y="266" text-anchor="middle" font-size="10" fill="#fff3bf">comparison_v1.md / .json</text>
+
+  <!-- FastAPI -->
+  <rect x="170" y="308" width="130" height="56" fill="#e8590c" rx="8"/>
+  <text x="235" y="329" text-anchor="middle" font-size="13" font-weight="700" fill="white">FastAPI</text>
+  <text x="235" y="346" text-anchor="middle" font-size="10" fill="#ffe8cc">uvicorn  ·  /analyze</text>
+
+  <!-- Streamlit Demo -->
+  <rect x="340" y="308" width="130" height="56" fill="#e8590c" rx="8"/>
+  <text x="405" y="329" text-anchor="middle" font-size="13" font-weight="700" fill="white">Streamlit Demo</text>
+  <text x="405" y="346" text-anchor="middle" font-size="10" fill="#ffe8cc">demo/app.py  ·  port 8501</text>
+
+  <!-- Prometheus -->
+  <rect x="170" y="388" width="130" height="56" fill="#e64980" rx="8"/>
+  <text x="235" y="409" text-anchor="middle" font-size="13" font-weight="700" fill="white">Prometheus</text>
+  <text x="235" y="426" text-anchor="middle" font-size="10" fill="#fce4ec">scrape /metrics  ·  9090</text>
+
+  <!-- Grafana -->
+  <rect x="340" y="388" width="130" height="56" fill="#c2255c" rx="8"/>
+  <text x="405" y="409" text-anchor="middle" font-size="13" font-weight="700" fill="white">Grafana</text>
+  <text x="405" y="426" text-anchor="middle" font-size="10" fill="#fce4ec">Dashboard  ·  port 3000</text>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- ARROWS -->
+  <!-- ═══════════════════════════════════════════ -->
+
+  <!-- params.yaml → run_benchmark -->
+  <line x1="235" y1="118" x2="235" y2="148" stroke="#4263eb" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- ground_truth → run_benchmark (diagonal) -->
+  <line x1="380" y1="118" x2="280" y2="148" stroke="#4263eb" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Qdrant KB → Pass 1 (diagonal) -->
+  <line x1="555" y1="118" x2="480" y2="148" stroke="#4263eb" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- run_benchmark → Pass 1 -->
+  <line x1="320" y1="176" x2="360" y2="176" stroke="#2f9e44" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Pass 1 → Pass 2 -->
+  <line x1="500" y1="176" x2="540" y2="176" stroke="#40c057" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Pass 2 → checkpoint -->
+  <line x1="680" y1="176" x2="720" y2="176" stroke="#74c0fc" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Pass 2 → log_experiment -->
+  <path d="M 610 204 Q 610 220 250 228" fill="none" stroke="#f08c00" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- log_experiment → Model Registry -->
+  <line x1="330" y1="256" x2="370" y2="256" stroke="#f08c00" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- run_benchmark → Comparison Report -->
+  <path d="M 245 204 Q 245 215 635 228" fill="none" stroke="#e67700" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr2)"/>
+
+  <!-- FastAPI → Prometheus -->
+  <line x1="235" y1="364" x2="235" y2="388" stroke="#e64980" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Prometheus → Grafana -->
+  <line x1="300" y1="416" x2="340" y2="416" stroke="#c2255c" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- FastAPI → Streamlit -->
+  <line x1="300" y1="336" x2="340" y2="336" stroke="#e8590c" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- LEGEND -->
+  <!-- ═══════════════════════════════════════════ -->
+  <rect x="170" y="480" width="690" height="120" fill="white" rx="8" stroke="#dee2e6" stroke-width="1"/>
+  <text x="515" y="502" text-anchor="middle" font-size="12" font-weight="700" fill="#495057">Legend</text>
+
+  <circle cx="195" cy="522" r="6" fill="#4263eb"/>
+  <text x="208" y="526" font-size="11" fill="#495057">Config / Data (DVC)</text>
+
+  <circle cx="195" cy="544" r="6" fill="#40c057"/>
+  <text x="208" y="548" font-size="11" fill="#495057">Benchmark pipeline</text>
+
+  <circle cx="195" cy="566" r="6" fill="#f08c00"/>
+  <text x="208" y="570" font-size="11" fill="#495057">MLflow tracking</text>
+
+  <circle cx="350" cy="522" r="6" fill="#e8590c"/>
+  <text x="363" y="526" font-size="11" fill="#495057">API serving</text>
+
+  <circle cx="350" cy="544" r="6" fill="#e64980"/>
+  <text x="363" y="548" font-size="11" fill="#495057">Monitoring</text>
+
+  <line x1="480" y1="522" x2="510" y2="522" stroke="#555" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="518" y="526" font-size="11" fill="#495057">Data / control flow</text>
+
+  <line x1="480" y1="544" x2="510" y2="544" stroke="#aaa" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr2)"/>
+  <text x="518" y="548" font-size="11" fill="#495057">Output artifact</text>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#444"/>
+    </marker>
+    <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#aaa"/>
+    </marker>
+  </defs>
+
+</svg>

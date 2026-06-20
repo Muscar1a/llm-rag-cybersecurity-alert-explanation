@@ -16,9 +16,12 @@ from src.mlops.tracking import log_rag_experiment, register_rag_pipeline
 from tests.eval.eval_latency import evaluate_latency
 from tests.eval.eval_retrieval import evaluate_retrieval
 from tests.eval.eval_generation import evaluate_generation
+from tests.eval.eval_remediation import evaluate_remediation
 
 DEFAULT_TEMPLATES = ["basic", "cot", "few_shot"]
 GROUND_TRUTH_FILE = project_root / "baselines" / "ground_truth.json"
+ALERTS_FILE = project_root / "tests" / "alerts.json"
+REMEDIATION_GT_FILE = project_root / "baselines" / "remediation_gt.json"
 RESULTS_DIR = project_root / "results"
 PARAMS_FILE = project_root / "params.yaml"
 
@@ -59,6 +62,8 @@ def run_template(
     retrieval_k: int,
     version: str,
     reset: bool,
+    alerts_by_id: dict | None = None,
+    rem_gt_by_id: dict | None = None,
 ) -> tuple[dict, Path, bool]:
     """Run benchmark for one template. Returns (summary, json_file, was_resumed_done)."""
     ckpt_dir = RESULTS_DIR / "checkpoints"
@@ -86,26 +91,45 @@ def run_template(
         print(f"\n  [Pass 1/2] RAG inference (template={template})")
         for i in range(state["next_idx"], len(sampled)):
             entry = sampled[i]
+            alert_id = entry.get("id")
             print(f"  [{template}] {i+1}/{len(sampled)} | Inference | {entry['label_tactic']} / {entry.get('label_technique', '')}")
+
+            metadata = None
+            if alerts_by_id and alert_id is not None:
+                alert_data = alerts_by_id.get(alert_id)
+                if alert_data:
+                    net = alert_data["network"]
+                    metadata = {
+                        "src_ip": net.get("src_ip"),
+                        "dest_ip": net.get("dest_ip"),
+                        "dest_port": net.get("dest_port"),
+                        "proto": net.get("proto"),
+                        "conn_state": net.get("conn_state"),
+                    }
+
             t0 = time.perf_counter()
             rag_out = rag_service.analyze(
-                alert_text=entry["user_input"],
+                alert_text=entry["alert_text"],
                 k=retrieval_k,
-                source=None,
                 template_name=template,
+                metadata=metadata,
             )
             latency = time.perf_counter() - t0
 
             output_text = rag_out.get("threat_description", "") + "\n" + rag_out.get("rationale", "")
 
             samples_data.append({
-                "alert_text": entry["user_input"],
+                "id": alert_id,
+                "alert_text": entry["alert_text"],
                 "label_tactic": entry["label_tactic"],
                 "label_technique": entry.get("label_technique", ""),
                 "output_text": output_text,
                 "retrieved_contexts": rag_out.get("retrieved_contexts_text", []),
                 "reference": entry["reference"],
                 "latency_s": round(latency, 3),
+                "gt_severity": entry.get("severity"),
+                "llm_severity": rag_out.get("severity", "Unknown"),
+                "remediation_commands": rag_out.get("remediation_commands", []),
             })
             state["next_idx"] = i + 1
             _save_ckpt(ckpt_file, state)
@@ -146,6 +170,15 @@ def run_template(
         "avg_hallucination_rate": nanmean("hallucination_rate"),
     }
 
+    # Severity + remediation evaluation
+    rem_summary = evaluate_remediation(samples_data, rem_gt_by_id or {})
+    summary["severity_accuracy"] = rem_summary.get("severity_accuracy")
+    summary["severity_correct"] = rem_summary.get("severity_correct")
+    summary["severity_total"] = rem_summary.get("severity_total")
+    summary["avg_cmd_recall"] = rem_summary.get("avg_cmd_recall")
+    summary["avg_cmd_precision"] = rem_summary.get("avg_cmd_precision")
+    summary["remediation_per_tactic"] = rem_summary.get("per_tactic")
+
     # Save final per-template JSON
     out_dir = RESULTS_DIR / template
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -160,6 +193,14 @@ def run_template(
     print(f"    Retrieval recall            : {summary['avg_context_recall']}")
     print(f"    Answer relevancy            : {summary['avg_answer_relevancy']}")
     print(f"    Hallucination rate          : {summary['avg_hallucination_rate']}")
+    sev_str = f"{rem_summary.get('severity_correct')}/{rem_summary.get('severity_total')}"
+    print(f"    Severity accuracy           : {summary['severity_accuracy']} ({sev_str})")
+    print(f"    Remediation cmd recall      : {summary['avg_cmd_recall']}")
+    print(f"    Remediation cmd precision   : {summary['avg_cmd_precision']}")
+    if rem_summary.get("per_tactic"):
+        print(f"    Per-tactic:")
+        for tactic, tm in rem_summary["per_tactic"].items():
+            print(f"      {tactic:25s} sev={tm['severity_accuracy']}  cmd_R={tm['cmd_recall']}  cmd_P={tm['cmd_precision']}  (n={tm['n']})")
     print(f"  JSON: {json_file}")
 
     return summary, json_file, already_done
@@ -171,6 +212,9 @@ COMPARISON_METRICS = [
     ("avg_context_recall",   "Retrieval Recall"),
     ("avg_answer_relevancy", "Answer Relevance"),
     ("avg_hallucination_rate", "Hallucination Rate"),
+    ("severity_accuracy",    "Severity Accuracy"),
+    ("avg_cmd_recall",       "Remediation Cmd Recall"),
+    ("avg_cmd_precision",    "Remediation Cmd Precision"),
 ]
 
 
@@ -234,6 +278,16 @@ def main():
     sampled = sample_balanced(gt_data, args.samples)
     print(f"Evaluating {len(sampled)} samples × {len(templates)} template(s): {templates}")
 
+    alerts_by_id = {}
+    if ALERTS_FILE.exists():
+        alerts_list = json.loads(ALERTS_FILE.read_text(encoding="utf-8"))
+        alerts_by_id = {a["id"]: a for a in alerts_list}
+
+    rem_gt_by_id = {}
+    if REMEDIATION_GT_FILE.exists():
+        rem_list = json.loads(REMEDIATION_GT_FILE.read_text(encoding="utf-8"))
+        rem_gt_by_id = {r["id"]: r for r in rem_list}
+
     rag_service = RagService()
     git_sha = get_git_sha()
 
@@ -258,6 +312,8 @@ def main():
             retrieval_k=retrieval_k,
             version=args.version,
             reset=args.reset,
+            alerts_by_id=alerts_by_id,
+            rem_gt_by_id=rem_gt_by_id,
         )
         all_summaries.append(summary)
 

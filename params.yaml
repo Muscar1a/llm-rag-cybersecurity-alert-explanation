@@ -11,6 +11,6 @@ retrieval:
   lambda_mult: 0.5
   score_threshold: 0.60
 llm:
-  model: "qwen2.5:7b-instruct-q4_K_M"
+  model: "deepseek-r1:14b"
   temperature: 0.1
   num_ctx: 5120

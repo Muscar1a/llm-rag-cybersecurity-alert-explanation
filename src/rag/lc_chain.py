@@ -12,7 +12,7 @@ def build_analyze_chain(
     k: int = 5,
     template_name: str = "basic",
 ):
-    model = settings.ollama_model or "qwen2.5:7b-instruct-q4_K_M"
+    model = settings.ollama_model or "deepseek-r1:14b"
     temperature = 0.1
     num_ctx = settings.ollama_num_ctx
     try:
