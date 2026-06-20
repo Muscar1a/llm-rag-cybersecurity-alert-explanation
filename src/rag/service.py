@@ -14,8 +14,8 @@ def _get_llm_metrics():
         return None, None
 
 
-class _OllamaMetaCB(BaseCallbackHandler):
-    """Captures Ollama response metadata (token counts, durations)."""
+class _LLMMetaCB(BaseCallbackHandler):
+    """Captures LLM response metadata (token counts, durations)."""
     def __init__(self):
         self.metadata = {}
 
@@ -160,18 +160,19 @@ class RagService:
         metadata: dict | None = None,
         auto_response: bool | None = None,
     ) -> dict:
-        cb = _OllamaMetaCB()
+        cb = _LLMMetaCB()
         chain = build_analyze_chain(k=k, template_name=template_name)
         result = chain.invoke({"input": alert_text}, config={"callbacks": [cb]})
 
-        # Record LLM speed metrics from Ollama response metadata
+        # Record LLM speed metrics from response metadata
         tok_hist, tok_counter = _get_llm_metrics()
-        eval_count = cb.metadata.get("eval_count", 0)
-        eval_duration_ns = cb.metadata.get("eval_duration", 0)
-        if tok_hist and eval_count and eval_duration_ns:
-            tokens_per_sec = eval_count / (eval_duration_ns / 1e9)
-            tok_hist.observe(tokens_per_sec)
-            tok_counter.inc(eval_count)
+        token_usage = cb.metadata.get("token_usage", {})
+        completion_tokens = token_usage.get("completion_tokens", 0)
+        if tok_hist and completion_tokens:
+            total_time = cb.metadata.get("total_duration", 0)
+            if total_time:
+                tok_hist.observe(completion_tokens / total_time)
+            tok_counter.inc(completion_tokens)
 
         raw_docs = result.get("context", [])
         parsed = _parse_output(result["answer"])

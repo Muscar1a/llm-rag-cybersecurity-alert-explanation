@@ -6,8 +6,6 @@ __pycache__/
 rag_security_plan.md
 .pytest_cache/
 .env
-data_minio/*
-data_minio/.minio.sys/*
 note.txt
 
 GUIDE_NEXT_STEPS.md

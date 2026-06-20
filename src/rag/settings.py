@@ -13,12 +13,12 @@ class Settings(BaseSettings):
 
     embedding_model: str = "BAAI/bge-base-en-v1.5"
     
-    ollama_host: str = "http://localhost:11434"
-    ollama_model: str | None = None
-    ollama_num_ctx: int = 5120
+    vllm_base_url: str = "http://localhost:8001/v1"
+    vllm_model: str | None = None
+    vllm_max_tokens: int = 4096
 
     deepseek_api_key: str | None = None
-    deepseek_model: str = "deepseek-chat"
+    deepseek_model: str = "deepseek-v4-flash"
     
     # Hugging Face Token for API access
     hf_token: str | None = None

@@ -2,7 +2,7 @@ import os
 import yaml
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from langchain_classic.chains import create_retrieval_chain
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from .lc_vectorstore import build_retriever
 from .lc_prompt import DOCUMENT_PROMPT, DOCUMENT_SEPARATOR, get_qa_prompt
 from .settings import settings
@@ -12,26 +12,26 @@ def build_analyze_chain(
     k: int = 5,
     template_name: str = "basic",
 ):
-    model = settings.ollama_model or "deepseek-r1:14b"
+    model = settings.vllm_model or "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
     temperature = 0.1
-    num_ctx = settings.ollama_num_ctx
+    max_tokens = settings.vllm_max_tokens
     try:
         if os.path.exists("params.yaml"):
             with open("params.yaml", "r", encoding="utf-8") as f:
                 p = yaml.safe_load(f)
             llm_p = p.get("llm", {})
-            if not settings.ollama_model:
+            if not settings.vllm_model:
                 model = llm_p.get("model", model)
             temperature = llm_p.get("temperature", temperature)
-            num_ctx = llm_p.get("num_ctx", num_ctx)
     except Exception:
         pass
 
-    llm = ChatOllama(
+    llm = ChatOpenAI(
         model=model,
-        base_url=settings.ollama_host,
+        base_url=settings.vllm_base_url,
+        api_key="EMPTY",
         temperature=temperature,
-        num_ctx=num_ctx,
+        max_tokens=max_tokens,
     )
 
     qa_chain = create_stuff_documents_chain(
@@ -42,3 +42,4 @@ def build_analyze_chain(
     )
 
     return create_retrieval_chain(build_retriever(k=k), qa_chain)
+

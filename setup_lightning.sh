@@ -1,10 +1,11 @@
 #!/bin/bash
 set -e
 
-OLLAMA_MODEL="deepseek-r1:14b"
+VLLM_MODEL="deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
+VLLM_PORT=8001
 QDRANT_STORAGE="/tmp/qdrant_data"
 
-echo "=== [1/4] Installing Qdrant ==="
+echo "=== [1/5] Installing Qdrant ==="
 QDRANT_VERSION=$(curl -s https://api.github.com/repos/qdrant/qdrant/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
 echo "Latest Qdrant: $QDRANT_VERSION"
 curl -LO "https://github.com/qdrant/qdrant/releases/download/${QDRANT_VERSION}/qdrant-x86_64-unknown-linux-gnu.tar.gz"
@@ -20,31 +21,40 @@ echo "Qdrant started (PID $QDRANT_PID, storage: $QDRANT_STORAGE)"
 sleep 3
 
 echo ""
-echo "=== [2/4] Installing Ollama ==="
-curl -fsSL https://ollama.ai/install.sh | sh
-
-ollama serve &
-OLLAMA_PID=$!
-echo "Ollama started (PID $OLLAMA_PID)"
-sleep 5
-
-echo ""
-echo "=== [3/4] Pulling model: $OLLAMA_MODEL ==="
-ollama pull "$OLLAMA_MODEL"
-
-echo ""
-echo "=== [4/4] Installing Python dependencies ==="
+echo "=== [2/5] Installing Python dependencies ==="
 pip install -r requirements.txt
 
 echo ""
-echo "=== Setup complete ==="
-echo "Qdrant : http://localhost:6333"
-echo "Ollama : http://localhost:11434"
+echo "=== [3/5] Starting vLLM server: $VLLM_MODEL ==="
+# Note: Using bitsandbytes 8-bit quantization so the 14B model fits on 24GB L4 GPU
+vllm serve "$VLLM_MODEL" \
+    --port "$VLLM_PORT" \
+    --max-model-len 5120 \
+    --quantization bitsandbytes \
+    --load-format bitsandbytes \
+    --gpu-memory-utilization 0.9 &
+VLLM_PID=$!
+echo "vLLM started (PID $VLLM_PID)"
+
+# Wait for vLLM to be ready
+echo "Waiting for vLLM to initialize (this may take a few minutes)..."
+while ! curl -s "http://localhost:${VLLM_PORT}/v1/models" > /dev/null; do
+    sleep 5
+done
+echo "vLLM is ready!"
+
 echo ""
-echo "Next steps:"
-echo "  1. Create .env with DEEPSEEK_API_KEY and HF_TOKEN"
-echo "  2. Ingest KB v2:  python src/data_process/ingest_kb.py"
-echo "  3. Run benchmark: python scripts/run_benchmark.py --samples 131 --templates basic --version v1"
+echo "=== [4/5] Ingesting Knowledge Base to Qdrant ==="
+python src/data_process/ingest_kb.py
+
 echo ""
-echo "To stop services:"
-echo "  kill $QDRANT_PID $OLLAMA_PID"
+echo "=== [5/5] Running Benchmark ==="
+# You can customize the sample size and templates here
+python scripts/run_benchmark.py --samples 173 --templates basic --version v1
+
+echo ""
+echo "=== Benchmark Complete ==="
+echo "Cleaning up background processes..."
+kill $QDRANT_PID $VLLM_PID
+echo "All done."
+

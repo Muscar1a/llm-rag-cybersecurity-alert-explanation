@@ -33,9 +33,9 @@ def _check_qdrant() -> bool:
         return False
 
 
-def _check_ollama() -> bool:
+def _check_vllm() -> bool:
     try:
-        r = httpx.get(f"{settings.ollama_host}/api/tags", timeout=3)
+        r = httpx.get(f"{settings.vllm_base_url}/models", timeout=3)
         return r.status_code == 200
     except Exception:
         return False
@@ -44,12 +44,12 @@ def _check_ollama() -> bool:
 @app.get("/health")
 def health():
     qdrant_ok = _check_qdrant()
-    ollama_ok = _check_ollama()
-    status = "ok" if (qdrant_ok and ollama_ok) else "degraded"
+    vllm_ok = _check_vllm()
+    status = "ok" if (qdrant_ok and vllm_ok) else "degraded"
     return {
         "status": status,
         "qdrant": "ok" if qdrant_ok else "unreachable",
-        "ollama": "ok" if ollama_ok else "unreachable",
+        "vllm": "ok" if vllm_ok else "unreachable",
     }
 
 
@@ -64,7 +64,7 @@ def version():
         pass
     return {
         "git_sha": _git_sha(),
-        "llm_model": params.get("llm", {}).get("model", settings.ollama_model),
+        "llm_model": params.get("llm", {}).get("model", settings.vllm_model),
         "embedding_model": params.get("embedding", {}).get("model_name", settings.embedding_model),
         "chunk_size": params.get("chunking", {}).get("chunk_size"),
         "retrieval_k": params.get("retrieval", {}).get("k"),
