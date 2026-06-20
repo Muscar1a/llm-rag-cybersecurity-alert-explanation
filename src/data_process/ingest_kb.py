@@ -16,8 +16,13 @@ Output: upserted to Qdrant collection 'cyber_chunks', source='kb_v2'
 
 import argparse
 import json
+import sys
 import uuid
 from pathlib import Path
+
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 import torch
 import yaml
@@ -26,7 +31,9 @@ from qdrant_client.models import (
     PointStruct,
     Filter, FieldCondition, MatchValue, FilterSelector,
 )
+
 from sentence_transformers import SentenceTransformer
+from src.rag.qdrant_store import ensure_collection as _ensure
 
 try:
     with open("params.yaml", encoding="utf-8") as f:
@@ -108,7 +115,6 @@ def warn_truncation(model: SentenceTransformer, entries: list[dict], texts: list
 
 
 def ensure_collection(client: QdrantClient) -> None:
-    from src.rag.qdrant_store import ensure_collection as _ensure
     _ensure(client, VECTOR_SIZE)
 
 

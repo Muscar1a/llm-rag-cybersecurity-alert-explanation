@@ -1,10 +1,17 @@
 import json
 import os
 import subprocess
+import sys
 
 import httpx
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
+from pathlib import Path
+
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+    
 from src.api.middleware import PrometheusMiddleware, metrics_app
 from src.rag.schemas import AnalyzeRequest, AnalyzeResponse
 from src.rag.service import RagService
