@@ -3,65 +3,62 @@
 # Core
 requests==2.33.1
 python-dotenv==1.2.2
-pandas
-numpy
-scipy
+pandas==2.3.3
+numpy==2.3.5
+scipy==1.17.1
 tqdm==4.67.3
 
 # Data Processing
-pyarrow
-fastparquet
+pyarrow==24.0.0
+fastparquet==2026.3.0
 bs4==0.0.2
 beautifulsoup4==4.14.3
 
 # HuggingFace & Embedding
-transformers
-huggingface_hub
-sentence_transformers
+transformers==5.7.0
+huggingface_hub==1.13.0
+sentence-transformers==5.4.1
 
 # PyTorch
-torch
-torchvision
+torch==2.11.0+cu126
+torchvision==0.26.0+cu126
 
 # Vector DB & RAG
-qdrant-client
-ragas>=0.2.6
+qdrant-client==1.17.1
+ragas==0.4.3
 
 # DVC
-dvc[s3]==3.67.1
+dvc==3.67.1
 dvc-s3==3.3.0
 
 # Web Framework
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-httpx
-
-# LLM Inference
-ollama
+fastapi==0.136.1
+uvicorn==0.48.0
+httpx==0.28.1
 
 # Validation & Settings
 pydantic==2.13.4
 pydantic-settings==2.14.1
 
 # LangChain
-langchain
-langchain-community
-langchain-qdrant
-langchain-ollama
-langchain-core
-langchain-huggingface
-langchain-openai
-langchain-google-genai
+langchain==1.2.18
+langchain-community==0.4.1
+langchain-core==1.4.0
+langchain-qdrant==1.1.0
+langchain-huggingface==1.2.2
+langchain-openai==1.2.1
+langchain-google-genai==4.2.2
 
-# Compatibility Fixes
+# Compatibility
 typing_extensions==4.15.0
 fsspec==2026.2.0
 
 # MLOps
-mlflow
-prometheus-client
-structlog
+mlflow==3.14.0
+prometheus_client==0.25.0
+structlog==25.5.0
 
 # Demo
-streamlit
-redis
+streamlit==1.58.0
+redis==8.0.0
+vllm==0.23.0
