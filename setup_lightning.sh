@@ -49,16 +49,16 @@ done
 echo "vLLM is ready!"
 
 echo ""
-echo "=== [4/5] Ingesting Knowledge Base to Qdrant ==="
+echo "=== [4/4] Ingesting Knowledge Base to Qdrant ==="
 PYTHONPATH=. python src/data_process/ingest_kb.py
 
 echo ""
-echo "=== [5/5] Running Benchmark ==="
-# You can customize the sample size and templates here
-PYTHONPATH=. python scripts/run_benchmark.py --samples 135 --templates basic --version v1
-
+echo "=== Setup Complete ==="
+echo "Qdrant PID: $QDRANT_PID | vLLM PID: $VLLM_PID"
 echo ""
-echo "=== Benchmark Complete ==="
-echo "Cleaning up background processes..."
-kill $QDRANT_PID $VLLM_PID
+echo "Run benchmark manually:"
+echo "  PYTHONPATH=. python scripts/run_benchmark.py --samples 135 --templates basic --version v1"
+echo ""
+echo "When done:"
+echo "  kill $QDRANT_PID $VLLM_PID"
 
