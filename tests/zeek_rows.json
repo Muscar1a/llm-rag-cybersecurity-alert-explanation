@@ -1,0 +1,3808 @@
+[
+  {
+    "id": 0,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.5.10",
+      "src_port": 54976,
+      "dest_ip": "143.88.5.1",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.004072,
+      "orig_bytes": 118,
+      "resp_bytes": 118,
+      "orig_pkts": 3,
+      "resp_pkts": 3,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 1,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.5.10",
+      "src_port": 35502,
+      "dest_ip": "143.88.5.1",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.01045,
+      "orig_bytes": 118,
+      "resp_bytes": 118,
+      "orig_pkts": 3,
+      "resp_pkts": 3,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 2,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.10.13",
+      "src_port": 47242,
+      "dest_ip": "143.88.255.10",
+      "dest_port": 53,
+      "conn_state": "S0",
+      "duration_s": 3.047083,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 6,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 3,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.0.18",
+      "src_port": 1412,
+      "dest_ip": "143.88.0.17",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.001087,
+      "orig_bytes": 58,
+      "resp_bytes": 58,
+      "orig_pkts": 1,
+      "resp_pkts": 1,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 4,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.5.10",
+      "src_port": 59501,
+      "dest_ip": "143.88.5.1",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.005031,
+      "orig_bytes": 118,
+      "resp_bytes": 118,
+      "orig_pkts": 3,
+      "resp_pkts": 3,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 5,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.0.2",
+      "src_port": 35970,
+      "dest_ip": "143.88.0.1",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.000469,
+      "orig_bytes": 43,
+      "resp_bytes": 43,
+      "orig_pkts": 1,
+      "resp_pkts": 1,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 6,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.4.10",
+      "src_port": 51349,
+      "dest_ip": "143.88.255.10",
+      "dest_port": 53,
+      "conn_state": "S0",
+      "duration_s": 0.000168,
+      "orig_bytes": 94,
+      "resp_bytes": 0,
+      "orig_pkts": 2,
+      "resp_pkts": 0,
+      "service": "dns",
+      "history": "D"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 7,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.0.18",
+      "src_port": 47908,
+      "dest_ip": "143.88.0.17",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.000837,
+      "orig_bytes": 58,
+      "resp_bytes": 58,
+      "orig_pkts": 1,
+      "resp_pkts": 1,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 8,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.1.22",
+      "src_port": 45223,
+      "dest_ip": "143.88.1.1",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.003481,
+      "orig_bytes": 118,
+      "resp_bytes": 118,
+      "orig_pkts": 3,
+      "resp_pkts": 3,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 9,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.3.10",
+      "src_port": 55518,
+      "dest_ip": "143.88.255.10",
+      "dest_port": 53,
+      "conn_state": "S0",
+      "duration_s": 0.000457,
+      "orig_bytes": 94,
+      "resp_bytes": 0,
+      "orig_pkts": 2,
+      "resp_pkts": 0,
+      "service": "dns",
+      "history": "D"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 10,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.5.10",
+      "src_port": 34449,
+      "dest_ip": "143.88.5.1",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.005256,
+      "orig_bytes": 163,
+      "resp_bytes": 163,
+      "orig_pkts": 3,
+      "resp_pkts": 3,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 11,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.0.18",
+      "src_port": 5316,
+      "dest_ip": "143.88.0.17",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.000704,
+      "orig_bytes": 43,
+      "resp_bytes": 43,
+      "orig_pkts": 1,
+      "resp_pkts": 1,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 12,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.5.10",
+      "src_port": 41694,
+      "dest_ip": "143.88.5.1",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.004016,
+      "orig_bytes": 163,
+      "resp_bytes": 163,
+      "orig_pkts": 3,
+      "resp_pkts": 3,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 13,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.5.10",
+      "src_port": 34390,
+      "dest_ip": "143.88.5.1",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.004209,
+      "orig_bytes": 118,
+      "resp_bytes": 118,
+      "orig_pkts": 3,
+      "resp_pkts": 3,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 14,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.1.22",
+      "src_port": 57037,
+      "dest_ip": "143.88.1.1",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.003329,
+      "orig_bytes": 163,
+      "resp_bytes": 163,
+      "orig_pkts": 3,
+      "resp_pkts": 3,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 15,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.2.18",
+      "src_port": 37996,
+      "dest_ip": "143.88.255.10",
+      "dest_port": 53,
+      "conn_state": "S0",
+      "duration_s": 0.000694,
+      "orig_bytes": 94,
+      "resp_bytes": 0,
+      "orig_pkts": 2,
+      "resp_pkts": 0,
+      "service": "dns",
+      "history": "D"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 16,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.0.34",
+      "src_port": 123,
+      "dest_ip": "143.88.255.1",
+      "dest_port": 123,
+      "conn_state": "SF",
+      "duration_s": 0.000932,
+      "orig_bytes": 48,
+      "resp_bytes": 48,
+      "orig_pkts": 1,
+      "resp_pkts": 1,
+      "service": "ntp",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 17,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.255.11",
+      "src_port": 46659,
+      "dest_ip": "8.8.4.4",
+      "dest_port": 53,
+      "conn_state": "S0",
+      "duration_s": 0.0,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 1,
+      "resp_pkts": 0,
+      "service": "dns",
+      "history": "D"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 18,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.0.18",
+      "src_port": 34371,
+      "dest_ip": "143.88.0.17",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.001087,
+      "orig_bytes": 58,
+      "resp_bytes": 58,
+      "orig_pkts": 1,
+      "resp_pkts": 1,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 19,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.0.18",
+      "src_port": 41636,
+      "dest_ip": "143.88.0.17",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.001039,
+      "orig_bytes": 43,
+      "resp_bytes": 43,
+      "orig_pkts": 1,
+      "resp_pkts": 1,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 20,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.4.10",
+      "src_port": 32777,
+      "dest_ip": "143.88.255.10",
+      "dest_port": 53,
+      "conn_state": "S0",
+      "duration_s": 0.000248,
+      "orig_bytes": 64,
+      "resp_bytes": 0,
+      "orig_pkts": 2,
+      "resp_pkts": 0,
+      "service": "dns",
+      "history": "D"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 21,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.0.18",
+      "src_port": 33581,
+      "dest_ip": "143.88.0.17",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.001654,
+      "orig_bytes": 58,
+      "resp_bytes": 58,
+      "orig_pkts": 1,
+      "resp_pkts": 1,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 22,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.0.18",
+      "src_port": 26034,
+      "dest_ip": "143.88.0.17",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.001124,
+      "orig_bytes": 58,
+      "resp_bytes": 58,
+      "orig_pkts": 1,
+      "resp_pkts": 1,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 23,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.5.10",
+      "src_port": 34465,
+      "dest_ip": "143.88.5.1",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.004444,
+      "orig_bytes": 163,
+      "resp_bytes": 163,
+      "orig_pkts": 3,
+      "resp_pkts": 3,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 24,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.0.2",
+      "src_port": 15356,
+      "dest_ip": "143.88.0.1",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.000355,
+      "orig_bytes": 43,
+      "resp_bytes": 43,
+      "orig_pkts": 1,
+      "resp_pkts": 1,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 25,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.9.13",
+      "src_port": 58428,
+      "dest_ip": "143.88.255.10",
+      "dest_port": 53,
+      "conn_state": "S0",
+      "duration_s": 0.000241,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 2,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 26,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.0.18",
+      "src_port": 33894,
+      "dest_ip": "143.88.0.17",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.001174,
+      "orig_bytes": 43,
+      "resp_bytes": 43,
+      "orig_pkts": 1,
+      "resp_pkts": 1,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 27,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.0.2",
+      "src_port": 57953,
+      "dest_ip": "143.88.0.1",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.001049,
+      "orig_bytes": 32,
+      "resp_bytes": 32,
+      "orig_pkts": 1,
+      "resp_pkts": 1,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 28,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.0.2",
+      "src_port": 2277,
+      "dest_ip": "143.88.0.1",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.000668,
+      "orig_bytes": 47,
+      "resp_bytes": 47,
+      "orig_pkts": 1,
+      "resp_pkts": 1,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 29,
+    "network": {
+      "proto": "udp",
+      "src_ip": "143.88.0.18",
+      "src_port": 63182,
+      "dest_ip": "143.88.0.17",
+      "dest_port": 53,
+      "conn_state": "SF",
+      "duration_s": 0.000997,
+      "orig_bytes": 32,
+      "resp_bytes": 32,
+      "orig_pkts": 1,
+      "resp_pkts": 1,
+      "service": "dns",
+      "history": "Dd"
+    },
+    "_ground_truth": {
+      "label_tactic": "Benign",
+      "label_technique": "none"
+    }
+  },
+  {
+    "id": 30,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 40751,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.031457,
+      "orig_bytes": 686,
+      "resp_bytes": 11329,
+      "orig_pkts": 44,
+      "resp_pkts": 48,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 31,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.15.10",
+      "src_port": 36489,
+      "dest_ip": "143.88.1.19",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.023756,
+      "orig_bytes": 686,
+      "resp_bytes": 11329,
+      "orig_pkts": 44,
+      "resp_pkts": 48,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 32,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.8.12",
+      "src_port": 42349,
+      "dest_ip": "143.88.9.10",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.023867,
+      "orig_bytes": 686,
+      "resp_bytes": 11329,
+      "orig_pkts": 44,
+      "resp_pkts": 48,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 33,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.8.12",
+      "src_port": 44429,
+      "dest_ip": "143.88.9.10",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 2.245309,
+      "orig_bytes": 1046,
+      "resp_bytes": 16681,
+      "orig_pkts": 44,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 34,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.5.14",
+      "src_port": 32965,
+      "dest_ip": "143.88.6.13",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.031232,
+      "orig_bytes": 686,
+      "resp_bytes": 11329,
+      "orig_pkts": 40,
+      "resp_pkts": 48,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 35,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 38457,
+      "dest_ip": "143.88.5.12",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.029067,
+      "orig_bytes": 686,
+      "resp_bytes": 11329,
+      "orig_pkts": 40,
+      "resp_pkts": 48,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 36,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.3.11",
+      "src_port": 34603,
+      "dest_ip": "143.88.4.13",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.839408,
+      "orig_bytes": 1044,
+      "resp_bytes": 16681,
+      "orig_pkts": 48,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 37,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.3.11",
+      "src_port": 35147,
+      "dest_ip": "143.88.4.13",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 4.479858,
+      "orig_bytes": 1046,
+      "resp_bytes": 16681,
+      "orig_pkts": 48,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 38,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.3.11",
+      "src_port": 38519,
+      "dest_ip": "143.88.4.13",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 3.176821,
+      "orig_bytes": 1005,
+      "resp_bytes": 16583,
+      "orig_pkts": 44,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 39,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.2.17",
+      "src_port": 39519,
+      "dest_ip": "143.88.3.14",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 10.844806,
+      "orig_bytes": 1055,
+      "resp_bytes": 11976,
+      "orig_pkts": 52,
+      "resp_pkts": 52,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 40,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.13.12",
+      "src_port": 34929,
+      "dest_ip": "143.88.14.12",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.021689,
+      "orig_bytes": 686,
+      "resp_bytes": 11329,
+      "orig_pkts": 40,
+      "resp_pkts": 48,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 41,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.15.10",
+      "src_port": 43129,
+      "dest_ip": "143.88.1.19",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 1.570448,
+      "orig_bytes": 1044,
+      "resp_bytes": 16681,
+      "orig_pkts": 44,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 42,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 38243,
+      "dest_ip": "143.88.5.12",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 5.272637,
+      "orig_bytes": 1009,
+      "resp_bytes": 16583,
+      "orig_pkts": 56,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 43,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.8.12",
+      "src_port": 45741,
+      "dest_ip": "143.88.9.10",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.874513,
+      "orig_bytes": 1041,
+      "resp_bytes": 16681,
+      "orig_pkts": 44,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 44,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.3.11",
+      "src_port": 37589,
+      "dest_ip": "143.88.4.13",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 2.301925,
+      "orig_bytes": 1058,
+      "resp_bytes": 16681,
+      "orig_pkts": 48,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 45,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.13.12",
+      "src_port": 40177,
+      "dest_ip": "143.88.14.12",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.93438,
+      "orig_bytes": 1060,
+      "resp_bytes": 16681,
+      "orig_pkts": 48,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 46,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.15.10",
+      "src_port": 34375,
+      "dest_ip": "143.88.1.19",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 1.812538,
+      "orig_bytes": 1045,
+      "resp_bytes": 16681,
+      "orig_pkts": 44,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 47,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.14.11",
+      "src_port": 37323,
+      "dest_ip": "143.88.15.12",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 4.737062,
+      "orig_bytes": 1009,
+      "resp_bytes": 16583,
+      "orig_pkts": 44,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 48,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.12.12",
+      "src_port": 33121,
+      "dest_ip": "143.88.13.10",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 1.716127,
+      "orig_bytes": 1047,
+      "resp_bytes": 16681,
+      "orig_pkts": 60,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 49,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.7.11",
+      "src_port": 45847,
+      "dest_ip": "143.88.8.13",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 4.251925,
+      "orig_bytes": 1009,
+      "resp_bytes": 16583,
+      "orig_pkts": 44,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 50,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.14.11",
+      "src_port": 37527,
+      "dest_ip": "143.88.15.12",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.037091,
+      "orig_bytes": 686,
+      "resp_bytes": 11329,
+      "orig_pkts": 40,
+      "resp_pkts": 48,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 51,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.6.11",
+      "src_port": 45835,
+      "dest_ip": "143.88.7.14",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 13.601655,
+      "orig_bytes": 1060,
+      "resp_bytes": 16681,
+      "orig_pkts": 44,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 52,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.7.11",
+      "src_port": 46165,
+      "dest_ip": "143.88.8.13",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.02312,
+      "orig_bytes": 686,
+      "resp_bytes": 11329,
+      "orig_pkts": 40,
+      "resp_pkts": 48,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 53,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.13.12",
+      "src_port": 37441,
+      "dest_ip": "143.88.14.12",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.024235,
+      "orig_bytes": 686,
+      "resp_bytes": 11329,
+      "orig_pkts": 40,
+      "resp_pkts": 48,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 54,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 43709,
+      "dest_ip": "143.88.5.12",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 2.053827,
+      "orig_bytes": 1044,
+      "resp_bytes": 16681,
+      "orig_pkts": 44,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 55,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.3.11",
+      "src_port": 36647,
+      "dest_ip": "143.88.4.13",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.019993,
+      "orig_bytes": 686,
+      "resp_bytes": 11329,
+      "orig_pkts": 52,
+      "resp_pkts": 48,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 56,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.3.11",
+      "src_port": 33269,
+      "dest_ip": "143.88.4.13",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.809864,
+      "orig_bytes": 1047,
+      "resp_bytes": 16681,
+      "orig_pkts": 52,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 57,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.8.12",
+      "src_port": 41635,
+      "dest_ip": "143.88.9.10",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.026343,
+      "orig_bytes": 686,
+      "resp_bytes": 11329,
+      "orig_pkts": 40,
+      "resp_pkts": 48,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 58,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.9.12",
+      "src_port": 35297,
+      "dest_ip": "143.88.10.11",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 2.758631,
+      "orig_bytes": 1059,
+      "resp_bytes": 16681,
+      "orig_pkts": 52,
+      "resp_pkts": 68,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 59,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.7.11",
+      "src_port": 32817,
+      "dest_ip": "143.88.8.13",
+      "dest_port": 4848,
+      "conn_state": "SF",
+      "duration_s": 0.025313,
+      "orig_bytes": 686,
+      "resp_bytes": 11329,
+      "orig_pkts": 40,
+      "resp_pkts": 48,
+      "service": "ssl",
+      "history": "ShADTdttFaf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Credential_Access",
+      "label_technique": "T1110"
+    }
+  },
+  {
+    "id": 60,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.6.11",
+      "src_port": 41531,
+      "dest_ip": "143.88.7.14",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001821,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 61,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.7.11",
+      "src_port": 40623,
+      "dest_ip": "143.88.8.13",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001803,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 62,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.13.12",
+      "src_port": 35343,
+      "dest_ip": "143.88.14.12",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001454,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 63,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.8.12",
+      "src_port": 43729,
+      "dest_ip": "143.88.9.10",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001206,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 64,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.12.12",
+      "src_port": 45767,
+      "dest_ip": "143.88.13.10",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 0.210513,
+      "orig_bytes": 10657,
+      "resp_bytes": 2522,
+      "orig_pkts": 108,
+      "resp_pkts": 96,
+      "service": "gssapi,smb,ntlm",
+      "history": "ShADTdtTtR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 65,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 41427,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 0.400642,
+      "orig_bytes": 73,
+      "resp_bytes": 174,
+      "orig_pkts": 20,
+      "resp_pkts": 12,
+      "service": "gssapi",
+      "history": "ShADTFadtR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 66,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.14.11",
+      "src_port": 33753,
+      "dest_ip": "143.88.15.12",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001274,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 67,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.15.10",
+      "src_port": 36879,
+      "dest_ip": "143.88.1.19",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001671,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 68,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.15.10",
+      "src_port": 42433,
+      "dest_ip": "143.88.1.19",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001531,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 69,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.6.11",
+      "src_port": 39085,
+      "dest_ip": "143.88.7.14",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001651,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 70,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.5.14",
+      "src_port": 34651,
+      "dest_ip": "143.88.6.13",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001801,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 71,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.2.17",
+      "src_port": 33541,
+      "dest_ip": "143.88.3.14",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001891,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 72,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.3.11",
+      "src_port": 36101,
+      "dest_ip": "143.88.4.12",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001484,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 73,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.11.10",
+      "src_port": 43815,
+      "dest_ip": "143.88.12.14",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001853,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 74,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.13.12",
+      "src_port": 39389,
+      "dest_ip": "143.88.14.12",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001174,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 75,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.13.12",
+      "src_port": 38581,
+      "dest_ip": "143.88.14.12",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001711,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 76,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.12.12",
+      "src_port": 42605,
+      "dest_ip": "143.88.13.10",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 0.204993,
+      "orig_bytes": 8809,
+      "resp_bytes": 2270,
+      "orig_pkts": 96,
+      "resp_pkts": 84,
+      "service": "gssapi,smb,ntlm",
+      "history": "ShADTdtTtR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 77,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.7.11",
+      "src_port": 36297,
+      "dest_ip": "143.88.8.13",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001621,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 78,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.15.10",
+      "src_port": 32945,
+      "dest_ip": "143.88.1.19",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001165,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 79,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 41305,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 16.376941,
+      "orig_bytes": 14981,
+      "resp_bytes": 4302,
+      "orig_pkts": 192,
+      "resp_pkts": 304,
+      "service": "smb,dce_rpc,ntlm,gssapi",
+      "history": "ShADTadtTtTtFR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 80,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.5.14",
+      "src_port": 40973,
+      "dest_ip": "143.88.6.13",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001369,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 81,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.13.12",
+      "src_port": 37909,
+      "dest_ip": "143.88.14.12",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001579,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 82,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.8.12",
+      "src_port": 37521,
+      "dest_ip": "143.88.9.10",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001234,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 83,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.2.17",
+      "src_port": 40315,
+      "dest_ip": "143.88.3.14",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001283,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 84,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 46589,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 0.309564,
+      "orig_bytes": 73,
+      "resp_bytes": 174,
+      "orig_pkts": 20,
+      "resp_pkts": 12,
+      "service": "gssapi",
+      "history": "ShADTFadtR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 85,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.2.17",
+      "src_port": 40011,
+      "dest_ip": "143.88.3.14",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001412,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 86,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.5.14",
+      "src_port": 33333,
+      "dest_ip": "143.88.6.13",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001028,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 87,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.9.12",
+      "src_port": 37575,
+      "dest_ip": "143.88.10.11",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001367,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 88,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.8.12",
+      "src_port": 44901,
+      "dest_ip": "143.88.9.10",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001054,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 89,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.7.11",
+      "src_port": 42847,
+      "dest_ip": "143.88.8.13",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.001775,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Defense_Evasion",
+      "label_technique": "T1078"
+    }
+  },
+  {
+    "id": 90,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 54112,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 0.002829,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 8,
+      "resp_pkts": 4,
+      "service": "",
+      "history": "ShR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 91,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 40815,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 11.72128,
+      "orig_bytes": 26577,
+      "resp_bytes": 4578,
+      "orig_pkts": 212,
+      "resp_pkts": 240,
+      "service": "ntlm,smb,gssapi",
+      "history": "ShADTdtTatTtR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 92,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 35231,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 0.678371,
+      "orig_bytes": 73,
+      "resp_bytes": 174,
+      "orig_pkts": 20,
+      "resp_pkts": 12,
+      "service": "gssapi",
+      "history": "ShADTFadtR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 93,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 40097,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTR",
+      "duration_s": 5.514831,
+      "orig_bytes": 15279,
+      "resp_bytes": 4666,
+      "orig_pkts": 184,
+      "resp_pkts": 196,
+      "service": "smb,dce_rpc,ntlm,gssapi",
+      "history": "ShADTadtTtTtFr"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 94,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 33359,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTR",
+      "duration_s": 9.710775,
+      "orig_bytes": 15595,
+      "resp_bytes": 4774,
+      "orig_pkts": 188,
+      "resp_pkts": 200,
+      "service": "gssapi,dce_rpc,ntlm,smb",
+      "history": "ShADTadtTtTtFr"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 95,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 42623,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 16.602004,
+      "orig_bytes": 14885,
+      "resp_bytes": 4278,
+      "orig_pkts": 188,
+      "resp_pkts": 304,
+      "service": "smb,dce_rpc,ntlm,gssapi",
+      "history": "ShADTadtTtTtFR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 96,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 41601,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 0.674959,
+      "orig_bytes": 73,
+      "resp_bytes": 174,
+      "orig_pkts": 20,
+      "resp_pkts": 12,
+      "service": "gssapi",
+      "history": "ShADTFadtR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 97,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 37743,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTR",
+      "duration_s": 10.768581,
+      "orig_bytes": 15271,
+      "resp_bytes": 4695,
+      "orig_pkts": 200,
+      "resp_pkts": 204,
+      "service": "gssapi,smb,ntlm,dce_rpc",
+      "history": "ShADTadtTtTtFr"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 98,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 41593,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 0.704013,
+      "orig_bytes": 73,
+      "resp_bytes": 174,
+      "orig_pkts": 20,
+      "resp_pkts": 16,
+      "service": "gssapi",
+      "history": "ShADTaFdtR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 99,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 46625,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 4.063095,
+      "orig_bytes": 6249,
+      "resp_bytes": 1806,
+      "orig_pkts": 84,
+      "resp_pkts": 84,
+      "service": "ntlm,smb,gssapi",
+      "history": "ShADTadtTtR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 100,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 40945,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 0.800224,
+      "orig_bytes": 73,
+      "resp_bytes": 174,
+      "orig_pkts": 20,
+      "resp_pkts": 12,
+      "service": "gssapi",
+      "history": "ShADTFadtR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 101,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 35803,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTR",
+      "duration_s": 9.804174,
+      "orig_bytes": 15527,
+      "resp_bytes": 4810,
+      "orig_pkts": 216,
+      "resp_pkts": 204,
+      "service": "gssapi,dce_rpc,ntlm,smb",
+      "history": "ShADTadtTtTtFr"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 102,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 52160,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 0.002822,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 8,
+      "resp_pkts": 4,
+      "service": "",
+      "history": "ShR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 103,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 46301,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 0.229157,
+      "orig_bytes": 7573,
+      "resp_bytes": 2102,
+      "orig_pkts": 88,
+      "resp_pkts": 76,
+      "service": "ntlm,smb,gssapi",
+      "history": "ShADTdtTtR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 104,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 40369,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTR",
+      "duration_s": 10.167826,
+      "orig_bytes": 15763,
+      "resp_bytes": 4978,
+      "orig_pkts": 240,
+      "resp_pkts": 212,
+      "service": "ntlm,dce_rpc,smb,gssapi",
+      "history": "ShADTadtTtTtFr"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 105,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 34337,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTR",
+      "duration_s": 10.546191,
+      "orig_bytes": 16115,
+      "resp_bytes": 5278,
+      "orig_pkts": 228,
+      "resp_pkts": 220,
+      "service": "dce_rpc,ntlm,smb,gssapi",
+      "history": "ShADTadtTtTtFr"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 106,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 37181,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTR",
+      "duration_s": 0.615058,
+      "orig_bytes": 15279,
+      "resp_bytes": 4642,
+      "orig_pkts": 180,
+      "resp_pkts": 176,
+      "service": "ntlm,dce_rpc,smb,gssapi",
+      "history": "ShADTdtTtTtFar"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 107,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 44577,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 7.787971,
+      "orig_bytes": 17337,
+      "resp_bytes": 3318,
+      "orig_pkts": 164,
+      "resp_pkts": 164,
+      "service": "ntlm,gssapi,smb",
+      "history": "ShADTadtTtTR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 108,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 46611,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTR",
+      "duration_s": 0.732843,
+      "orig_bytes": 15623,
+      "resp_bytes": 4870,
+      "orig_pkts": 208,
+      "resp_pkts": 188,
+      "service": "gssapi,dce_rpc,ntlm,smb",
+      "history": "ShADTdtTtTtFar"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 109,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 35607,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTR",
+      "duration_s": 10.179588,
+      "orig_bytes": 15811,
+      "resp_bytes": 5026,
+      "orig_pkts": 224,
+      "resp_pkts": 212,
+      "service": "ntlm,dce_rpc,gssapi,smb",
+      "history": "ShADTadtTtTtFr"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 110,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 35179,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTR",
+      "duration_s": 10.555228,
+      "orig_bytes": 15139,
+      "resp_bytes": 4611,
+      "orig_pkts": 192,
+      "resp_pkts": 196,
+      "service": "ntlm,dce_rpc,gssapi,smb",
+      "history": "ShADTadtTtTtFr"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 111,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 46009,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTR",
+      "duration_s": 10.629338,
+      "orig_bytes": 15895,
+      "resp_bytes": 5098,
+      "orig_pkts": 224,
+      "resp_pkts": 220,
+      "service": "gssapi,smb,ntlm,dce_rpc",
+      "history": "ShADTadtTtTtFr"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 112,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 44301,
+      "dest_ip": "143.88.2.20",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 0.738695,
+      "orig_bytes": 73,
+      "resp_bytes": 174,
+      "orig_pkts": 20,
+      "resp_pkts": 12,
+      "service": "gssapi",
+      "history": "ShADTFadtR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Exfiltration",
+      "label_technique": "T1048"
+    }
+  },
+  {
+    "id": 113,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.6.11",
+      "src_port": 38183,
+      "dest_ip": "143.88.7.10",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.100335,
+      "orig_bytes": 608,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 114,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.8.12",
+      "src_port": 44837,
+      "dest_ip": "143.88.9.14",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.101979,
+      "orig_bytes": 602,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 115,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 44197,
+      "dest_ip": "143.88.5.11",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.103935,
+      "orig_bytes": 621,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 116,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.15.10",
+      "src_port": 34635,
+      "dest_ip": "143.88.1.21",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.090369,
+      "orig_bytes": 571,
+      "resp_bytes": 202,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 117,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.7.11",
+      "src_port": 46333,
+      "dest_ip": "143.88.8.10",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.096904,
+      "orig_bytes": 570,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 118,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 39329,
+      "dest_ip": "143.88.5.11",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.101904,
+      "orig_bytes": 601,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 119,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.9.12",
+      "src_port": 34283,
+      "dest_ip": "143.88.10.14",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.090644,
+      "orig_bytes": 568,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 120,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.8.12",
+      "src_port": 33129,
+      "dest_ip": "143.88.9.14",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.096995,
+      "orig_bytes": 616,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 121,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 34961,
+      "dest_ip": "143.88.2.21",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.100302,
+      "orig_bytes": 608,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 122,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.12.12",
+      "src_port": 35777,
+      "dest_ip": "143.88.13.14",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.098404,
+      "orig_bytes": 573,
+      "resp_bytes": 202,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 123,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 37831,
+      "dest_ip": "143.88.2.21",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.111438,
+      "orig_bytes": 616,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 124,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.15.10",
+      "src_port": 36469,
+      "dest_ip": "143.88.1.21",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.09725,
+      "orig_bytes": 608,
+      "resp_bytes": 202,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 125,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.5.14",
+      "src_port": 46541,
+      "dest_ip": "143.88.6.12",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.097985,
+      "orig_bytes": 602,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 126,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.15.10",
+      "src_port": 37743,
+      "dest_ip": "143.88.1.21",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.095934,
+      "orig_bytes": 571,
+      "resp_bytes": 202,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 127,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.14.11",
+      "src_port": 35777,
+      "dest_ip": "143.88.15.14",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.11281,
+      "orig_bytes": 604,
+      "resp_bytes": 202,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 128,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.15.10",
+      "src_port": 38153,
+      "dest_ip": "143.88.1.21",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.098455,
+      "orig_bytes": 569,
+      "resp_bytes": 202,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 129,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.13.12",
+      "src_port": 40079,
+      "dest_ip": "143.88.14.10",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.094648,
+      "orig_bytes": 605,
+      "resp_bytes": 202,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 130,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.7.11",
+      "src_port": 44597,
+      "dest_ip": "143.88.8.10",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.101167,
+      "orig_bytes": 567,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 131,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.9.12",
+      "src_port": 38851,
+      "dest_ip": "143.88.10.14",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.096788,
+      "orig_bytes": 573,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 132,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.6.11",
+      "src_port": 42201,
+      "dest_ip": "143.88.7.10",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.097671,
+      "orig_bytes": 572,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 133,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 38469,
+      "dest_ip": "143.88.5.11",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.116622,
+      "orig_bytes": 605,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 134,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.6.11",
+      "src_port": 45167,
+      "dest_ip": "143.88.7.10",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.136311,
+      "orig_bytes": 603,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 135,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.7.11",
+      "src_port": 34885,
+      "dest_ip": "143.88.8.10",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.100896,
+      "orig_bytes": 607,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 136,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.12.12",
+      "src_port": 45609,
+      "dest_ip": "143.88.13.14",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.101814,
+      "orig_bytes": 606,
+      "resp_bytes": 202,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 137,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.8.12",
+      "src_port": 43673,
+      "dest_ip": "143.88.9.14",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.093583,
+      "orig_bytes": 608,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 138,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.7.11",
+      "src_port": 35857,
+      "dest_ip": "143.88.8.10",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.094592,
+      "orig_bytes": 570,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 139,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.14.11",
+      "src_port": 33925,
+      "dest_ip": "143.88.15.14",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.116987,
+      "orig_bytes": 611,
+      "resp_bytes": 202,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 140,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.13.12",
+      "src_port": 46239,
+      "dest_ip": "143.88.14.10",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.098127,
+      "orig_bytes": 570,
+      "resp_bytes": 202,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 141,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.3.11",
+      "src_port": 42827,
+      "dest_ip": "143.88.4.14",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.094266,
+      "orig_bytes": 608,
+      "resp_bytes": 201,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 142,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.15.10",
+      "src_port": 37719,
+      "dest_ip": "143.88.1.21",
+      "dest_port": 80,
+      "conn_state": "SF",
+      "duration_s": 0.112508,
+      "orig_bytes": 610,
+      "resp_bytes": 202,
+      "orig_pkts": 24,
+      "resp_pkts": 16,
+      "service": "http",
+      "history": "ShADTadtFf"
+    },
+    "_ground_truth": {
+      "label_tactic": "Initial_Access",
+      "label_technique": "T1190"
+    }
+  },
+  {
+    "id": 143,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 62372,
+      "dest_ip": "143.88.5.14",
+      "dest_port": 443,
+      "conn_state": "REJ",
+      "duration_s": 0.002823,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 4,
+      "service": "",
+      "history": "Sr"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 144,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 45457,
+      "dest_ip": "143.88.5.11",
+      "dest_port": 443,
+      "conn_state": "S0",
+      "duration_s": 0.001289,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 145,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.10.12",
+      "src_port": 43547,
+      "dest_ip": "143.88.11.6",
+      "dest_port": 80,
+      "conn_state": "OTH",
+      "duration_s": 0.0,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 1,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "A"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 146,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.5.14",
+      "src_port": 40184,
+      "dest_ip": "143.88.6.10",
+      "dest_port": 143,
+      "conn_state": "REJ",
+      "duration_s": 0.002739,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 4,
+      "service": "",
+      "history": "Sr"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 147,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.10.12",
+      "src_port": 53605,
+      "dest_ip": "143.88.11.17",
+      "dest_port": 80,
+      "conn_state": "OTH",
+      "duration_s": 0.0,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 1,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "A"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 148,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.15.10",
+      "src_port": 64711,
+      "dest_ip": "143.88.1.10",
+      "dest_port": 20,
+      "conn_state": "S0",
+      "duration_s": 0.001095,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 149,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.10.12",
+      "src_port": 61364,
+      "dest_ip": "143.88.11.7",
+      "dest_port": 80,
+      "conn_state": "OTH",
+      "duration_s": 0.0,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 1,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "A"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 150,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.10.12",
+      "src_port": 50133,
+      "dest_ip": "143.88.11.18",
+      "dest_port": 80,
+      "conn_state": "OTH",
+      "duration_s": 0.0,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 1,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "A"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 151,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 47441,
+      "dest_ip": "143.88.5.2",
+      "dest_port": 443,
+      "conn_state": "S0",
+      "duration_s": 0.00091,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 3,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 152,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 46037,
+      "dest_ip": "143.88.5.5",
+      "dest_port": 443,
+      "conn_state": "S0",
+      "duration_s": 0.000352,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 3,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 153,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.10.12",
+      "src_port": 37295,
+      "dest_ip": "143.88.11.15",
+      "dest_port": 80,
+      "conn_state": "OTH",
+      "duration_s": 0.0,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 1,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "A"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 154,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 41013,
+      "dest_ip": "143.88.5.2",
+      "dest_port": 443,
+      "conn_state": "S0",
+      "duration_s": 0.001476,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 3,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 155,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.10.12",
+      "src_port": 60060,
+      "dest_ip": "143.88.11.1",
+      "dest_port": 80,
+      "conn_state": "RSTO",
+      "duration_s": 0.003576,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 6,
+      "resp_pkts": 3,
+      "service": "",
+      "history": "ShR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 156,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.2.17",
+      "src_port": 37317,
+      "dest_ip": "143.88.3.1",
+      "dest_port": 445,
+      "conn_state": "S0",
+      "duration_s": 0.000943,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 3,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 157,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.15.10",
+      "src_port": 49451,
+      "dest_ip": "143.88.1.10",
+      "dest_port": 20,
+      "conn_state": "S0",
+      "duration_s": 0.001023,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 158,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 59210,
+      "dest_ip": "143.88.2.18",
+      "dest_port": 445,
+      "conn_state": "REJ",
+      "duration_s": 0.002561,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 4,
+      "service": "",
+      "history": "Sr"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 159,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 47803,
+      "dest_ip": "143.88.5.8",
+      "dest_port": 443,
+      "conn_state": "S0",
+      "duration_s": 0.000506,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 3,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 160,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.14.11",
+      "src_port": 60983,
+      "dest_ip": "143.88.15.11",
+      "dest_port": 21,
+      "conn_state": "REJ",
+      "duration_s": 0.002631,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 4,
+      "service": "",
+      "history": "Sr"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 161,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 56007,
+      "dest_ip": "143.88.5.6",
+      "dest_port": 443,
+      "conn_state": "S0",
+      "duration_s": 0.001165,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 3,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 162,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.8.12",
+      "src_port": 36026,
+      "dest_ip": "143.88.9.14",
+      "dest_port": 111,
+      "conn_state": "S0",
+      "duration_s": 0.001619,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 163,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.9.12",
+      "src_port": 49644,
+      "dest_ip": "143.88.10.14",
+      "dest_port": 110,
+      "conn_state": "S0",
+      "duration_s": 0.000874,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 164,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.14.11",
+      "src_port": 55195,
+      "dest_ip": "143.88.15.14",
+      "dest_port": 21,
+      "conn_state": "RSTO",
+      "duration_s": 0.002412,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 8,
+      "resp_pkts": 4,
+      "service": "",
+      "history": "ShR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 165,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 52198,
+      "dest_ip": "143.88.5.16",
+      "dest_port": 443,
+      "conn_state": "S0",
+      "duration_s": 0.000786,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 3,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 166,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 56536,
+      "dest_ip": "143.88.5.15",
+      "dest_port": 443,
+      "conn_state": "S0",
+      "duration_s": 0.001009,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 3,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 167,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.1.18",
+      "src_port": 62987,
+      "dest_ip": "143.88.2.21",
+      "dest_port": 445,
+      "conn_state": "RSTO",
+      "duration_s": 0.003926,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 8,
+      "resp_pkts": 4,
+      "service": "",
+      "history": "ShR"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 168,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.10.12",
+      "src_port": 51476,
+      "dest_ip": "143.88.11.19",
+      "dest_port": 80,
+      "conn_state": "OTH",
+      "duration_s": 0.0,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 1,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "A"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 169,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 47443,
+      "dest_ip": "143.88.5.9",
+      "dest_port": 443,
+      "conn_state": "S0",
+      "duration_s": 0.000889,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 3,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 170,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.4.11",
+      "src_port": 57557,
+      "dest_ip": "143.88.5.12",
+      "dest_port": 443,
+      "conn_state": "S0",
+      "duration_s": 0.001066,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 171,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.12.12",
+      "src_port": 60416,
+      "dest_ip": "143.88.13.13",
+      "dest_port": 25,
+      "conn_state": "REJ",
+      "duration_s": 0.002596,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 4,
+      "service": "",
+      "history": "Sr"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  },
+  {
+    "id": 172,
+    "network": {
+      "proto": "tcp",
+      "src_ip": "143.88.6.11",
+      "src_port": 35511,
+      "dest_ip": "143.88.7.10",
+      "dest_port": 139,
+      "conn_state": "S0",
+      "duration_s": 0.001925,
+      "orig_bytes": 0,
+      "resp_bytes": 0,
+      "orig_pkts": 4,
+      "resp_pkts": 0,
+      "service": "",
+      "history": "S"
+    },
+    "_ground_truth": {
+      "label_tactic": "Reconnaissance",
+      "label_technique": "T1595"
+    }
+  }
+]
