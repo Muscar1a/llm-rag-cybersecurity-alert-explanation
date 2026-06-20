@@ -15,11 +15,11 @@ from tests.eval.eval_generation import evaluate_generation
 from tests.eval.eval_remediation import evaluate_remediation
 
 DEFAULT_TEMPLATES = ["basic", "cot", "few_shot"]
-GROUND_TRUTH_FILE = project_root / "baselines" / "ground_truth.json"
-ALERTS_FILE = project_root / "tests" / "alerts.json"
-REMEDIATION_GT_FILE = project_root / "baselines" / "remediation_gt.json"
-RESULTS_DIR = project_root / "results"
-PARAMS_FILE = project_root / "params.yaml"
+GROUND_TRUTH_FILE = Path("baselines") / "ground_truth.json"
+ALERTS_FILE = Path("tests") / "alerts.json"
+REMEDIATION_GT_FILE = Path("baselines") / "remediation_gt.json"
+RESULTS_DIR = Path("results")
+PARAMS_FILE = Path("params.yaml")
 
 
 def get_git_sha():
