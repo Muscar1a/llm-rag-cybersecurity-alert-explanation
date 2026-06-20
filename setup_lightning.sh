@@ -26,6 +26,11 @@ pip install -r requirements.txt
 
 echo ""
 echo "=== [3/5] Starting vLLM server: $VLLM_MODEL ==="
+# Load environment variables from .env if it exists so vLLM can read HF_TOKEN
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
 # Note: Using bitsandbytes 8-bit quantization so the 14B model fits on 24GB L4 GPU
 vllm serve "$VLLM_MODEL" \
     --port "$VLLM_PORT" \
@@ -45,16 +50,15 @@ echo "vLLM is ready!"
 
 echo ""
 echo "=== [4/5] Ingesting Knowledge Base to Qdrant ==="
-python src/data_process/ingest_kb.py
+PYTHONPATH=. python src/data_process/ingest_kb.py
 
 echo ""
 echo "=== [5/5] Running Benchmark ==="
 # You can customize the sample size and templates here
-python scripts/run_benchmark.py --samples 173 --templates basic --version v1
+PYTHONPATH=. python scripts/run_benchmark.py --samples 135 --templates basic --version v1
 
 echo ""
 echo "=== Benchmark Complete ==="
 echo "Cleaning up background processes..."
 kill $QDRANT_PID $VLLM_PID
-echo "All done."
 
