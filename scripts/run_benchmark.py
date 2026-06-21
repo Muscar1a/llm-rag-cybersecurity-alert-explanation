@@ -246,7 +246,7 @@ def write_comparison(summaries: list[dict], templates: list[str], version: str, 
 
 def main():
     parser = argparse.ArgumentParser(description="Unified RAG benchmark — runs one or more prompt templates with checkpointing and MLflow logging.")
-    parser.add_argument("--samples", type=int, default=135, help="Sample size per template (default: 135)")
+    parser.add_argument("--samples", type=int, default=173, help="Sample size per template (default: 173)")
     parser.add_argument("--templates", type=str, default=",".join(DEFAULT_TEMPLATES),
                         help=f"Comma-separated templates (default: {','.join(DEFAULT_TEMPLATES)})")
     parser.add_argument("--reset", action="store_true", help="Delete existing checkpoints and start fresh")

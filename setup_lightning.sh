@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VLLM_MODEL="deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
+VLLM_MODEL="Qwen/Qwen2.5-14B-Instruct"
 VLLM_PORT=8001
 QDRANT_STORAGE="/tmp/qdrant_data"
 
@@ -34,7 +34,7 @@ fi
 # Note: Using bitsandbytes 8-bit quantization so the 14B model fits on 24GB L4 GPU
 vllm serve "$VLLM_MODEL" \
     --port "$VLLM_PORT" \
-    --max-model-len 10240 \
+    --max-model-len 8192 \
     --quantization bitsandbytes \
     --load-format bitsandbytes \
     --gpu-memory-utilization 0.9 &

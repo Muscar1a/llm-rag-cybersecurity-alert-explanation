@@ -81,24 +81,26 @@ Output ONLY a single valid JSON object. No markdown fences, no prose before or a
 
 {{
   "threat_description": "Semantic explanation of what behavior this alert indicates. Do NOT restate the raw alert. If a tactic is identifiable from context, name it.",
-  "severity": "Low | Medium | High | Unknown",
+  "severity": "Low | Medium | High | Critical | Unknown",
   "rationale": "2-4 sentences. Cite specific evidence from the alert AND from retrieved context (port profile, conn_state semantics, traffic pattern, or tactic entry).",
   "mitigation_steps": ["step 1", "step 2", "..."]
 }}
 
 Severity criteria (assess from alert observables + retrieved context):
-- High:   Established session (SF/S1) to sensitive service (per port_profile)
-          AND anomalous traffic pattern (per traffic_pattern entry).
-          Suricata severity 1 reinforces High when both conditions are met.
-- Medium: ONE of the two conditions above — either sensitive service OR
-          anomalous pattern, but not both confirmed by context.
-          Suricata severity 1-2 alone (without KB confirmation) stays Medium.
-- Low:    No session established (S0/REJ/RSTO), no payload exchanged,
-          single probe only.
-- Unknown: Retrieved context insufficient to assess either condition.
+- Critical: Established session (SF/S1) to sensitive service (per port_profile)
+            AND anomalous traffic pattern (per traffic_pattern entry)
+            AND confirmed attacker tactic from retrieved context (e.g. Credential Access,
+            Exfiltration). Suricata severity 1 reinforces Critical.
+- High:     TWO of the three conditions above (sensitive service, anomalous pattern,
+            confirmed tactic). Suricata severity 1-2 supports High.
+- Medium:   Only ONE of the three conditions confirmed by context. A single suspicious
+            indicator without corroboration.
+- Low:      No session established (S0/REJ/RSTO), no payload exchanged,
+            single probe only, OR alert category is benign / not suspicious.
+- Unknown:  Retrieved context insufficient to assess.
 
 Constraints:
-- "severity" must be exactly one of: Low, Medium, High, Unknown.
+- "severity" must be exactly one of: Low, Medium, High, Critical, Unknown.
 - "mitigation_steps" must contain 2-5 actionable steps. Each step should mention
   a concrete action (e.g. "block source IP at perimeter firewall",
   "check authentication logs for unauthorized access"). Avoid generic steps
@@ -209,7 +211,7 @@ _EXAMPLE_1_OUTPUT = """\
 {{
   "threat_description": "A single SYN probe to TCP/443 was rejected by the server (conn_state REJ, RST sent in reply). No payload was exchanged and no session was established. Consistent with the Reconnaissance tactic — specifically a closed-port probe — but a single flow alone is not a confirmed scan.",
   "severity": "Low",
-  "rationale": "The conn_state entry explains REJ as 'port closed or firewall ACL drop', and notes that a single REJ in isolation is not malicious. The Reconnaissance tactic entry lists short zero-payload REJ probes as a representative network signature, but requires evidence across multiple destinations to confirm scanning — that evidence is not in this single-flow alert. Hence Low, not Medium.",
+  "rationale": "The conn_state entry explains REJ as 'port closed or firewall ACL drop', and notes that a single REJ in isolation is not malicious. The Reconnaissance tactic entry lists short zero-payload REJ probes as a representative network signature, but requires evidence across multiple destinations to confirm scanning — that evidence is not in this single-flow alert. Hence Low, not High.",
   "mitigation_steps": [
     "Correlate the source IP across all REJ/S0 flows in the same window to detect systematic scanning.",
     "If the same source touches multiple closed ports or hosts, escalate and block at the perimeter.",
@@ -251,8 +253,8 @@ services with admin interfaces."""
 _EXAMPLE_2_OUTPUT = """\
 {{
   "threat_description": "A single completed session (SF) to GlassFish admin port (4848) with non-zero data transfer and a high byte ratio (18.85x server-dominant). Per the port_profile, this is a management interface where legitimate access is rare and typically internal. The Credential_Access tactic entry notes repeated short connections as a key indicator — this single flow alone does not confirm brute-force but warrants investigation.",
-  "severity": "Medium",
-  "rationale": "The port_profile identifies 4848 as a sensitive admin interface (High if combined with anomalous pattern), and the conn_state SF confirms a fully established session. However, the Credential_Access tactic entry requires 'repeated short connections' to confirm brute-force — only one flow is observed here. Hence Medium (sensitive service, but only one condition met), not High.",
+  "severity": "High",
+  "rationale": "The port_profile identifies 4848 as a sensitive admin interface, and the conn_state SF confirms a fully established session. The Credential_Access tactic entry confirms this is an authentication-related service. Two of three conditions are met (sensitive service + confirmed tactic), but the traffic pattern alone does not confirm brute-force — only one flow is observed. Hence High, not Critical.",
   "mitigation_steps": [
     "Check if the source IP is internal and authorized to access GlassFish admin.",
     "Correlate with other connections from the same source to port 4848 to detect repeated attempts.",
@@ -282,7 +284,7 @@ Output:
 {_EXAMPLE_1_OUTPUT}
 --- END EXAMPLE 1 ---
 
---- EXAMPLE 2 (Credential Access — Medium severity, single session) ---
+--- EXAMPLE 2 (Credential Access — High severity, single session) ---
 Alert:
 {_EXAMPLE_2_ALERT}
 

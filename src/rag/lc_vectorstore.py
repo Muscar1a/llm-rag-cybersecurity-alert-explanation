@@ -65,7 +65,8 @@ class KBRetriever(BaseRetriever):
     vectorstore:    QdrantVectorStore
     qdrant_client:  QdrantClient
     collection:     str
-    k_semantic:     int = 2
+    k_semantic:     int = 4
+    max_docs:       int = 6
     reranker_model: str | None = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
     def _exact_fetch(self, kb_type: str, extra: list) -> list[Document]:
@@ -128,14 +129,14 @@ class KBRetriever(BaseRetriever):
             add(d)
 
         if not self.reranker_model or len(docs) <= 1:
-            return docs
+            return docs[:self.max_docs]
 
         reranker = _get_reranker(self.reranker_model)
         scores   = reranker.predict([(query, d.page_content) for d in docs])
         ranked   = sorted(zip(scores, docs), key=lambda x: x[0], reverse=True)
         for score, d in ranked:
             d.metadata["rerank_score"] = float(score)
-        return [d for _, d in ranked]
+        return [d for _, d in ranked][:self.max_docs]
 
 
 def build_retriever(k: int = 5) -> BaseRetriever:
@@ -151,5 +152,6 @@ def build_retriever(k: int = 5) -> BaseRetriever:
         vectorstore=vs,
         qdrant_client=client,
         collection=settings.qdrant_collection,
-        k_semantic=k // 2 or 2,
+        k_semantic=4,
+        max_docs=k,
     )

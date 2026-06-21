@@ -12,7 +12,7 @@ def build_analyze_chain(
     k: int = 5,
     template_name: str = "basic",
 ):
-    model = settings.vllm_model or "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
+    model = settings.vllm_model or "Qwen/Qwen2.5-14B-Instruct"
     temperature = 0.1
     max_tokens = settings.vllm_max_tokens
     try:
