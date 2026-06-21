@@ -34,10 +34,12 @@ fi
 # Note: Using bitsandbytes 8-bit quantization so the 14B model fits on 24GB L4 GPU
 vllm serve "$VLLM_MODEL" \
     --port "$VLLM_PORT" \
-    --max-model-len 5120 \
+    --max-model-len 10240 \
     --quantization bitsandbytes \
     --load-format bitsandbytes \
-    --gpu-memory-utilization 0.9 &
+    --gpu-memory-utilization 0.9 \
+    --enable-reasoning \
+    --reasoning-parser deepseek_r1 &
 VLLM_PID=$!
 echo "vLLM started (PID $VLLM_PID)"
 
