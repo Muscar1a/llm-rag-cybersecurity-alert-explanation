@@ -22,7 +22,6 @@ class AnalyzeRequest(BaseModel):
 class RemediationCommand(BaseModel):
     description: str
     command: str
-    undo_command: str | None = None
     platform: str = "linux"
     risk: str = "low"
     auto_executable: bool = False

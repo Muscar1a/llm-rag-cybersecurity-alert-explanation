@@ -127,9 +127,6 @@ def _render_remediation(res: dict, container):
             with st.expander(cmd.get("description", "Command")):
                 st.markdown(header, unsafe_allow_html=True)
                 st.code(cmd.get("command", ""), language="bash")
-                if cmd.get("undo_command"):
-                    st.caption("Undo:")
-                    st.code(cmd["undo_command"], language="bash")
 
 
 def _render_result(res: dict, container):

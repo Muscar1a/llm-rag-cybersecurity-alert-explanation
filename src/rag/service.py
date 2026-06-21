@@ -28,8 +28,17 @@ class _LLMMetaCB(BaseCallbackHandler):
                 pass
 
 
+def _clean_bpe_artifacts(text: str) -> str:
+    # GPT-2/Qwen tokenizers use Ġ (U+0120) for space and Ċ (U+010A) for newline
+    return text.replace("Ġ", " ").replace("Ċ", "\n")
+
+
 def _extract_json(text: str) -> str:
-    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+    text = _clean_bpe_artifacts(text)
+    # Handle both closed <think>...</think> and unclosed <think>... (truncated output)
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    text = re.sub(r"<think>.*", "", text, flags=re.DOTALL)
+    text = text.strip()
     if text.startswith("{") and text.endswith("}"):
         return text
     if m := re.search(r"<answer>\s*(\{.*?\})\s*</answer>", text, re.DOTALL):

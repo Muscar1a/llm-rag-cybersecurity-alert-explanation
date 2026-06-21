@@ -25,14 +25,12 @@ TACTIC_TEMPLATES = {
         {
             "description": "Block source IP at firewall",
             "command_template": "iptables -A INPUT -s {src_ip} -j DROP",
-            "undo_template": "iptables -D INPUT -s {src_ip} -j DROP",
             "severity_threshold": "High",
             "risk": "low",
         },
         {
             "description": "Log all connections from source IP",
             "command_template": "iptables -A INPUT -s {src_ip} -j LOG --log-prefix '[THREAT:{src_ip}] '",
-            "undo_template": "iptables -D INPUT -s {src_ip} -j LOG --log-prefix '[THREAT:{src_ip}] '",
             "severity_threshold": "Medium",
             "risk": "low",
         },
@@ -41,21 +39,18 @@ TACTIC_TEMPLATES = {
         {
             "description": "Block source IP at firewall",
             "command_template": "iptables -A INPUT -s {src_ip} -j DROP",
-            "undo_template": "iptables -D INPUT -s {src_ip} -j DROP",
             "severity_threshold": "High",
             "risk": "low",
         },
         {
             "description": "Block source IP on target port",
             "command_template": "iptables -A INPUT -p tcp --dport {dest_port} -s {src_ip} -j DROP",
-            "undo_template": "iptables -D INPUT -p tcp --dport {dest_port} -s {src_ip} -j DROP",
             "severity_threshold": "High",
             "risk": "low",
         },
         {
             "description": "Check authentication logs from source IP",
             "command_template": "grep '{src_ip}' /var/log/auth.log | tail -50",
-            "undo_template": None,
             "severity_threshold": "Critical",
             "risk": "low",
         },
@@ -64,21 +59,18 @@ TACTIC_TEMPLATES = {
         {
             "description": "Block outbound traffic to destination IP",
             "command_template": "iptables -A OUTPUT -d {dest_ip} -j DROP",
-            "undo_template": "iptables -D OUTPUT -d {dest_ip} -j DROP",
             "severity_threshold": "High",
             "risk": "medium",
         },
         {
             "description": "Capture traffic to destination for forensics",
             "command_template": "tcpdump -i any host {dest_ip} -w /tmp/exfil_{dest_ip}.pcap &",
-            "undo_template": "kill $(pgrep -f 'tcpdump.*{dest_ip}')",
             "severity_threshold": "Medium",
             "risk": "low",
         },
         {
             "description": "Kill active connections to destination IP",
             "command_template": "ss -K dst {dest_ip}",
-            "undo_template": None,
             "severity_threshold": "Critical",
             "risk": "high",
         },
@@ -87,21 +79,18 @@ TACTIC_TEMPLATES = {
         {
             "description": "Block source IP at firewall",
             "command_template": "iptables -A INPUT -s {src_ip} -j DROP",
-            "undo_template": "iptables -D INPUT -s {src_ip} -j DROP",
             "severity_threshold": "High",
             "risk": "low",
         },
         {
             "description": "Isolate compromised host",
             "command_template": "iptables -A INPUT -d {dest_ip} -j DROP && iptables -A OUTPUT -s {dest_ip} -j DROP",
-            "undo_template": "iptables -D INPUT -d {dest_ip} -j DROP && iptables -D OUTPUT -s {dest_ip} -j DROP",
             "severity_threshold": "Critical",
             "risk": "high",
         },
         {
             "description": "Check running services on target port",
             "command_template": "ss -tlnp | grep :{dest_port}",
-            "undo_template": None,
             "severity_threshold": "Medium",
             "risk": "low",
         },
@@ -110,14 +99,12 @@ TACTIC_TEMPLATES = {
         {
             "description": "Enable enhanced logging for source IP",
             "command_template": "iptables -A INPUT -s {src_ip} -j LOG --log-prefix '[EVASION:{src_ip}] ' --log-level 4",
-            "undo_template": "iptables -D INPUT -s {src_ip} -j LOG --log-prefix '[EVASION:{src_ip}] ' --log-level 4",
             "severity_threshold": "Medium",
             "risk": "low",
         },
         {
             "description": "Isolate suspect host",
             "command_template": "iptables -A INPUT -d {dest_ip} -j DROP && iptables -A OUTPUT -s {dest_ip} -j DROP",
-            "undo_template": "iptables -D INPUT -d {dest_ip} -j DROP && iptables -D OUTPUT -s {dest_ip} -j DROP",
             "severity_threshold": "Critical",
             "risk": "high",
         },
@@ -129,7 +116,6 @@ PORT_TEMPLATES = {
         {
             "description": "Block SSH from source IP",
             "command_template": "iptables -A INPUT -p tcp --dport 22 -s {src_ip} -j DROP",
-            "undo_template": "iptables -D INPUT -p tcp --dport 22 -s {src_ip} -j DROP",
             "severity_threshold": "High",
             "risk": "low",
         },
@@ -138,7 +124,6 @@ PORT_TEMPLATES = {
         {
             "description": "Block external SMB access from source",
             "command_template": "iptables -A INPUT -p tcp --dport 445 -s {src_ip} -j DROP",
-            "undo_template": "iptables -D INPUT -p tcp --dport 445 -s {src_ip} -j DROP",
             "severity_threshold": "High",
             "risk": "low",
         },
@@ -147,7 +132,6 @@ PORT_TEMPLATES = {
         {
             "description": "Restrict GlassFish admin to localhost only",
             "command_template": "iptables -A INPUT -p tcp --dport 4848 ! -s 127.0.0.1 -j DROP",
-            "undo_template": "iptables -D INPUT -p tcp --dport 4848 ! -s 127.0.0.1 -j DROP",
             "severity_threshold": "Medium",
             "risk": "low",
         },
@@ -213,14 +197,12 @@ class ResponseActionEngine:
             threshold_rank = SEVERITY_RANK.get(t["severity_threshold"], 0)
             try:
                 cmd = t["command_template"].format(**params)
-                undo = t["undo_template"].format(**params) if t.get("undo_template") else None
             except KeyError:
                 continue
 
             commands.append({
                 "description": t["description"],
                 "command": cmd,
-                "undo_command": undo,
                 "platform": "linux",
                 "risk": t["risk"],
                 "auto_executable": sev_rank >= threshold_rank,
