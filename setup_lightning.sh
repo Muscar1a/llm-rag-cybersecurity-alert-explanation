@@ -37,9 +37,7 @@ vllm serve "$VLLM_MODEL" \
     --max-model-len 10240 \
     --quantization bitsandbytes \
     --load-format bitsandbytes \
-    --gpu-memory-utilization 0.9 \
-    --enable-reasoning \
-    --reasoning-parser deepseek_r1 &
+    --gpu-memory-utilization 0.9 &
 VLLM_PID=$!
 echo "vLLM started (PID $VLLM_PID)"
 
