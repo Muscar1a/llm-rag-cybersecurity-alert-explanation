@@ -1,30 +1,28 @@
-def evaluate_remediation(samples_data: list[dict], rem_gt_by_id: dict) -> dict:
-    """Compare engine remediation output against ground truth.
+import numpy as np
+from .utils import get_judge_emb
 
-    Returns severity accuracy + command recall/precision metrics.
+SIMILARITY_THRESHOLD = 0.7
+
+
+def evaluate_remediation(samples_data: list[dict], rem_gt_by_id: dict) -> dict:
+    """Evaluate remediation description quality using embedding similarity.
+
+    Compares LLM-generated remediation descriptions against ground truth.
+    Commands are excluded from evaluation.
     """
-    sev_correct = 0
-    sev_total = 0
-    cmd_recalls = []
-    cmd_precisions = []
-    per_tactic = {}
+    emb_model = get_judge_emb()
+
+    desc_recalls = []
+    desc_precisions = []
+    per_tactic: dict[str, dict] = {}
 
     for s in samples_data:
         aid = s.get("id")
         tactic = s.get("label_tactic", "Unknown")
 
         if tactic not in per_tactic:
-            per_tactic[tactic] = {"sev_correct": 0, "sev_total": 0, "recalls": [], "precisions": []}
+            per_tactic[tactic] = {"recalls": [], "precisions": []}
         pt = per_tactic[tactic]
-
-        gt_sev = s.get("gt_severity", "")
-        llm_sev = s.get("llm_severity", "")
-        if gt_sev:
-            sev_total += 1
-            pt["sev_total"] += 1
-            if llm_sev and gt_sev.strip().lower() == llm_sev.strip().lower():
-                sev_correct += 1
-                pt["sev_correct"] += 1
 
         if aid is None or aid not in rem_gt_by_id:
             continue
@@ -32,48 +30,64 @@ def evaluate_remediation(samples_data: list[dict], rem_gt_by_id: dict) -> dict:
         if not gt_rem:
             continue
 
-        gt_cmds = set()
+        llm_descs = [
+            cmd["description"]
+            for cmd in s.get("remediation_commands", [])
+            if isinstance(cmd, dict) and cmd.get("description")
+        ]
+
+        if not llm_descs:
+            any_gt = any(step for v in gt_rem for step in v.get("steps", []))
+            if any_gt:
+                desc_recalls.append(0.0)
+                pt["recalls"].append(0.0)
+            continue
+
+        llm_vecs = np.array(emb_model.embed_documents(llm_descs))
+
+        # Recall: best-matching variant (LLM might follow one strategy)
+        best_recall = 0.0
         for variant in gt_rem:
-            for step in variant.get("steps", []):
-                gt_cmds.add(_norm(step["command"]))
+            v_descs = [step["description"] for step in variant.get("steps", []) if step.get("description")]
+            if not v_descs:
+                continue
+            v_vecs = np.array(emb_model.embed_documents(v_descs))
+            sim = v_vecs @ llm_vecs.T
+            matched = int((sim.max(axis=1) >= SIMILARITY_THRESHOLD).sum())
+            best_recall = max(best_recall, matched / len(v_descs))
 
-        engine_cmds = set()
-        for cmd in s.get("remediation_commands", []):
-            if isinstance(cmd, dict) and cmd.get("command"):
-                engine_cmds.add(_norm(cmd["command"]))
+        desc_recalls.append(best_recall)
+        pt["recalls"].append(best_recall)
 
-        if gt_cmds:
-            matched = len(gt_cmds & engine_cmds)
-            recall = matched / len(gt_cmds)
-            cmd_recalls.append(recall)
-            pt["recalls"].append(recall)
-        if engine_cmds:
-            matched = len(gt_cmds & engine_cmds)
-            precision = matched / len(engine_cmds)
-            cmd_precisions.append(precision)
-            pt["precisions"].append(precision)
+        # Precision: LLM description matches any GT description across all variants
+        all_gt_descs = [
+            step["description"]
+            for v in gt_rem for step in v.get("steps", [])
+            if step.get("description")
+        ]
+        if all_gt_descs:
+            gt_vecs = np.array(emb_model.embed_documents(all_gt_descs))
+            sim = gt_vecs @ llm_vecs.T
+            llm_matched = int((sim.max(axis=0) >= SIMILARITY_THRESHOLD).sum())
+            precision = llm_matched / len(llm_descs)
+        else:
+            precision = 0.0
+
+        desc_precisions.append(precision)
+        pt["precisions"].append(precision)
 
     def _avg(lst):
         return round(sum(lst) / len(lst), 3) if lst else None
 
     tactic_summary = {}
-    for tactic, pt in sorted(per_tactic.items()):
+    for tactic, vals in sorted(per_tactic.items()):
         tactic_summary[tactic] = {
-            "severity_accuracy": round(pt["sev_correct"] / pt["sev_total"], 3) if pt["sev_total"] else None,
-            "n": pt["sev_total"],
-            "cmd_recall": _avg(pt["recalls"]),
-            "cmd_precision": _avg(pt["precisions"]),
+            "desc_recall": _avg(vals["recalls"]),
+            "desc_precision": _avg(vals["precisions"]),
         }
 
     return {
-        "severity_correct": sev_correct,
-        "severity_total": sev_total,
-        "severity_accuracy": round(sev_correct / sev_total, 3) if sev_total else None,
-        "avg_cmd_recall": _avg(cmd_recalls),
-        "avg_cmd_precision": _avg(cmd_precisions),
+        "avg_desc_recall": _avg(desc_recalls),
+        "avg_desc_precision": _avg(desc_precisions),
         "per_tactic": tactic_summary,
     }
-
-
-def _norm(cmd: str) -> str:
-    return " ".join(cmd.strip().split())

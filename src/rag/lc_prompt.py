@@ -52,9 +52,9 @@ Citation contract:
   (e.g. "CVE-2016-3607", "T1110", "Credential Access") appears word-for-word in the
   Retrieved Knowledge block. If an identifier does not appear there, omit it
   entirely — do not substitute from memory.
-- Ground every claim in Retrieved Knowledge. If retrieved context does not support a
-  claim you would like to make, either drop the claim or mark it "not confirmed by
-  retrieved context" in `rationale`.
+- STRICT: every factual claim in threat_description and rationale must be traceable
+  to either the Alert text or a specific Retrieved Knowledge entry. If you cannot
+  point to the source, do not include the claim.
 - When naming the attack category, prefer the MITRE tactic level
   (e.g. "Reconnaissance", "Credential Access", "Initial Access") if a `tactic` entry
   is present in the retrieved context. Technique-level names only if the
@@ -80,23 +80,24 @@ _OUTPUT_SCHEMA = """\
 Output ONLY a single valid JSON object. No markdown fences, no prose before or after.
 
 {{
-  "threat_description": "Semantic explanation of what behavior this alert indicates. Do NOT restate the raw alert. If a tactic is identifiable from context, name it.",
+  "threat_description": "1-2 sentences. Describe the observed behavior and its security meaning. Do NOT restate raw alert fields. Name the tactic ONLY if a tactic entry exists in Retrieved Knowledge.",
   "severity": "Low | Medium | High | Critical | Unknown",
-  "rationale": "2-4 sentences. Cite specific evidence from the alert AND from retrieved context (port profile, conn_state semantics, traffic pattern, or tactic entry).",
+  "rationale": "1-2 sentences. Each sentence MUST reference a specific entry from Retrieved Knowledge (e.g. 'the port_profile entry identifies ...', 'the tactic entry confirms ...'). Do not include claims unsupported by Retrieved Knowledge.",
   "mitigation_steps": ["step 1", "step 2", "..."]
 }}
 
-Severity criteria (assess from alert observables + retrieved context):
-- Critical: Established session (SF/S1) to sensitive service (per port_profile)
-            AND anomalous traffic pattern (per traffic_pattern entry)
-            AND confirmed attacker tactic from retrieved context (e.g. Credential Access,
-            Exfiltration). Suricata severity 1 reinforces Critical.
-- High:     TWO of the three conditions above (sensitive service, anomalous pattern,
-            confirmed tactic). Suricata severity 1-2 supports High.
-- Medium:   Only ONE of the three conditions confirmed by context. A single suspicious
-            indicator without corroboration.
-- Low:      No session established (S0/REJ/RSTO), no payload exchanged,
-            single probe only, OR alert category is benign / not suspicious.
+Severity criteria — use the Suricata severity number in the alert as the primary anchor,
+then adjust based on retrieved context:
+- Critical: Suricata severity 1 with an established session (SF/S1).
+            OR Suricata severity 2 with confirmed Exfiltration tactic in retrieved context
+            and established session.
+- High:     Suricata severity 2 with a confirmed attack tactic in retrieved context
+            (e.g. Credential Access, Defense Evasion, Initial Access) and established
+            session (SF/S1).
+- Medium:   Suricata severity 2 with only one suspicious indicator confirmed by context,
+            OR session not established (S0/REJ).
+- Low:      Suricata severity 3, OR alert category is benign / not suspicious,
+            OR no attack tactic confirmed by retrieved context.
 - Unknown:  Retrieved context insufficient to assess.
 
 Constraints:
@@ -130,8 +131,9 @@ Alert:
 Retrieved Knowledge:
 {context}
 
-Reminder: every claim in your JSON must trace to the Alert or Retrieved
-Knowledge above. Do not add identifiers from memory."""
+Reminder: every claim in threat_description and rationale must trace to the Alert
+or Retrieved Knowledge above. Do not add facts, CVEs, or technique names from
+memory. Keep responses concise — 1-2 sentences per field."""
 
 basic_prompt = ChatPromptTemplate.from_messages([
     ("system", _BASIC_SYSTEM),
@@ -310,8 +312,8 @@ few_shot_prompt = ChatPromptTemplate.from_messages([
 
 PROMPTS = {
     "basic": basic_prompt,
-    "cot": cot_prompt,
-    "few_shot": few_shot_prompt,
+    # "cot": cot_prompt,
+    # "few_shot": few_shot_prompt,
 }
 
 def get_qa_prompt(template_name: str = "basic") -> ChatPromptTemplate:

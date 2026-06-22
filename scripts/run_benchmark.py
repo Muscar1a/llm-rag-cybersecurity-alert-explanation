@@ -2,7 +2,6 @@ import argparse
 import json
 import sys
 import time
-from datetime import datetime
 from pathlib import Path
 
 import yaml
@@ -14,7 +13,7 @@ from tests.eval.eval_retrieval import evaluate_retrieval
 from tests.eval.eval_generation import evaluate_generation
 from tests.eval.eval_remediation import evaluate_remediation
 
-DEFAULT_TEMPLATES = ["basic", "cot", "few_shot"]
+DEFAULT_TEMPLATES = ["basic"]
 GROUND_TRUTH_FILE = Path("baselines") / "ground_truth.json"
 ALERTS_FILE = Path("tests") / "alerts.json"
 REMEDIATION_GT_FILE = Path("baselines") / "remediation_gt.json"
@@ -166,13 +165,35 @@ def run_template(
         "avg_hallucination_rate": nanmean("hallucination_rate"),
     }
 
-    # Severity + remediation evaluation
+    # Severity evaluation
+    sev_correct = 0
+    sev_total = 0
+    per_tactic_sev = {}
+    for s in samples_data:
+        gt_sev = s.get("gt_severity", "")
+        llm_sev = s.get("llm_severity", "")
+        tactic = s.get("label_tactic", "Unknown")
+        if tactic not in per_tactic_sev:
+            per_tactic_sev[tactic] = {"correct": 0, "total": 0}
+        if gt_sev:
+            sev_total += 1
+            per_tactic_sev[tactic]["total"] += 1
+            if llm_sev and gt_sev.strip().lower() == llm_sev.strip().lower():
+                sev_correct += 1
+                per_tactic_sev[tactic]["correct"] += 1
+
+    summary["severity_accuracy"] = round(sev_correct / sev_total, 3) if sev_total else None
+    summary["severity_correct"] = sev_correct
+    summary["severity_total"] = sev_total
+    summary["severity_per_tactic"] = {
+        t: {"severity_accuracy": round(v["correct"] / v["total"], 3) if v["total"] else None, "n": v["total"]}
+        for t, v in sorted(per_tactic_sev.items())
+    }
+
+    # Remediation description evaluation
     rem_summary = evaluate_remediation(samples_data, rem_gt_by_id or {})
-    summary["severity_accuracy"] = rem_summary.get("severity_accuracy")
-    summary["severity_correct"] = rem_summary.get("severity_correct")
-    summary["severity_total"] = rem_summary.get("severity_total")
-    summary["avg_cmd_recall"] = rem_summary.get("avg_cmd_recall")
-    summary["avg_cmd_precision"] = rem_summary.get("avg_cmd_precision")
+    summary["avg_desc_recall"] = rem_summary.get("avg_desc_recall")
+    summary["avg_desc_precision"] = rem_summary.get("avg_desc_precision")
     summary["remediation_per_tactic"] = rem_summary.get("per_tactic")
 
     # Save final per-template JSON
@@ -189,14 +210,15 @@ def run_template(
     print(f"    Retrieval recall            : {summary['avg_context_recall']}")
     print(f"    Answer relevancy            : {summary['avg_answer_relevancy']}")
     print(f"    Hallucination rate          : {summary['avg_hallucination_rate']}")
-    sev_str = f"{rem_summary.get('severity_correct')}/{rem_summary.get('severity_total')}"
-    print(f"    Severity accuracy           : {summary['severity_accuracy']} ({sev_str})")
-    print(f"    Remediation cmd recall      : {summary['avg_cmd_recall']}")
-    print(f"    Remediation cmd precision   : {summary['avg_cmd_precision']}")
-    if rem_summary.get("per_tactic"):
+    print(f"    Severity accuracy           : {summary['severity_accuracy']} ({sev_correct}/{sev_total})")
+    print(f"    Remediation desc recall     : {summary['avg_desc_recall']}")
+    print(f"    Remediation desc precision  : {summary['avg_desc_precision']}")
+    if summary.get("severity_per_tactic"):
         print(f"    Per-tactic:")
-        for tactic, tm in rem_summary["per_tactic"].items():
-            print(f"      {tactic:25s} sev={tm['severity_accuracy']}  cmd_R={tm['cmd_recall']}  cmd_P={tm['cmd_precision']}  (n={tm['n']})")
+        for tactic in summary["severity_per_tactic"]:
+            st = summary["severity_per_tactic"][tactic]
+            rt = (summary.get("remediation_per_tactic") or {}).get(tactic, {})
+            print(f"      {tactic:25s} sev={st['severity_accuracy']}  desc_R={rt.get('desc_recall')}  desc_P={rt.get('desc_precision')}  (n={st['n']})")
     print(f"  JSON: {json_file}")
 
     return summary, json_file, already_done
@@ -209,8 +231,8 @@ COMPARISON_METRICS = [
     ("avg_answer_relevancy", "Answer Relevance"),
     ("avg_hallucination_rate", "Hallucination Rate"),
     ("severity_accuracy",    "Severity Accuracy"),
-    ("avg_cmd_recall",       "Remediation Cmd Recall"),
-    ("avg_cmd_precision",    "Remediation Cmd Precision"),
+    ("avg_desc_recall",      "Remediation Desc Recall"),
+    ("avg_desc_precision",   "Remediation Desc Precision"),
 ]
 
 
