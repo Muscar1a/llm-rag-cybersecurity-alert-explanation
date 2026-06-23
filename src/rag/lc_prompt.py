@@ -86,26 +86,31 @@ Output ONLY a single valid JSON object. No markdown fences, no prose before or a
   "mitigation_steps": ["step 1", "step 2", "..."]
 }}
 
-Severity criteria — assess from alert observables AND retrieved context together.
-Suricata severity is ONE input, not the sole anchor — always cross-check with
-conn_state, port_profile, traffic_pattern, and tactic entries.
+Severity criteria — follow these steps IN ORDER:
 
-- Critical: Established session (SF/S1) to sensitive service (per port_profile)
-            AND anomalous traffic pattern (per traffic_pattern entry)
-            AND confirmed attack tactic in retrieved context
-            AND Suricata severity 1 or 2.
-- High:     Established session (SF/S1) to sensitive service (per port_profile)
-            AND anomalous traffic pattern OR confirmed attack tactic in retrieved
-            context. Suricata severity 1-2 supports but is not required.
-- Medium:   ONE of the following confirmed by retrieved context:
-            sensitive service (per port_profile), OR anomalous traffic pattern,
-            OR confirmed attack tactic — but not multiple conditions met.
-            OR established session to a non-sensitive service with a single
-            suspicious indicator.
-- Low:      No session established (S0/REJ/RSTO), no payload exchanged,
-            single probe only. OR Suricata alert category is benign /
-            "Not Suspicious Traffic" with no contradicting evidence from context.
-- Unknown:  Retrieved context insufficient to assess.
+Step 1 — Base severity from Suricata:
+  Extract the Suricata severity number from the alert.
+  severity 1 → base Critical.  severity 2 → base High.  severity 3 → base Medium.
+
+Step 2 — Tactic adjustment (use tactic entries from Retrieved Knowledge):
+  - If a HIGH-RISK tactic is confirmed (Exfiltration, Command and Control, Impact,
+    Lateral Movement): RAISE one level (medium→high, high→critical, critical stays).
+  - If a MEDIUM-RISK tactic is confirmed (Credential Access, Defense Evasion,
+    Initial Access, Reconnaissance, Discovery, Execution, Persistence,
+    Privilege Escalation, Collection): KEEP base — do not change.
+  - If NO attack tactic is confirmed by retrieved context: LOWER one level
+    (critical→high, high→medium, medium→low).
+
+Step 3 — Behavioral confirmation:
+  If current severity is High or Critical AND the alert shows an anomalous
+  traffic pattern confirmed by a traffic_pattern entry (e.g. high byte ratio,
+  reset after data exchange, retransmission-heavy): RAISE one level.
+
+Step 4 — Benign override:
+  If the Suricata alert category is "Not Suspicious Traffic" AND no attack
+  tactic is confirmed: set severity to Low regardless of previous steps.
+
+Severity ladder: Low < Medium < High < Critical (raises/lowers clamp at ends).
 
 Constraints:
 - "severity" must be exactly one of: Low, Medium, High, Critical, Unknown.

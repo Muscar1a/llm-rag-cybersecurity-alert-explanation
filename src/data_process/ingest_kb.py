@@ -10,7 +10,7 @@ Usage:
     python src/data_process/ingest_kb.py --group port_profile
     python src/data_process/ingest_kb.py --test-only --query "port 445 SMB lateral movement"
 
-Input:  data/kb/{port_profile,conn_state,traffic_pattern,tatic_profile}/*.jsonl
+Input:  data/kb/{port_profile,conn_state,traffic_pattern,tactic_profile,suricata_category}/*.jsonl
 Output: upserted to Qdrant collection 'cyber_chunks', source='kb_v2'
 """
 
@@ -49,10 +49,11 @@ SOURCE_TAG = "kb_v2"
 KB_ROOT    = Path("data/kb")
 
 GROUPS = {
-    "port_profile":    KB_ROOT / "port_profile"   / "port_profiles.jsonl",
-    "conn_state":      KB_ROOT / "conn_state"      / "conn_state_profiles.jsonl",
-    "traffic_pattern": KB_ROOT / "traffic_pattern" / "traffic_pattern_profiles.jsonl",
-    "tactic":          KB_ROOT / "tactic_profile"  / "tactic_profiles.jsonl",
+    "port_profile":       KB_ROOT / "port_profile"       / "port_profiles.jsonl",
+    "conn_state":         KB_ROOT / "conn_state"          / "conn_state_profiles.jsonl",
+    "traffic_pattern":    KB_ROOT / "traffic_pattern"     / "traffic_pattern_profiles.jsonl",
+    "tactic":             KB_ROOT / "tactic_profile"      / "tactic_profiles.jsonl",
+    "suricata_category":  KB_ROOT / "suricata_category"   / "suricata_category_profiles.jsonl",
 }
 
 
@@ -89,6 +90,8 @@ def build_payload(entry: dict, text: str) -> dict:
         extra = {k: meta[k] for k in ("pattern_id", "scope") if k in meta}
     elif kb_type == "tactic":
         extra = {k: meta[k] for k in ("tactic",) if k in meta}
+    elif kb_type == "suricata_category":
+        extra = {k: meta[k] for k in ("category", "classtype", "default_priority") if k in meta}
 
     payload.update(extra)
     payload["metadata"].update(extra)
