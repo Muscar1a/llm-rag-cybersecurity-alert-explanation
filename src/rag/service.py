@@ -128,9 +128,15 @@ class RagService:
         template_name: str = "basic",
         metadata: dict | None = None,
         auto_response: bool | None = None,
+        provider: str = "vllm",
+        api_key: str | None = None,
+        model: str | None = None,
     ):
         """Generator yielding SSE-style dicts: contexts → tokens → done."""
-        chain = build_analyze_chain(k=k, template_name=template_name)
+        chain = build_analyze_chain(
+            k=k, template_name=template_name,
+            provider=provider, api_key=api_key, model=model,
+        )
 
         raw_docs = []
         contexts_sent = False
@@ -167,9 +173,15 @@ class RagService:
         template_name: str = "basic",
         metadata: dict | None = None,
         auto_response: bool | None = None,
+        provider: str = "vllm",
+        api_key: str | None = None,
+        model: str | None = None,
     ) -> dict:
         cb = _LLMMetaCB()
-        chain = build_analyze_chain(k=k, template_name=template_name)
+        chain = build_analyze_chain(
+            k=k, template_name=template_name,
+            provider=provider, api_key=api_key, model=model,
+        )
         result = chain.invoke({"input": alert_text}, config={"callbacks": [cb]})
 
         # Record LLM speed metrics from response metadata

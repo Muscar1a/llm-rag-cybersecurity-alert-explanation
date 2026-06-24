@@ -17,8 +17,13 @@ class Settings(BaseSettings):
     vllm_model: str | None = None
     vllm_max_tokens: int = 4096
 
+    openai_api_key: str | None = None
     deepseek_api_key: str | None = None
     deepseek_model: str = "deepseek-v4-flash"
+    gemini_api_key: str | None = None
+    glm_api_key: str | None = None
+    kimi_api_key: str | None = None
+    grok_api_key: str | None = None
     
     # Hugging Face Token for API access
     hf_token: str | None = None

@@ -58,7 +58,8 @@ class KBRetriever(BaseRetriever):
     """Hybrid retriever for kb_v2.
 
     - port_profile / conn_state: exact filter match (no vector needed)
-    - traffic_pattern / tactic:  semantic similarity search
+    - traffic_pattern:           semantic similarity search
+    - tactic:                    union of bi-encoder + cross-encoder rankers
     """
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -66,6 +67,8 @@ class KBRetriever(BaseRetriever):
     qdrant_client:  QdrantClient
     collection:     str
     k_semantic:     int = 2
+    k_tactic_bi:    int = 3
+    k_tactic_ce:    int = 3
     reranker_model: str | None = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
     def _exact_fetch(self, kb_type: str, extra: list) -> list[Document]:
@@ -83,6 +86,24 @@ class KBRetriever(BaseRetriever):
             k=self.k_semantic,
             filter=_kb_filter(kb_type),
         )
+
+    def _tactic_fetch(self, query: str) -> list[Document]:
+        """Tactic ranking by text similarity is unreliable — alert telemetry
+        (ports, byte counts, conn_state) is lexically/semantically far from MITRE
+        tactic prose, so neither encoder alone ranks the right tactic well. Union
+        two complementary rankers over the full tactic set:
+        bi-encoder top-k_tactic_bi ∪ cross-encoder top-k_tactic_ce (~0.94 recall)."""
+        all_docs = self.vectorstore.similarity_search(
+            query, k=64, filter=_kb_filter("tactic"),
+        )
+        picked = list(all_docs[: self.k_tactic_bi])  # bi-encoder order
+        if self.reranker_model and len(all_docs) > self.k_tactic_bi:
+            reranker = _get_reranker(self.reranker_model)
+            scores   = reranker.predict([(query, d.page_content) for d in all_docs])
+            ce_ranked = [d for _, d in sorted(zip(scores, all_docs),
+                                              key=lambda x: x[0], reverse=True)]
+            picked += ce_ranked[: self.k_tactic_ce]
+        return picked
 
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -124,7 +145,7 @@ class KBRetriever(BaseRetriever):
         for d in self._semantic_fetch(query, "traffic_pattern"):
             add(d)
 
-        for d in self._semantic_fetch(query, "tactic"):
+        for d in self._tactic_fetch(query):
             add(d)
 
         if not self.reranker_model or len(docs) <= 1:

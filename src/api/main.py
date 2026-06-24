@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 
 from src.api.middleware import PrometheusMiddleware, metrics_app
+from src.rag.llm_factory import PROVIDERS
 from src.rag.schemas import AnalyzeRequest, AnalyzeResponse
 from src.rag.service import RagService
 from src.rag.settings import settings
@@ -46,7 +47,7 @@ def _check_vllm() -> bool:
 def health():
     qdrant_ok = _check_qdrant()
     vllm_ok = _check_vllm()
-    status = "ok" if (qdrant_ok and vllm_ok) else "degraded"
+    status = "ok" if qdrant_ok else "degraded"
     return {
         "status": status,
         "qdrant": "ok" if qdrant_ok else "unreachable",
@@ -72,6 +73,20 @@ def version():
     }
 
 
+@app.get("/providers")
+def providers():
+    return [
+        {
+            "id": pid,
+            "label": cfg["label"],
+            "default_model": cfg["model"],
+            "models": cfg.get("models", [cfg["model"]]),
+            "requires_api_key": cfg["requires_api_key"],
+        }
+        for pid, cfg in PROVIDERS.items()
+    ]
+
+
 @app.post("/analyze", response_model=AnalyzeResponse)
 def analyze(request: AnalyzeRequest):
     meta = request.metadata.model_dump() if request.metadata else None
@@ -80,6 +95,9 @@ def analyze(request: AnalyzeRequest):
         k=request.k,
         metadata=meta,
         auto_response=request.auto_response,
+        provider=request.provider,
+        api_key=request.api_key,
+        model=request.model,
     )
 
 
@@ -93,6 +111,9 @@ def analyze_stream(request: AnalyzeRequest):
             k=request.k,
             metadata=meta,
             auto_response=request.auto_response,
+            provider=request.provider,
+            api_key=request.api_key,
+            model=request.model,
         ):
             yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 

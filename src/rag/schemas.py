@@ -17,6 +17,9 @@ class AnalyzeRequest(BaseModel):
     k: int = Field(default=5, ge=1, le=20)
     metadata: AlertMetadata | None = None
     auto_response: bool | None = None
+    provider: str = "vllm"
+    api_key: str | None = None
+    model: str | None = None
 
 
 class RemediationCommand(BaseModel):

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import yaml
 
+from src.rag.llm_factory import PROVIDERS
 from src.rag.service import RagService
 from src.mlops.tracking import log_rag_experiment, register_rag_pipeline
 from tests.eval.eval_latency import evaluate_latency
@@ -59,11 +60,13 @@ def run_template(
     reset: bool,
     alerts_by_id: dict | None = None,
     rem_gt_by_id: dict | None = None,
+    provider: str = "vllm",
+    model: str | None = None,
 ) -> tuple[dict, Path, bool]:
     """Run benchmark for one template. Returns (summary, json_file, was_resumed_done)."""
     ckpt_dir = RESULTS_DIR / "checkpoints"
     ckpt_dir.mkdir(parents=True, exist_ok=True)
-    ckpt_file = ckpt_dir / f"checkpoint_{template}_{version}.json"
+    ckpt_file = ckpt_dir / f"checkpoint_{template}_{provider}_{version}.json"
 
     if reset and ckpt_file.exists():
         print(f"  [Reset] Deleting checkpoint: {ckpt_file.name}")
@@ -108,6 +111,8 @@ def run_template(
                 k=retrieval_k,
                 template_name=template,
                 metadata=metadata,
+                provider=provider,
+                model=model,
             )
             latency = time.perf_counter() - t0
 
@@ -199,7 +204,7 @@ def run_template(
     # Save final per-template JSON
     out_dir = RESULTS_DIR / template
     out_dir.mkdir(parents=True, exist_ok=True)
-    json_file = out_dir / f"benchmark_{template}_{version}.json"
+    json_file = out_dir / f"benchmark_{template}_{provider}_{version}.json"
     json_file.write_text(
         json.dumps({"summary": summary, "samples": samples_data}, ensure_ascii=False, indent=2),
         encoding="utf-8",
@@ -273,6 +278,8 @@ def main():
                         help=f"Comma-separated templates (default: {','.join(DEFAULT_TEMPLATES)})")
     parser.add_argument("--reset", action="store_true", help="Delete existing checkpoints and start fresh")
     parser.add_argument("--version", type=str, default="v1", help="Version tag (default: v1). Used in output paths and checkpoint names.")
+    parser.add_argument("--provider", type=str, default="vllm", help="LLM provider (default: vllm). Options: vllm, openai, deepseek, gemini, glm, kimi, grok")
+    parser.add_argument("--model", type=str, default=None, help="Override model name (default: provider's default)")
     args = parser.parse_args()
 
     templates = [t.strip() for t in args.templates.split(",") if t.strip()]
@@ -306,15 +313,30 @@ def main():
         rem_list = json.loads(REMEDIATION_GT_FILE.read_text(encoding="utf-8"))
         rem_gt_by_id = {r["id"]: r for r in rem_list}
 
+    provider_cfg = PROVIDERS.get(args.provider)
+    if provider_cfg is None:
+        print(f"Error: unknown provider '{args.provider}'. Supported: {list(PROVIDERS)}")
+        sys.exit(1)
+    if provider_cfg["requires_api_key"]:
+        from src.rag.settings import settings
+        env_key = getattr(settings, f"{args.provider}_api_key", None)
+        if not env_key:
+            print(f"Error: {args.provider.upper()}_API_KEY not found in .env")
+            sys.exit(1)
+
+    effective_model = args.model or provider_cfg["model"]
+    print(f"Provider: {provider_cfg['label']} | Model: {effective_model}")
+
     rag_service = RagService()
     git_sha = get_git_sha()
 
     base_params = {
+        "provider": args.provider,
         "embed_model": params["embedding"]["model_name"],
         "embed_dim": params["embedding"]["dim"],
         "chunk_size": params["chunking"]["chunk_size"],
         "retrieval_k": retrieval_k,
-        "llm_model": params["llm"]["model"],
+        "llm_model": effective_model,
         "llm_temp": params["llm"]["temperature"],
         "git_sha": git_sha,
         "num_samples": len(sampled),
@@ -332,6 +354,8 @@ def main():
             reset=args.reset,
             alerts_by_id=alerts_by_id,
             rem_gt_by_id=rem_gt_by_id,
+            provider=args.provider,
+            model=args.model,
         )
         all_summaries.append(summary)
 

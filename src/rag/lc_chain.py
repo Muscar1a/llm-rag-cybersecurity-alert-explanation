@@ -2,7 +2,7 @@ import os
 import yaml
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from langchain_classic.chains import create_retrieval_chain
-from langchain_openai import ChatOpenAI
+from .llm_factory import build_llm
 from .lc_vectorstore import build_retriever
 from .lc_prompt import DOCUMENT_PROMPT, DOCUMENT_SEPARATOR, get_qa_prompt
 from .settings import settings
@@ -11,8 +11,10 @@ from .settings import settings
 def build_analyze_chain(
     k: int = 5,
     template_name: str = "basic",
+    provider: str = "vllm",
+    api_key: str | None = None,
+    model: str | None = None,
 ):
-    model = settings.vllm_model or "Qwen/Qwen2.5-14B-Instruct"
     temperature = 0.1
     max_tokens = settings.vllm_max_tokens
     try:
@@ -20,16 +22,19 @@ def build_analyze_chain(
             with open("params.yaml", "r", encoding="utf-8") as f:
                 p = yaml.safe_load(f)
             llm_p = p.get("llm", {})
-            if not settings.vllm_model:
-                model = llm_p.get("model", model)
             temperature = llm_p.get("temperature", temperature)
+            if provider == "vllm" and not model and not settings.vllm_model:
+                model = llm_p.get("model", None)
     except Exception:
         pass
 
-    llm = ChatOpenAI(
+    if provider == "vllm" and not model:
+        model = settings.vllm_model or None
+
+    llm = build_llm(
+        provider=provider,
+        api_key=api_key,
         model=model,
-        base_url=settings.vllm_base_url,
-        api_key="EMPTY",
         temperature=temperature,
         max_tokens=max_tokens,
     )
