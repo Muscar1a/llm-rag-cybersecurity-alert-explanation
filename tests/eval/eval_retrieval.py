@@ -3,7 +3,7 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from ragas import EvaluationDataset, SingleTurnSample, evaluate, RunConfig
-from ragas.metrics import context_recall
+from ragas.metrics import context_recall, context_precision
 from .utils import get_judge_llm, get_judge_emb, safe_val, _is_rate_limit
 
 _RAGAS_RUN_CONFIG = RunConfig(timeout=180, max_retries=2, max_workers=1)
@@ -24,7 +24,7 @@ def evaluate_retrieval(samples_data: list[dict]) -> list[dict]:
             try:
                 ragas_result = evaluate(
                     EvaluationDataset(samples=[sample]),
-                    metrics=[context_recall],
+                    metrics=[context_recall, context_precision],
                     llm=get_judge_llm(),
                     embeddings=get_judge_emb(),
                     run_config=_RAGAS_RUN_CONFIG,
@@ -43,6 +43,7 @@ def evaluate_retrieval(samples_data: list[dict]) -> list[dict]:
 
         results.append({
             "context_recall": safe_val(scores.get("context_recall")),
+            "context_precision": safe_val(scores.get("context_precision")),
         })
 
     return results

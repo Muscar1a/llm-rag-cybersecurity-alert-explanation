@@ -166,6 +166,7 @@ def run_template(
         "total": total,
         **latency_metrics,
         "avg_context_recall": nanmean("context_recall"),
+        "avg_context_precision": nanmean("context_precision"),
         "avg_answer_relevancy": nanmean("answer_relevancy"),
         "avg_hallucination_rate": nanmean("hallucination_rate"),
     }
@@ -213,6 +214,7 @@ def run_template(
     print(f"\n  [{template.upper()}] Summary:")
     print(f"    p50 / avg latency (s)       : {summary.get('p50_latency_s')} / {summary.get('avg_latency_s')}")
     print(f"    Retrieval recall            : {summary['avg_context_recall']}")
+    print(f"    Retrieval precision         : {summary['avg_context_precision']}")
     print(f"    Answer relevancy            : {summary['avg_answer_relevancy']}")
     print(f"    Hallucination rate          : {summary['avg_hallucination_rate']}")
     print(f"    Severity accuracy           : {summary['severity_accuracy']} ({sev_correct}/{sev_total})")
@@ -233,6 +235,7 @@ COMPARISON_METRICS = [
     ("p50_latency_s",        "p50 latency (s)"),
     ("avg_latency_s",        "avg latency (s)"),
     ("avg_context_recall",   "Retrieval Recall"),
+    ("avg_context_precision", "Retrieval Precision"),
     ("avg_answer_relevancy", "Answer Relevance"),
     ("avg_hallucination_rate", "Hallucination Rate"),
     ("severity_accuracy",    "Severity Accuracy"),
