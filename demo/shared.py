@@ -8,7 +8,7 @@ API_URL = "http://127.0.0.1:8000"
 FALLBACK_PROVIDERS = [
     {"id": "vllm", "label": "vLLM (Local)", "default_model": "Qwen/Qwen2.5-14B-Instruct", "models": ["Qwen/Qwen2.5-14B-Instruct"], "requires_api_key": False},
     {"id": "openai", "label": "OpenAI", "default_model": "gpt-4o-mini", "models": ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1-nano"], "requires_api_key": True},
-    {"id": "deepseek", "label": "DeepSeek", "default_model": "deepseek-chat", "models": ["deepseek-chat", "deepseek-reasoner"], "requires_api_key": True},
+    {"id": "deepseek", "label": "DeepSeek", "default_model": "deepseek-v4-flash", "models": ["deepseek-v4-flash", "deepseek-v4-pro"], "requires_api_key": True},
     {"id": "gemini", "label": "Google Gemini", "default_model": "gemini-2.0-flash", "models": ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-pro"], "requires_api_key": True},
     {"id": "glm", "label": "GLM (Zhipu)", "default_model": "glm-4-flash", "models": ["glm-4-flash", "glm-4-plus"], "requires_api_key": True},
     {"id": "kimi", "label": "Kimi (Moonshot)", "default_model": "moonshot-v1-8k", "models": ["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"], "requires_api_key": True},

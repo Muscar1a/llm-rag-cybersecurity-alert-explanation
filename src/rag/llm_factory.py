@@ -19,8 +19,8 @@ PROVIDERS = {
     "deepseek": {
         "label": "DeepSeek",
         "base_url": "https://api.deepseek.com/v1",
-        "model": "deepseek-chat",
-        "models": ["deepseek-chat", "deepseek-reasoner"],
+        "model": "deepseek-v4-flash",
+        "models": ["deepseek-v4-flash", "deepseek-v4-pro"],
         "requires_api_key": True,
     },
     "gemini": {
