@@ -20,8 +20,21 @@ API_TIMEOUT = int(os.getenv("API_TIMEOUT", 60))
 SURICATA_QUEUE = "suricata:alerts:raw"
 RESULT_QUEUE = "alerts:results"
 MAX_RESULTS = 200
+CONSUMER_PROVIDER = os.getenv("CONSUMER_PROVIDER", "vllm")
+CONSUMER_MODEL = os.getenv("CONSUMER_MODEL") or None
 
 r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
+
+
+def _get_provider_config() -> tuple[str, str | None]:
+    try:
+        p = r.get("config:consumer:provider")
+        m = r.get("config:consumer:model")
+        provider = p.decode() if p else CONSUMER_PROVIDER
+        model = m.decode() if m else (CONSUMER_MODEL or "")
+        return provider, model or None
+    except Exception:
+        return CONSUMER_PROVIDER, CONSUMER_MODEL
 
 
 def _flow_key(event: dict) -> str:
@@ -55,9 +68,13 @@ def consume():
 
         alert_text = build_combined_alert(event, zeek_flow)
 
+        provider, model = _get_provider_config()
+        log.info(f"  Using provider: {provider}" + (f" / {model}" if model else ""))
         payload = {
             "alert_text": alert_text,
             "k": 5,
+            "provider": provider,
+            "model": model,
             "metadata": {
                 "src_ip":    event.get("src_ip", ""),
                 "dest_ip":   event.get("dest_ip", ""),

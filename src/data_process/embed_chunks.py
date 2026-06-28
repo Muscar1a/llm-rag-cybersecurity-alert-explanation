@@ -1,5 +1,7 @@
 import argparse
 import json
+import os
+import sys
 import uuid
 from pathlib import Path
 import pandas as pd
@@ -9,6 +11,9 @@ from tqdm import tqdm
 import numpy as np
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct, Filter, FieldCondition, MatchValue, FilterSelector
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.insert(0, PROJECT_ROOT)
 
 from src.rag.qdrant_store import ensure_collection as _ensure
     

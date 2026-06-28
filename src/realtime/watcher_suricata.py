@@ -14,6 +14,7 @@ REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 LOG_PATH = os.getenv("SURICATA_EVE_LOG", "/var/log/suricata/eve.json")
 QUEUE = "suricata:alerts:raw"
+TAIL_FROM_START = os.getenv("TAIL_FROM_START", "0") == "1"
 
 r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
 
@@ -27,7 +28,8 @@ def wait_for_file(path: str, poll: float = 1.0):
 
 def tail(path: str, poll: float = 0.3):
     with open(path, "r") as f:
-        f.seek(0, 2)
+        if not TAIL_FROM_START:
+            f.seek(0, 2)
         while True:
             line = f.readline()
             if not line:

@@ -3,11 +3,13 @@ import json
 import os
 import glob
 import re
+import sys
 import pandas as pd
 import yaml
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 os.chdir(PROJECT_ROOT)
+sys.path.insert(0, PROJECT_ROOT)
 
 from src.data_process.parse_attck import load_attack_techniques
 
@@ -195,7 +197,7 @@ def run_mitre():
     os.makedirs(out_dir, exist_ok=True)
     out = os.path.join(out_dir, "mitre_cleaned.parquet")
     df.to_parquet(out, index=False)
-    print(f"  Saved {len(df)} MITRE techniques → {out}")
+    print(f"  Saved {len(df)} MITRE techniques -> {out}")
 
 
 def run_sigma():
@@ -216,7 +218,7 @@ def run_sigma():
     os.makedirs(out_dir, exist_ok=True)
     out = os.path.join(out_dir, "sigma_cleaned.parquet")
     df.to_parquet(out, index=False)
-    print(f"  Saved {len(df)} Sigma rules → {out}")
+    print(f"  Saved {len(df)} Sigma rules -> {out}")
 
 
 def run_et_rules():
@@ -237,7 +239,7 @@ def run_et_rules():
     os.makedirs(out_dir, exist_ok=True)
     out = os.path.join(out_dir, "et_rules_cleaned.parquet")
     df.to_parquet(out, index=False)
-    print(f"  Saved {len(df)} ET rules → {out}")
+    print(f"  Saved {len(df)} ET rules -> {out}")
 
     print("\n--- Sample rule_text ---")
     print(df.iloc[0]["rule_text"])

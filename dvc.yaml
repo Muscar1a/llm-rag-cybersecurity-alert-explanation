@@ -8,31 +8,18 @@ stages:
       - data/processed/sigma/sigma_cleaned.parquet
       - data/processed/emerging_threats/et_rules_cleaned.parquet
 
-  chunk_data:
-    cmd: python src/data_process/chunk_data.py
+  ingest_kb:
+    cmd: python src/data_process/ingest_kb.py
     deps:
-      - src/data_process/chunk_data.py
-      - data/processed/MITRE/mitre_cleaned.parquet
-      - data/processed/sigma/sigma_cleaned.parquet
-      - data/processed/emerging_threats/et_rules_cleaned.parquet
-    params:
-      - chunking.tokenizer_model
-      - chunking.chunk_size
-      - chunking.chunk_overlap
-    outs:
-      - data/processed/MITRE/chunks.parquet
-      - data/processed/sigma/chunks.parquet
-      - data/processed/emerging_threats/chunks.parquet
-
-  embed_chunks:
-    cmd: python src/data_process/embed_chunks.py --recreate
-    deps:
-      - src/data_process/embed_chunks.py
-      - data/processed/MITRE/chunks.parquet
-      - data/processed/sigma/chunks.parquet
-      - data/processed/emerging_threats/chunks.parquet
+      - src/data_process/ingest_kb.py
+      - data/kb/port_profile/port_profiles.jsonl
+      - data/kb/conn_state/conn_state_profiles.jsonl
+      - data/kb/traffic_pattern/traffic_pattern_profiles.jsonl
+      - data/kb/tactic_profile/tactic_profiles.jsonl
+      - data/kb/suricata_category/suricata_category_profiles.jsonl
     params:
       - embedding.model_name
       - embedding.dim
+      - embedding.batch_size
     outs:
-      - data/embeddings/completed.txt
+      - data/kb/ingest_completed.txt

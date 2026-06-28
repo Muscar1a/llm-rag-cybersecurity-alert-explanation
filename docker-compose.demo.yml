@@ -1,0 +1,41 @@
+# Demo overlay — pcap replay mode (no live network capture needed)
+# Usage:
+#   docker compose build watcher-suricata watcher-zeek   (once after code change)
+#   docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d watcher-suricata watcher-zeek consumer
+#   docker compose -f docker-compose.yml -f docker-compose.demo.yml run --rm zeek
+#   docker compose -f docker-compose.yml -f docker-compose.demo.yml run --rm suricata
+
+services:
+  watcher-suricata:
+    environment:
+      REDIS_HOST: redis
+      SURICATA_EVE_LOG: /var/log/suricata/eve.json
+      TAIL_FROM_START: "1"
+
+  watcher-zeek:
+    environment:
+      REDIS_HOST: redis
+      ZEEK_CONN_LOG: /opt/zeek/logs/current/conn.log
+      TAIL_FROM_START: "1"
+
+  suricata:
+    network_mode: bridge
+    volumes:
+      - suricata_logs:/var/log/suricata
+      - ./suricata/suricata.yaml:/etc/suricata/suricata.yaml:ro
+      - ./suricata/suricata.rules:/var/lib/suricata/rules/suricata.rules:ro
+      - ./data:/data:ro
+    # -k none: skip checksum validation on synthetic pcap
+    command: suricata -r /data/demo.pcap -k none -c /etc/suricata/suricata.yaml -l /var/log/suricata
+
+  zeek:
+    network_mode: bridge
+    volumes:
+      - zeek_logs:/opt/zeek/logs
+      - ./zeek/local.zeek:/usr/local/zeek/share/zeek/site/local.zeek:ro
+      - ./data:/data:ro
+    # -C: skip checksum verification; cd to /current so watcher_zeek finds conn.log at expected path
+    command: >
+      bash -c "mkdir -p /opt/zeek/logs/current
+      && cd /opt/zeek/logs/current
+      && zeek -C -r /data/demo.pcap local.zeek"

@@ -1,9 +1,7 @@
 """
-Ingest KB v2 (4 groups) into Qdrant.
+Ingest KB v2 (5 groups) into Qdrant.
 
-No chunking: each JSONL entry is already a self-contained chunk (design doc §3),
-so we embed entry["document"] whole — one entry = one vector. The chunking:
-section in params.yaml is for the legacy raw-source pipeline, not this one.
+Each JSONL entry is a self-contained knowledge unit — no chunking needed.
 
 Usage:
     python src/data_process/ingest_kb.py
@@ -16,6 +14,7 @@ Output: upserted to Qdrant collection 'cyber_chunks', source='kb_v2'
 
 import argparse
 import json
+import os
 import sys
 import uuid
 from pathlib import Path
@@ -30,6 +29,10 @@ from qdrant_client.models import (
 )
 
 from sentence_transformers import SentenceTransformer
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.insert(0, PROJECT_ROOT)
+
 from src.rag.qdrant_store import ensure_collection as _ensure
 
 try:
@@ -190,6 +193,12 @@ def ingest(groups: dict[str, Path]) -> None:
         print(f"  Upserted {min(i + 200, len(points))}/{len(points)}")
 
     print(f"\n[+] Done. {len(points)} kb_v2 points in collection '{COLLECTION}'.")
+
+    marker = KB_ROOT / "ingest_completed.txt"
+    marker.write_text(
+        f"{len(points)} points ingested into '{COLLECTION}' (source={SOURCE_TAG})\n",
+        encoding="utf-8",
+    )
 
 
 def query_test(query: str, score: float) -> None:

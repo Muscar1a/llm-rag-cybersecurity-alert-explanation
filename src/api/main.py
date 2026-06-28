@@ -68,7 +68,6 @@ def version():
         "git_sha": _git_sha(),
         "llm_model": params.get("llm", {}).get("model", settings.vllm_model),
         "embedding_model": params.get("embedding", {}).get("model_name", settings.embedding_model),
-        "chunk_size": params.get("chunking", {}).get("chunk_size"),
         "retrieval_k": params.get("retrieval", {}).get("k"),
     }
 

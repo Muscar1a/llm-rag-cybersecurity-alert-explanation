@@ -2,10 +2,6 @@ embedding:
   model_name: "BAAI/bge-base-en-v1.5"
   dim: 768
   batch_size: 64
-chunking:
-  tokenizer_model: "BAAI/bge-base-en-v1.5"
-  chunk_size: 400
-  chunk_overlap: 100
 retrieval:
   k: 5
   lambda_mult: 0.5
