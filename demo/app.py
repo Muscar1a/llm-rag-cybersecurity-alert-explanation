@@ -59,6 +59,9 @@ try:
     r.ping()
     redis_label = "Redis online"
     redis_color = "green"
+    # Persist provider/model selection so consumer picks it up without restart
+    r.set("config:consumer:provider", provider)
+    r.set("config:consumer:model", model_name or "")
 except Exception:
     r = None
     redis_label = "Redis unreachable"
@@ -68,7 +71,8 @@ st.markdown(
     f'<span style="color:{api_color};font-size:0.85rem">● {api_label}</span>'
     f'&emsp;<span style="color:{qdrant_color};font-size:0.85rem">● {qdrant_label}</span>'
     f'&emsp;<span style="color:{vllm_color};font-size:0.85rem">● {vllm_label}</span>'
-    f'&emsp;<span style="color:{redis_color};font-size:0.85rem">● {redis_label}</span>',
+    f'&emsp;<span style="color:{redis_color};font-size:0.85rem">● {redis_label}</span>'
+    f'&emsp;<span style="color:#2563eb;font-size:0.85rem">🤖 {provider} / {model_name}</span>',
     unsafe_allow_html=True,
 )
 
