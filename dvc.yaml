@@ -1,13 +1,4 @@
 stages:
-  clean_data:
-    cmd: python src/data_process/clean_data.py
-    deps:
-      - src/data_process/clean_data.py
-    outs:
-      - data/processed/MITRE/mitre_cleaned.parquet
-      - data/processed/sigma/sigma_cleaned.parquet
-      - data/processed/emerging_threats/et_rules_cleaned.parquet
-
   ingest_kb:
     cmd: python src/data_process/ingest_kb.py
     deps:

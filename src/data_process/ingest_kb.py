@@ -1,17 +1,3 @@
-"""
-Ingest KB v2 (5 groups) into Qdrant.
-
-Each JSONL entry is a self-contained knowledge unit — no chunking needed.
-
-Usage:
-    python src/data_process/ingest_kb.py
-    python src/data_process/ingest_kb.py --group port_profile
-    python src/data_process/ingest_kb.py --test-only --query "port 445 SMB lateral movement"
-
-Input:  data/kb/{port_profile,conn_state,traffic_pattern,tactic_profile,suricata_category}/*.jsonl
-Output: upserted to Qdrant collection 'cyber_chunks', source='kb_v2'
-"""
-
 import argparse
 import json
 import os

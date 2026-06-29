@@ -1,34 +1,3 @@
-"""
-Zeek conn.log row → natural language alert text for RAG ingestion / evaluation.
-
-DESIGN PRINCIPLE
-----------------
-Alert text describes ONLY observable facts (port, connection state, byte
-counts, packet counts, duration, TCP history). It contains NO interpretation:
-no "scanning", no "brute-force", no "exfiltration", no "high-value target",
-no "lateral movement", no severity hints.
-
-Interpretation is the job of the retrieval layer + LLM, not this builder.
-Keeping the alert neutral is what makes the RAG component meaningful: the
-model must consult external knowledge to explain what the facts mean, instead
-of paraphrasing conclusions that were baked into the input.
-
-The technical fact tables below (port names, connection-state descriptions,
-service names, history decoding) are intentionally kept — they are neutral
-labels a packet analyst would read directly off the wire, not conclusions
-about intent. Anything that asserts *why* traffic looks the way it does has
-been removed and belongs in the knowledge base instead.
-
-Input columns (UWF-ZeekData24 schema):
-    community_id, conn_state, duration, history,
-    src_ip_zeek, src_port_zeek, dest_ip_zeek, dest_port_zeek,
-    local_orig, local_resp, missed_bytes,
-    orig_bytes, orig_ip_bytes, orig_pkts,
-    proto, resp_bytes, resp_ip_bytes, resp_pkts,
-    service, ts, uid, datetime,
-    label_tactic, label_technique, label_binary, label_cve
-"""
-
 # ── Lookup tables (neutral facts only) ────────────────────────────────────────
 
 # Port → registered service name. This is a naming convention (IANA-style),
@@ -135,38 +104,16 @@ def _parse_services(service_raw) -> list[str]:
 
 
 def _interpret_history(history: str) -> str:
-    """Decode the Zeek history string into packet-level tokens.
-
-    This is a literal transcription of which packets were seen, not an
-    interpretation — it stays in the alert.
-    """
     if not history:
         return ""
     return " → ".join(HISTORY_CHAR.get(ch, f"flag({ch})") for ch in history)
 
 
 def _port_label(port: int) -> str:
-    """Return the bare port number only.
-
-    The service name (e.g. "GlassFish admin" for 4848) is deliberately NOT
-    included. Knowing what runs on a port is interpretation — it is the
-    knowledge base's job to supply "port 4848 = GlassFish admin console,
-    a management interface...". Baking the name into the alert would hand the
-    model half the answer and make the retrieval step redundant.
-
-    KNOWN_PORTS is retained above as a convenient seed list for *building* the
-    knowledge base, but is intentionally not consulted here.
-    """
     return f"port {port}"
 
 
 def _direction_label(orig_bytes: int, resp_bytes: int) -> str:
-    """Factual description of which side sent more bytes.
-
-    Reports the observed asymmetry only. The old version editorialized here
-    ("large download", "upload, exfiltration, or C2 beacon"); that judgement
-    is removed.
-    """
     if orig_bytes == 0 and resp_bytes == 0:
         return "no application payload"
     if orig_bytes == 0:
@@ -181,19 +128,6 @@ def _direction_label(orig_bytes: int, resp_bytes: int) -> str:
 # ── Main builder ──────────────────────────────────────────────────────────────
 
 def build_alert_text(row: dict) -> str:
-    """Build a neutral, fact-only natural-language summary of a Zeek flow.
-
-    Sections, in order:
-      1. Protocol + destination port
-      2. Connection state (factual outcome)
-      3. Traffic volume (packet/byte counts)
-      4. Byte ratio (number + neutral direction)
-      5. Duration
-      6. TCP history sequence
-      7. Detected services (protocol names)
-
-    No behavioral hints. No intent language.
-    """
     parts: list[str] = []
 
     proto      = str(_get(row, "proto", "tcp")).upper()
@@ -258,11 +192,6 @@ def build_alert_text(row: dict) -> str:
 
 
 def build_metadata(row: dict) -> dict:
-    """Structured metadata for retrieval filtering and RAGAS evaluation.
-
-    label_* fields are kept here (NOT in the alert text) so they can serve as
-    ground truth for evaluation without leaking the answer into the input.
-    """
     return {
         "src_ip":          _get(row, "src_ip_zeek", ""),
         "dest_ip":         _get(row, "dest_ip_zeek", ""),

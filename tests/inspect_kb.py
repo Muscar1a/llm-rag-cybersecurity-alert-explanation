@@ -1,14 +1,3 @@
-"""
-inspect_kb.py — Kiểm tra trực tiếp knowledge base trong Qdrant.
-
-Chạy:
-    python tests/inspect_kb.py                  # tổng quan + sample
-    python tests/inspect_kb.py --query "SYN flood detection"
-    python tests/inspect_kb.py --source mitre   # lọc theo source
-    python tests/inspect_kb.py --score 0.5      # hạ ngưỡng score
-    python tests/inspect_kb.py --sample 10      # in 10 chunks ngẫu nhiên
-"""
-
 import argparse
 from collections import Counter
 

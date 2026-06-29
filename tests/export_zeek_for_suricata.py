@@ -1,15 +1,3 @@
-"""
-Export Zeek telemetry rows for synthetic Suricata alert generation.
-
-Same sampling logic as generate_alerts.py. Output contains:
-  - "network": raw observables for chatbot to generate Suricata alerts
-  - "_ground_truth": labels (do NOT feed to chatbot)
-
-Usage:
-    python tests/export_zeek_for_suricata.py
-    python tests/export_zeek_for_suricata.py --max-per-tactic 35 --out tests/zeek_rows.json
-"""
-
 import argparse
 import json
 import sys

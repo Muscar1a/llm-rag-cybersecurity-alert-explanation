@@ -1,6 +1,5 @@
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 
-# Format khi nối retrieved chunks. Khớp đúng metadata thực tế trong KB v2.
 DOCUMENT_PROMPT = PromptTemplate(
     input_variables=["page_content", "source", "kb_type"],
     template="[source={source} | kb_type={kb_type}]\n{page_content}",
@@ -11,8 +10,6 @@ DOCUMENT_SEPARATOR = "\n\n"
 # Shared rule blocks
 # ---------------------------------------------------------------------------
 
-# Grounding viết lại theo đúng FIELDS thực tế trong zeek_alert_builder
-# (conn_state, byte ratio, TCP history sequence — KHÔNG dùng "Flag Cnt").
 _GROUNDING_RULES = """\
 Grounding constraints (apply before naming any attack type):
 - Name an attack type ONLY if the required observable is present in the alert text:
@@ -33,8 +30,6 @@ Grounding constraints (apply before naming any attack type):
   context before confirming an attack type.
 """
 
-# Fallback baseline — CHỈ dùng khi không có port_profile / traffic_pattern entry nào
-# trong retrieved context. Khi có, ưu tiên KB.
 _FALLBACK_BASELINES = """\
 Fallback baselines (use ONLY if retrieved context contains no relevant port_profile
 or traffic_pattern entry for the observed behavior):
@@ -44,8 +39,6 @@ or traffic_pattern entry for the observed behavior):
 - Ephemeral source ports (>49152): dynamic client-side ports; do not recommend blocking.
 """
 
-# [FIX 1] Citation contract — đổi sang POSITIVE constraint (whitelist).
-# Thay vì "do NOT introduce", nói rõ model ĐƯỢC PHÉP cite cái gì.
 _CITATION_RULES = """\
 Citation contract:
 - You MAY cite a CVE id, technique id, or tactic name ONLY IF that exact identifier
@@ -75,7 +68,6 @@ If Retrieved Knowledge is empty or none of it is relevant to this alert:
 - Keep "threat_description" descriptive of the observed flow only; do not speculate.
 """
 
-# [FIX 3] Output schema — thêm severity anchor định lượng.
 _OUTPUT_SCHEMA = """\
 Output ONLY a single valid JSON object. No markdown fences, no prose before or after.
 
@@ -135,7 +127,7 @@ significance to a Tier-1 analyst deciding whether to escalate.
 {_EMPTY_CONTEXT_RULE}
 {_OUTPUT_SCHEMA}"""
 
-# [FIX 2] Human message — thêm grounding reminder gần điểm generate.
+# [FIX 2] Human message — add grounding reminder near generate.
 _BASIC_HUMAN = """\
 Alert:
 {input}

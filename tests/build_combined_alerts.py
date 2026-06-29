@@ -1,14 +1,3 @@
-"""
-Build combined alert_text for each suricata_alerts.json entry.
-
-Reads suricata_alerts.json, runs alert_builder.build_combined_alert()
-to combine Suricata header + Zeek telemetry, and writes the result
-to combined_alerts.json.
-
-Usage:
-    python tests/build_combined_alerts.py
-"""
-
 import json
 from pathlib import Path
 

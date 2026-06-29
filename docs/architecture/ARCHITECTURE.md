@@ -1,137 +1,217 @@
-# Cyber Security RAG System — Architecture
+# Cyber-RAG System — Architecture
 
-**Project**: Đồ án tốt nghiệp (Capstone Project)
-**Purpose**: Giải thích cảnh báo mạng bằng RAG — Retrieval-Augmented Generation system for explaining network security alerts using cybersecurity knowledge bases
+## 1. Overview
 
----
+A Retrieval-Augmented Generation (RAG) system for cybersecurity alert analysis in SOC environments. The system:
 
-## 1. Project Overview
-
-A **RAG** system that explains network security alerts by:
-
-1. **Detecting** threats via Suricata IDS (signature-based)
-2. **Enriching** alerts with Zeek network telemetry (flow metadata)
-3. **Retrieving** relevant cybersecurity knowledge from Qdrant vector DB
-4. **Generating** threat analysis and mitigation via local LLM (vLLM)
-5. **Executing** auto-response actions based on severity and tactic
-6. **Evaluating** RAG quality using RAGAS metrics
-
-**Key Features**:
-- Real-time alert pipeline: Suricata (detection) + Zeek (telemetry) → Redis → Consumer → RAG
-- Multi-mode analysis: sync, streaming (SSE), and batch
-- Tactic-aware auto-response with dry-run and execution modes
-- Multiple prompt templates (basic, CoT, few-shot)
-- RAGAS evaluation (context_recall, answer_relevancy, hallucination_rate, latency)
-- MLflow experiment tracking, Prometheus/Grafana monitoring
-- Streamlit UI for interactive and real-time alert analysis
+1. **Detects** threats via Suricata IDS (signature-based)
+2. **Enriches** alerts with Zeek network telemetry (flow metadata)
+3. **Retrieves** relevant context from a five-tier anti-leakage Knowledge Base (Qdrant)
+4. **Generates** structured threat analysis via LLM (local vLLM or cloud API)
+5. **Executes** autonomous remediation commands based on severity and tactic
+6. **Evaluates** output quality using the RAGAS framework
 
 ---
 
-## 2. System Architecture
+## 2. Layered Architecture
 
-### 2.1 High-Level Data Flow
+The system follows a four-layer architecture with strict top-down dependency:
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                      REALTIME NETWORK MONITORING                        │
-│  Traffic → Suricata (detection, eve.json) + Zeek (telemetry, conn.log) │
-│  → Watchers → Redis → Consumer (correlate + build) → RAG API          │
-└──────────────────────────────┬──────────────────────────────────────────┘
-                               ↓
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         ALERT INPUT SOURCES                             │
-│  • Realtime pipeline (primary)   • Demo UI (Streamlit)                 │
-│  • API direct call               • Batch processing (JSON upload)      │
-└──────────────────────────────┬──────────────────────────────────────────┘
-                               ↓
-┌─────────────────────────────────────────────────────────────────────────┐
-│  FastAPI REST API (8000) — src/api/main.py                             │
-│  GET /health · GET /version · POST /analyze · POST /analyze/stream     │
-└──────────────────────────────┬──────────────────────────────────────────┘
-                               ↓
-┌─────────────────────────────────────────────────────────────────────────┐
-│  RAG Service — src/rag/service.py                                       │
-│  analyze() / stream_analyze()                                           │
-│    ├─ Retrieve top-k KB chunks (Qdrant)                                │
-│    ├─ Generate threat analysis JSON (vLLM)                              │
-│    └─ Build remediation commands (tactic-based)                        │
-└────────┬──────────────────────┬──────────────────────┬──────────────────┘
-         ↓                      ↓                      ↓
-  ┌──────────────┐  ┌───────────────────┐  ┌──────────────────────┐
-  │  Retriever   │  │  LLM (vLLM)       │  │  Response Actions    │
-  │  KBRetriever │  │  DeepSeek-R1-14B  │  │  Tactic detection    │
-  │  Qdrant      │  │  temp=0.1         │  │  Command generation  │
-  │  768-dim BGE │  │  max_tokens=4096  │  │  Auto-execution      │
-  └──────────────┘  └───────────────────┘  └──────────────────────┘
-         ↑
-  ┌──────────────────────────────────────┐
-  │  KB Ingestion — data/kb/*.jsonl     │
-  │  port_profile, conn_state,          │
-  │  traffic_pattern, tactic_profile,   │
-  │  suricata_category                  │
-  └──────────────────────────────────────┘
-```
-
-### 2.2 Component Table
-
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| **API** | `src/api/main.py` | FastAPI endpoints, health checks, SSE streaming |
-| **RAG Service** | `src/rag/service.py` | Orchestrates retrieval, generation, remediation |
-| **Chain Builder** | `src/rag/lc_chain.py` | LangChain retrieval + generation chain |
-| **Retriever** | `src/rag/lc_vectorstore.py` | KBRetriever: exact filter + semantic search + reranking |
-| **Embeddings** | `src/rag/embeddings.py` | BAAI/bge-base-en-v1.5, 768-dim, normalized |
-| **Prompts** | `src/rag/lc_prompt.py` | basic, CoT, few-shot templates |
-| **Schemas** | `src/rag/schemas.py` | AnalyzeRequest (with AlertMetadata: signature, severity), AnalyzeResponse, RemediationCommand |
-| **Settings** | `src/rag/settings.py` | Env-based config (Qdrant, vLLM, embedding, auto-response) |
-| **Response Actions** | `src/rag/response_actions.py` | Tactic detection, command gen & execution |
-| **Data Cleaning** | `src/data_process/clean_data.py` | MITRE, Sigma, ET rules → cleaned parquet |
-| **KB Ingestion** | `src/data_process/ingest_kb.py` | Load KB v2 JSONL → embed → upsert Qdrant |
-| **Alert Builder** | `src/data_process/zeek_alert_builder.py` | Zeek conn.log row → neutral fact-only text |
-| **Combined Builder** | `src/realtime/alert_builder.py` | Suricata signature + Zeek telemetry → combined text |
-| **Suricata Watcher** | `src/realtime/watcher_suricata.py` | Tail eve.json → filter alerts → Redis queue |
-| **Zeek Watcher** | `src/realtime/watcher_zeek.py` | Tail conn.log → Redis flow cache (TTL) |
-| **Consumer** | `src/realtime/consumer.py` | Correlate Suricata+Zeek → build alert → call RAG API |
-| **Demo UI** | `demo/app.py` | Streamlit: paste/upload/batch + streaming display |
-| **Realtime UI** | `demo/pages/realtime.py` | Streamlit: poll Redis, live alert monitor |
-| **Evaluation** | `tests/eval/`, `scripts/run_benchmark.py` | RAGAS metrics, two-pass benchmark |
+| Layer | Packages | Responsibility |
+|-------|----------|----------------|
+| **Presentation** | `demo/` | Streamlit dashboard (realtime monitor + batch analysis) |
+| **Application** | `src/api/` | FastAPI REST endpoints, Prometheus metrics middleware |
+| **Core Domain** | `src/rag/`, `src/realtime/` | RAG pipeline, LLM orchestration, realtime event correlation |
+| **Infrastructure** | `src/data_process/`, `src/mlops/`, `src/monitoring/` | KB ingestion, MLflow tracking, port baselines |
 
 ---
 
-## 3. Realtime Pipeline — Suricata + Zeek
-
-### 3.1 Design Principle
-
-| Component | Role | Output |
-|-----------|------|--------|
-| **Suricata** | Detection (signature-based IDS) | Alert: signature name, severity, category |
-| **Zeek** | Telemetry (flow metadata) | Context: conn_state, bytes, packets, duration, TCP history |
-| **Alert Builder** | Combine alert + telemetry | Enriched text for RAG |
-| **RAG** | Explain the alert using KB | Threat analysis grounded in knowledge base |
-
-Suricata replaces the old `should_alert()` heuristic — signature-based detection is more accurate and covers more attack patterns via ET Open rules.
-
-### 3.2 Pipeline Flow
+## 3. Data Flow
 
 ```
-Traffic ──► Suricata (eve.json alerts) ──► Watcher-S ──► Redis queue
-       └──► Zeek (conn.log flows)     ──► Watcher-Z ──► Redis flow cache
-                                                              │
-Consumer: BLPOP alert → lookup Zeek flow (5-tuple) → build combined text → POST /analyze
+Network Traffic
+    ├── Suricata (signature detection) → eve.json → Watcher → Redis queue
+    └── Zeek (flow telemetry)          → conn.log → Watcher → Redis flow cache (TTL 300s)
+                                                                    │
+                                                               Consumer
+                                                          BLPOP + 5-tuple lookup
+                                                          → build combined alert
+                                                          → POST /analyze
+                                                                    │
+                                                              FastAPI (8000)
+                                                          ┌─────────┼──────────┐
+                                                     KBRetriever   LLM    Response Engine
+                                                     (Qdrant)   (vLLM/   (iptables cmds)
+                                                                 Cloud)
+                                                                    │
+                                                              Streamlit (8501)
+                                                          poll Redis → dashboard
 ```
 
-**Redis keys:**
+---
 
-| Key | Type | Content | TTL |
-|-----|------|---------|-----|
-| `suricata:alerts:raw` | List | Suricata alert events | — |
-| `zeek:flow:{proto}:{src}:{sp}:{dst}:{dp}` | String | Zeek conn.log row | 300s |
-| `alerts:results` | List | RAG analysis results (LTRIM 200) | — |
+## 4. Core Components
 
-**Correlation:** 5-tuple `(proto, src_ip, src_port, dst_ip, dst_port)`. When Zeek flow not yet available (Suricata fires mid-connection, Zeek logs on close), consumer falls back to Suricata-only info — graceful degradation.
+### 4.1 RAG Pipeline (`src/rag/`)
 
-### 3.3 Combined Alert Text Format
+| Component | File | Purpose |
+|-----------|------|---------|
+| RAG Service | `service.py` | Facade orchestrating retrieval → generation → remediation |
+| Chain Builder | `lc_chain.py` | LangChain LCEL retrieval + generation chain |
+| KBRetriever | `lc_vectorstore.py` | Hybrid exact-filter + semantic search + dual-ranker tactic union |
+| LLM Factory | `llm_factory.py` | 7-provider factory (vLLM, OpenAI, DeepSeek, Gemini, GLM, Kimi, Grok) |
+| Prompt Templates | `lc_prompt.py` | basic, CoT, few-shot templates with grounding rules |
+| Response Engine | `response_actions.py` | Tactic/port-based command generation with risk-gated execution |
+| Embeddings | `embeddings.py` | BAAI/bge-base-en-v1.5 (768-dim), CUDA-aware |
+| Qdrant Store | `qdrant_store.py` | Vector DB client + collection management |
+| Schemas | `schemas.py` | Pydantic models (AnalyzeRequest/Response, AlertMetadata) |
+| Settings | `settings.py` | Env-based configuration via pydantic-settings |
 
+### 4.2 Realtime Pipeline (`src/realtime/`)
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| Suricata Watcher | `watcher_suricata.py` | Tail eve.json → filter alerts → Redis RPUSH |
+| Zeek Watcher | `watcher_zeek.py` | Tail conn.log → Redis SET with 300s TTL |
+| Consumer | `consumer.py` | BLPOP alert → 5-tuple Zeek lookup → build text → POST /analyze |
+| Alert Builder | `alert_builder.py` | Suricata signature + Zeek telemetry → combined fact-only text |
+
+### 4.3 Data Pipeline (`src/data_process/`)
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| KB Ingestion | `ingest_kb.py` | KB v2 JSONL → embed (batch 64) → upsert Qdrant |
+| Alert Builder | `zeek_alert_builder.py` | Zeek conn.log row → neutral fact-only text (no interpretation) |
+
+---
+
+## 5. Knowledge Base (KB v2)
+
+Five taxonomic silos, each stored as JSONL in `data/kb/`:
+
+| Silo | Source | Retrieval Method |
+|------|--------|------------------|
+| `port_profile` | Manual curation | Exact filter on destination port |
+| `conn_state` | Zeek documentation | Exact filter on connection state code |
+| `traffic_pattern` | Manual curation | Semantic similarity search |
+| `tactic` | MITRE ATT&CK (network-adapted) | Dual-ranker union (bi-encoder ∪ cross-encoder) |
+| `suricata_category` | Suricata classification rules | Exact filter on alert category |
+
+All silos are indexed in a single Qdrant collection (`cyber_chunks`) with `kb_type` metadata for pre-filtering.
+
+---
+
+## 6. Retrieval Strategy
+
+KBRetriever applies per-silo retrieval:
+
+1. **Exact match silos** — regex extracts structured facts from alert text:
+   - `\bport (\d+)\b` → `port_profile` filter
+   - `\bConnection state (\w+)[:\s]` → `conn_state` filter
+   - `Suricata alert: .+?\(severity \d+, (.+?)\)` → `suricata_category` filter
+
+2. **Semantic search silos** — `traffic_pattern` via standard cosine similarity
+
+3. **Dual-ranker tactic union** — bi-encoder top-k ∪ cross-encoder top-k to bridge the semantic gap between raw network observables and abstract MITRE tactic descriptions
+
+4. **Final reranking** — all collected documents merged, deduplicated, cross-encoder reranked
+
+---
+
+## 7. API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Qdrant + vLLM reachability check |
+| `GET` | `/version` | Git SHA, model info, parameters |
+| `GET` | `/providers` | List available LLM providers |
+| `POST` | `/analyze` | Synchronous RAG analysis → JSON response |
+| `POST` | `/analyze/stream` | SSE streaming (contexts → tokens → done) |
+
+---
+
+## 8. Response Action Engine
+
+Two template registries generate remediation commands:
+
+- **Tactic templates** — mapped to MITRE ATT&CK tactics (e.g., Exfiltration → block outbound, capture traffic)
+- **Port templates** — mapped to well-known services (e.g., port 22 → SSH hardening)
+
+Each command carries a `severity_threshold`; execution is risk-gated:
+- `dry_run` mode (default): log only
+- `live` mode: `subprocess.run` execution (Linux only, requires root)
+
+---
+
+## 9. Evaluation Framework
+
+Two-pass benchmark (`scripts/run_benchmark.py`):
+- **Pass 1**: RAG inference on 135 stratified samples → collect outputs + contexts + latency
+- **Pass 2**: RAGAS judge evaluation (DeepSeek as independent judge LLM)
+
+| Metric | Target | Best Achieved |
+|--------|--------|---------------|
+| Context Recall | ≥ 0.75 | 0.674 (14B) |
+| Faithfulness | ≥ 0.80 | 0.575 (14B) |
+| Answer Relevancy | ≥ 0.75 | 0.705 (14B) |
+
+Additional evaluations: retrieval (`eval_retrieval.py`), generation (`eval_generation.py`), latency (`eval_latency.py`), remediation quality (`eval_remediation.py`).
+
+---
+
+## 10. Infrastructure
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| Qdrant | 6333 | Vector database |
+| Redis | 6379 | Event queue + flow cache |
+| MLflow | 5000 | Experiment tracking |
+| Prometheus | 9090 | Metrics scraping |
+| Grafana | 3000 | Monitoring dashboard |
+| FastAPI | 8000 | RAG API |
+| Streamlit | 8501 | SOC dashboard |
+
+All services containerized via Docker Compose. DVC manages the reproducible data pipeline (`clean_data` → `ingest_kb`).
+
+---
+
+## 11. Realtime Pipeline — Suricata + Zeek Correlation
+
+### 11.1 Pipeline Flow
+
+```
+Network Traffic
+    ├── Suricata (eve.json alerts) → Watcher-S → RPUSH → Redis queue
+    └── Zeek (conn.log flows)      → Watcher-Z → SET EX → Redis flow cache
+                                                                │
+                Consumer: BLPOP alert → lookup Zeek flow (5-tuple) →
+                build combined text → POST /analyze → RPUSH result
+                                                                │
+                                                        Streamlit dashboard
+                                                        (poll every 3s)
+```
+
+### 11.2 Redis Keys
+
+| Key | Type | Producer | Consumer | TTL |
+|-----|------|----------|----------|-----|
+| `suricata:alerts:raw` | List (RPUSH/BLPOP) | Suricata Watcher | Consumer | — |
+| `zeek:flow:{proto}:{src}:{sp}:{dst}:{dp}` | String (SET EX) | Zeek Watcher | Consumer | 300s |
+| `alerts:results` | List (RPUSH/LRANGE) | Consumer | Streamlit | LTRIM 200 |
+
+### 11.3 Temporal Race Condition
+
+Suricata fires alerts mid-connection (instant signature match). Zeek emits conn.log after flow termination (FIN/RST/timeout). This creates a timing gap.
+
+**Resolution:**
+- Zeek flows are cached in Redis with 300s TTL (sliding window)
+- Consumer looks up Zeek flow for each Suricata alert
+- If Zeek flow not yet available → graceful degradation (Suricata-only info)
+- Pipeline never blocks waiting for telemetry
+
+### 11.4 Combined Alert Text Format
+
+**With Zeek telemetry:**
 ```
 Suricata alert: ET SCAN Potential SSH Scan (severity 2, Attempted Information Leak).
 TCP connection to port 22. Connection state S0: SYN sent, no SYN-ACK received.
@@ -139,247 +219,33 @@ Traffic volume: 1 packets sent / 0 packets received, 0 bytes / 0 bytes (0 total)
 TCP sequence: SYN(client).
 ```
 
-Line 1 = Suricata signature. Rest = reuses `zeek_alert_builder.build_alert_text()`. Format preserves `"port {N}"` and `"Connection state {X}:"` patterns for KBRetriever regex matching.
-
-> See `docs/architecture/zeek_realtime_design.md` for full pipeline design with code examples, Docker setup, and sequence diagrams.
-
----
-
-## 4. RAG Pipeline
-
-### 4.1 Retrieval (lc_vectorstore.py)
-
-**KBRetriever** — hybrid exact + semantic retrieval:
-
-| KB Group | Method | Match |
-|----------|--------|-------|
-| `port_profile` | Exact filter | `\bport (\d+)\b` regex → metadata.port |
-| `conn_state` | Exact filter | `\bConnection state (\w+)[:\s]` regex → metadata.state_code |
-| `suricata_category` | Exact filter | `Suricata alert: .+?\(severity \d+, (.+?)\)` regex → metadata.category |
-| `traffic_pattern` | Semantic search | Top-k similarity in Qdrant |
-| `tactic` | Semantic search | Top-k similarity in Qdrant |
-
-After retrieval: optional CrossEncoder reranking (`cross-encoder/ms-marco-MiniLM-L-6-v2`).
-
-**Embedding**: BAAI/bge-base-en-v1.5 (768-dim, HuggingFace, normalized L2, cosine similarity). Configured in `params.yaml` → `embedding.model_name`. GPU if available, else CPU.
-
-### 4.2 Generation (lc_chain.py)
-
-LangChain `create_retrieval_chain` with `create_stuff_documents_chain`. `build_analyze_chain(k, template_name)` — no source filter needed since KBRetriever always queries `kb_v2`. LLM: `ChatOpenAI(model=Qwen/Qwen2.5-14B-Instruct, temperature=0.1, max_tokens=4096)` via local vLLM server.
-
-**Prompt templates** (`lc_prompt.py`):
-- **basic** (active): Context + question → JSON answer. Optimal for cybersecurity domain.
-- **cot** (defined, not active): Chain-of-thought in `<scratchpad>`, JSON output after.
-- **few_shot** (defined, not active): 2 in-context examples (Reconnaissance + Credential Access).
-
-Currently only `basic` is registered in the `PROMPTS` selector dict. `cot` and `few_shot` are defined but commented out.
-
-**Output extraction** (`service.py`): Try JSON parse → `<answer>{}</answer>` → ` ```json``` ` → regex `{...}` → raw text fallback.
-
-### 4.3 KB v2 (data_process/ingest_kb.py)
-
-No chunking — each JSONL entry is self-contained. Input: `data/kb/{port_profile,conn_state,traffic_pattern,tactic_profile}/*.jsonl`. Batch embed (batch_size=64) → upsert to Qdrant with metadata.
-
----
-
-## 5. Response Actions & Auto-Response
-
-**Tactic detection** (`response_actions.py`): Priority: explicit `label_tactic` from metadata → extract from KB docs → parse from LLM output → fallback "Reconnaissance".
-
-**Command generation**: Per-tactic templates with `{src_ip}`, `{dest_ip}`, `{dest_port}` substitution. Each command has: description, command, severity_threshold, risk level, auto_executable flag.
-
-**Execution modes**: `dry_run` (default, log only) or `execute` (subprocess.run, Linux only). Triggered when: auto_response enabled AND severity >= threshold (default: Critical).
-
----
-
-## 6. API & Streaming
-
-**POST /analyze**: `AnalyzeRequest { alert_text, k, metadata?: AlertMetadata, auto_response? }` → JSON response with threat_description, severity, rationale, mitigation_steps, contexts, remediation_commands. `AlertMetadata` includes: src_ip, dest_ip, dest_port, proto, conn_state, label_tactic, signature, severity.
-
-**POST /analyze/stream**: Same request → SSE events: `contexts` (retrieved KB chunks) → `token` (incremental generation) → `done` (final parsed result with remediation).
-
-**GET /health**: Check Qdrant + vLLM reachability. **GET /version**: Git SHA, model info, params.
-
----
-
-## 7. Demo UI (Streamlit)
-
-**Main page** (`demo/app.py`): Paste/upload alert text → streaming analysis display. Sidebar: metadata (src_ip, dest_ip, dest_port), auto-response toggle, top-k slider. Output: severity badge, threat description, mitigation steps, remediation commands, retrieved KB sources with scores. Supports batch mode (JSON array upload).
-
-**Realtime page** (`demo/pages/realtime.py`): Polls Redis `alerts:results` every 3s. Shows summary metrics (total/critical/high/medium+low) and latest 20 alerts with expandable details.
-
----
-
-## 8. Evaluation & Benchmarking
-
-**Two-pass evaluation** (`scripts/run_benchmark.py`):
-- Pass 1 (inference): Run `rag.analyze()` on sampled ground truth, collect output + contexts + latency. Checkpointed.
-- Pass 2 (judge): RAGAS metrics via judge LLM (default: DeepSeek). Checkpointed.
-
-**Metrics:**
-
-| Metric | Range | What it measures |
-|--------|-------|------------------|
-| context_recall | [0,1] ↑ | Fraction of ground-truth info in retrieved chunks |
-| answer_relevancy | [0,1] ↑ | How well answer addresses the question |
-| hallucination_rate | [0,1] ↓ | 1 - faithfulness; factual inconsistencies |
-| latency (p50/avg) | seconds | Retrieval + generation wall-clock time |
-
-**Usage**: `python scripts/run_benchmark.py --samples 135 --templates "basic,cot,few_shot" --version v4`
-
-**Latest results** (qwen2.5:7b, BGE-base, basic template, 135 samples): context_recall=0.674, answer_relevancy=0.505, hallucination=0.425, p50=4.9s.
-
----
-
-## 9. Configuration
-
-**Environment** (`src/rag/settings.py`, loaded via pydantic_settings from `.env`):
-
-| Group | Key settings |
-|-------|-------------|
-| Qdrant | `qdrant_host=localhost`, `qdrant_port=6333`, `qdrant_collection=cyber_chunks`, `qdrant_timeout=60` |
-| Embedding | `embedding_model=BAAI/bge-base-en-v1.5` |
-| vLLM | `vllm_base_url=http://localhost:8001/v1`, `vllm_max_tokens=4096` |
-| Auto-response | `auto_response_enabled=False`, `auto_response_mode=dry_run`, `severity_threshold=Critical` |
-| Judge LLM | `deepseek_api_key`, `deepseek_model=deepseek-v4-flash` |
-
-**Pipeline** (`params.yaml`): `embedding.model_name`, `embedding.dim=768`, `retrieval.k=6`, `llm.model=Qwen/Qwen2.5-14B-Instruct`, `llm.temperature=0.1`, `llm.num_ctx=5120`.
-
-**Precedence**: `.env` → environment variables → Settings class defaults.
-
----
-
-## 10. Docker Stack
-
-| Service | Image | Purpose | Port |
-|---------|-------|---------|------|
-| **qdrant** | qdrant/qdrant:v1-gpu-nvidia | Vector database | 6333 |
-| **mlflow** | ghcr.io/mlflow/mlflow:v2.16.2 | Experiment tracking | 5000 |
-| **prometheus** | prom/prometheus:latest | Metrics scraping | 9090 |
-| **grafana** | grafana/grafana:latest | Monitoring dashboard | 3000 |
-| **redis** | redis:7-alpine | Queue broker + flow cache | 6379 |
-| **suricata** | jasonish/suricata:latest | Signature-based IDS | — |
-| **zeek** | zeekurity/zeek:latest | Network telemetry | — |
-| **watcher-suricata** | custom | Tail eve.json → Redis queue | — |
-| **watcher-zeek** | custom | Tail conn.log → Redis flow cache | — |
-| **consumer** | custom | Correlate → alert builder → RAG API | — |
-
-**Volumes**: `qdrant_storage`, `prometheus_data`, `grafana_data`, `suricata_logs`, `zeek_logs`.
-
-**Networking**: Windows/Mac: `http://host.docker.internal:8000/analyze`. Linux: `--network host` or `http://172.17.0.1:8000`.
-
----
-
-## 11. Project Structure
-
+**Without Zeek telemetry (fallback):**
 ```
-project/
-├── src/
-│   ├── api/
-│   │   ├── main.py                    # FastAPI app
-│   │   └── middleware.py              # Prometheus metrics
-│   ├── rag/
-│   │   ├── service.py                 # RAG orchestration
-│   │   ├── lc_chain.py                # LangChain chain builder
-│   │   ├── lc_vectorstore.py          # KBRetriever (hybrid exact+semantic)
-│   │   ├── lc_prompt.py               # Prompt templates (basic, CoT, few-shot)
-│   │   ├── embeddings.py              # SentenceTransformer (BGE-base)
-│   │   ├── qdrant_store.py            # Qdrant client + ensure_collection
-│   │   ├── schemas.py                 # Pydantic models (AlertMetadata, AnalyzeRequest/Response)
-│   │   ├── settings.py                # Environment config (pydantic_settings)
-│   │   └── response_actions.py        # Tactic-based auto-response engine
-│   ├── data_process/
-│   │   ├── clean_data.py              # MITRE + Sigma + ET rules → cleaned parquet
-│   │   ├── chunk_data.py              # Tokenizer-based chunking
-│   │   ├── embed_chunks.py            # Embed chunks → upsert Qdrant
-│   │   ├── ingest_kb.py              # KB v2 JSONL → embed → upsert Qdrant
-│   │   ├── parse_attck.py            # MITRE ATT&CK STIX → techniques
-│   │   └── zeek_alert_builder.py      # Zeek flow → neutral fact-only text
-│   ├── realtime/
-│   │   ├── watcher_suricata.py        # Tail eve.json → Redis queue
-│   │   ├── watcher_zeek.py            # Tail conn.log → Redis flow cache
-│   │   ├── consumer.py                # Correlate → build → POST /analyze
-│   │   └── alert_builder.py           # Suricata + Zeek → combined text
-│   ├── mlops/
-│   │   └── tracking.py                # MLflow experiment logging
-│   └── monitoring/
-│       ├── baseline.py                # PortBaseline (MAD-based anomaly stats)
-│       └── build_baseline.py          # Build baseline from CIC-IDS CSV
-├── scripts/
-│   ├── run_benchmark.py               # Two-pass RAGAS evaluation
-│   └── measure_recall_k.py            # Recall@K measurement
-├── tests/
-│   ├── eval/                          # RAGAS evaluation modules
-│   ├── export_zeek_for_suricata.py    # UWF-ZeekData24 → zeek_rows.json
-│   ├── build_combined_alerts.py       # suricata_alerts.json + Zeek → alerts.json
-│   └── inspect_kb.py                  # Qdrant KB inspection tool
-├── demo/
-│   ├── app.py                         # Streamlit main UI (paste/upload/batch/stream)
-│   └── pages/realtime.py              # Realtime alert monitor (poll Redis)
-├── suricata/suricata.yaml             # Suricata config (ET Open rules)
-├── zeek/local.zeek                    # Zeek JSON output config
-├── data/kb/                           # KB v2 JSONL (4 groups)
-├── baselines/                         # Ground truth for evaluation
-├── results/                           # Benchmark outputs + checkpoints
-├── infra/                             # Prometheus + Grafana config
-├── Dockerfile.watcher-suricata
-├── Dockerfile.watcher-zeek
-├── Dockerfile.consumer
-├── docker-compose.yml
-├── params.yaml
-└── requirements.txt
+Suricata alert: ET SCAN Potential SSH Scan (severity 2, Attempted Information Leak).
+TCP connection to port 22.
 ```
 
----
+Both formats preserve `"port {N}"`, `"Connection state {X}:"`, and `"Suricata alert: ... (severity N, {category})"` patterns for KBRetriever regex matching.
 
-## 12. Technology Stack
+### 11.5 Error Handling
 
-| Layer | Technology |
-|-------|-----------|
-| **IDS** | Suricata (detection, ET Open rules), Zeek (telemetry) |
-| **API** | FastAPI, Uvicorn, SSE |
-| **LLM** | LangChain + vLLM (Qwen/Qwen2.5-14B-Instruct) |
-| **Vector DB** | Qdrant |
-| **Embeddings** | SentenceTransformer (BAAI/bge-base-en-v1.5, 768-dim) |
-| **Evaluation** | RAGAS (judge-based) |
-| **Monitoring** | Prometheus, Grafana, MLflow |
-| **Queue** | Redis |
-| **UI** | Streamlit |
-| **Infra** | Docker, docker-compose |
+| Scenario | Behavior |
+|----------|----------|
+| Suricata/Zeek log not yet created | Watcher polls every 1s until file appears |
+| Log rotation | Watcher detects `tell() > file_size`, seeks to beginning |
+| Redis down | Watchers/Consumer crash → Docker auto-restart |
+| Zeek flow not yet cached | Graceful degradation: Suricata-only alert text |
+| RAG API timeout (>60s) | Consumer logs warning, skips alert, continues |
+| Queue backlog | Redis buffers alerts, consumer processes FIFO sequentially |
 
----
+### 11.6 Docker Services
 
-## 13. Quick Start
+| Service | Image | Volumes |
+|---------|-------|---------|
+| `suricata` | `jasonish/suricata:latest` | `suricata_logs:/var/log/suricata` |
+| `zeek` | `zeek/zeek:latest` | `zeek_logs:/opt/zeek/logs` |
+| `watcher-suricata` | Custom (Dockerfile.watcher-suricata) | `suricata_logs` (read-only) |
+| `watcher-zeek` | Custom (Dockerfile.watcher-zeek) | `zeek_logs` (read-only) |
+| `consumer` | Custom (Dockerfile.consumer) | — |
 
-**Local development:**
-```bash
-pip install -r requirements.txt
-# Start Qdrant: docker run -p 6333:6333 qdrant/qdrant
-# Start vLLM: vllm serve Qwen/Qwen2.5-14B-Instruct --port 8001
-python src/data_process/ingest_kb.py        # Ingest KB
-uvicorn src.api.main:app --reload --port 8000
-streamlit run demo/app.py                   # Optional UI
-```
-
-**Docker stack:** `docker-compose up -d`. Endpoints: API `:8000`, Docs `:8000/docs`, Prometheus `:9090`, Grafana `:3000`, MLflow `:5000`.
-
----
-
-## 14. Status & Benchmark
-
-**Completed**: Core RAG pipeline, KB v2 (4 groups), streaming API, RAGAS evaluation, MLflow tracking, Prometheus metrics, auto-response engine, Streamlit UI, realtime Suricata+Zeek pipeline (code, prompts, Docker).
-
-**In Progress**: Demo & testing (pcap dataset, end-to-end test, dry-run before thesis defense).
-
-**Benchmark** (basic template, 135 samples, qwen2.5:7b + BGE-base):
-
-| Metric | Value |
-|--------|-------|
-| Context Recall | 0.674 |
-| Answer Relevancy | 0.505 |
-| Hallucination Rate | 0.425 |
-| p50 Latency | 4.9s |
-
----
-
-**Version**: 3.2 | **Updated**: 2026-06-23 | **Maintainer**: Muscar1a
+For pcap replay demo, use `docker-compose.demo.yml` overlay which sets `TAIL_FROM_START=1` so watchers read from the beginning of log files.

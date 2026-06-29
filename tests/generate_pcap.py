@@ -1,12 +1,3 @@
-"""
-Generate data/demo.pcap from uwf-zeekdata24 CSV data.
-
-Requires: pip install scapy
-Output: data/demo.pcap  (for Suricata + Zeek pcap replay demo)
-
-Usage:
-    python tests/generate_pcap.py
-"""
 import csv
 import random
 import time
