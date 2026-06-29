@@ -1,0 +1,20 @@
+# Demo rules — match traffic from generate_pcap.py
+# severity: 1=critical, 2=high, 3=medium (maps to Suricata priority)
+
+# Reconnaissance
+alert tcp any any -> any 22 (msg:"ET SCAN SSH Brute Force Attempt"; flags:S; priority:2; sid:9000001; rev:1; classtype:attempted-admin;)
+alert tcp any any -> any [21,25,80,110,111,135,139,143,443] (msg:"ET SCAN TCP Port Sweep Detected"; flags:S; priority:3; sid:9000002; rev:1; classtype:attempted-recon;)
+
+# Credential_Access
+alert tcp any any -> any 4848 (msg:"ET EXPLOIT GlassFish Admin Console Access Attempt"; priority:2; sid:9000003; rev:1; classtype:attempted-admin;)
+alert tcp any any -> any 22 (msg:"ET BRUTE SSH Password Brute Force Credential Theft"; priority:2; sid:9000004; rev:1; classtype:attempted-admin;)
+
+# Initial_Access / Lateral Movement
+alert tcp any any -> any 445 (msg:"ET EXPLOIT Microsoft SMB MS17-010 EternalBlue Attempt"; priority:1; sid:9000005; rev:1; classtype:attempted-user;)
+alert tcp any any -> any 80 (msg:"ET WEB_SERVER Possible Web Exploitation Attempt"; priority:2; sid:9000006; rev:1; classtype:web-application-attack;)
+
+# Defense_Evasion
+alert tcp any any -> any 139 (msg:"ET SCAN NetBIOS Session Request Defense Evasion"; flags:S; priority:2; sid:9000007; rev:1; classtype:attempted-recon;)
+
+# Exfiltration
+alert tcp any any -> any 445 (msg:"ET POLICY Large SMB Outbound Data Exfiltration Detected"; priority:1; sid:9000008; rev:1; classtype:policy-violation;)

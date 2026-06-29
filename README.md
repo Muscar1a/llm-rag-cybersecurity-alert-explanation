@@ -3,14 +3,14 @@
 ## Yêu cầu trước khi bắt đầu
 
 - Docker Desktop đang chạy
-- Ollama đang chạy trên máy host (port 11434) với model đã được pull sẵn
+- vLLM đang chạy trên máy host (port 8001) với model đã được load sẵn
 - Python virtual environment đã được cài đặt tại `.venv`
 
 ---
 
 ## 1. Khởi động hạ tầng
 
-Khởi động MinIO (lưu trữ data), Qdrant (vector database) và MLflow (tracking server):
+Khởi động Qdrant (vector database) và MLflow (tracking server):
 
 ```bash
 make up
@@ -28,16 +28,6 @@ make down
 
 ```bash
 .venv\Scripts\dvc init
-```
-
-Cấu hình remote lưu trữ trên MinIO:
-
-```bash
-.venv\Scripts\dvc remote add -d minio_remote s3://minio-processed
-.venv\Scripts\dvc remote modify minio_remote endpointurl http://localhost:9000
-.venv\Scripts\dvc remote modify minio_remote access_key_id minioadmin
-.venv\Scripts\dvc remote modify minio_remote secret_access_key minioadmin123
-.venv\Scripts\dvc remote modify minio_remote use_ssl false
 ```
 
 ---
@@ -89,7 +79,7 @@ make up-api
 Kiểm tra API:
 
 ```bash
-# Kiểm tra trạng thái Qdrant và Ollama
+# Kiểm tra trạng thái Qdrant và vLLM
 curl http://localhost:8000/health
 
 # Xem phiên bản model và cấu hình đang chạy
@@ -102,7 +92,7 @@ curl http://localhost:8000/version
 
 | Lệnh | Mô tả |
 |---|---|
-| `make up` | Khởi động minio, qdrant, mlflow |
+| `make up` | Khởi động qdrant, mlflow |
 | `make up-api` | Khởi động toàn bộ stack (bao gồm rag-api) |
 | `make build-api` | Build Docker image cho rag-api |
 | `make down` | Dừng toàn bộ containers |

@@ -12,7 +12,7 @@ A **RAG** system that explains network security alerts by:
 1. **Detecting** threats via Suricata IDS (signature-based)
 2. **Enriching** alerts with Zeek network telemetry (flow metadata)
 3. **Retrieving** relevant cybersecurity knowledge from Qdrant vector DB
-4. **Generating** threat analysis and mitigation via local LLM (Ollama)
+4. **Generating** threat analysis and mitigation via local LLM (vLLM)
 5. **Executing** auto-response actions based on severity and tactic
 6. **Evaluating** RAG quality using RAGAS metrics
 
@@ -53,21 +53,22 @@ A **RAG** system that explains network security alerts by:
 │  RAG Service — src/rag/service.py                                       │
 │  analyze() / stream_analyze()                                           │
 │    ├─ Retrieve top-k KB chunks (Qdrant)                                │
-│    ├─ Generate threat analysis JSON (Ollama LLM)                       │
+│    ├─ Generate threat analysis JSON (vLLM)                              │
 │    └─ Build remediation commands (tactic-based)                        │
 └────────┬──────────────────────┬──────────────────────┬──────────────────┘
          ↓                      ↓                      ↓
   ┌──────────────┐  ┌───────────────────┐  ┌──────────────────────┐
-  │  Retriever   │  │  LLM (Ollama)     │  │  Response Actions    │
-  │  KBRetriever │  │  qwen2.5:7b       │  │  Tactic detection    │
+  │  Retriever   │  │  LLM (vLLM)       │  │  Response Actions    │
+  │  KBRetriever │  │  DeepSeek-R1-14B  │  │  Tactic detection    │
   │  Qdrant      │  │  temp=0.1         │  │  Command generation  │
-  │  768-dim BGE │  │  ctx=5120 tokens  │  │  Auto-execution      │
+  │  768-dim BGE │  │  max_tokens=4096  │  │  Auto-execution      │
   └──────────────┘  └───────────────────┘  └──────────────────────┘
          ↑
   ┌──────────────────────────────────────┐
   │  KB Ingestion — data/kb/*.jsonl     │
-  │  4 groups: port_profile, conn_state, │
-  │  traffic_pattern, tactic_profile     │
+  │  port_profile, conn_state,          │
+  │  traffic_pattern, tactic_profile,   │
+  │  suricata_category                  │
   └──────────────────────────────────────┘
 ```
 
@@ -82,7 +83,7 @@ A **RAG** system that explains network security alerts by:
 | **Embeddings** | `src/rag/embeddings.py` | BAAI/bge-base-en-v1.5, 768-dim, normalized |
 | **Prompts** | `src/rag/lc_prompt.py` | basic, CoT, few-shot templates |
 | **Schemas** | `src/rag/schemas.py` | AnalyzeRequest (with AlertMetadata: signature, severity), AnalyzeResponse, RemediationCommand |
-| **Settings** | `src/rag/settings.py` | Env-based config (Qdrant, Ollama, embedding, auto-response) |
+| **Settings** | `src/rag/settings.py` | Env-based config (Qdrant, vLLM, embedding, auto-response) |
 | **Response Actions** | `src/rag/response_actions.py` | Tactic detection, command gen & execution |
 | **Data Cleaning** | `src/data_process/clean_data.py` | MITRE, Sigma, ET rules → cleaned parquet |
 | **KB Ingestion** | `src/data_process/ingest_kb.py` | Load KB v2 JSONL → embed → upsert Qdrant |
@@ -154,6 +155,7 @@ Line 1 = Suricata signature. Rest = reuses `zeek_alert_builder.build_alert_text(
 |----------|--------|-------|
 | `port_profile` | Exact filter | `\bport (\d+)\b` regex → metadata.port |
 | `conn_state` | Exact filter | `\bConnection state (\w+)[:\s]` regex → metadata.state_code |
+| `suricata_category` | Exact filter | `Suricata alert: .+?\(severity \d+, (.+?)\)` regex → metadata.category |
 | `traffic_pattern` | Semantic search | Top-k similarity in Qdrant |
 | `tactic` | Semantic search | Top-k similarity in Qdrant |
 
@@ -163,12 +165,14 @@ After retrieval: optional CrossEncoder reranking (`cross-encoder/ms-marco-MiniLM
 
 ### 4.2 Generation (lc_chain.py)
 
-LangChain `create_retrieval_chain` with `create_stuff_documents_chain`. `build_analyze_chain(k, template_name)` — no source filter needed since KBRetriever always queries `kb_v2`. LLM: `ChatOllama(model=qwen2.5:7b-instruct-q4_K_M, temperature=0.1, num_ctx=5120)`.
+LangChain `create_retrieval_chain` with `create_stuff_documents_chain`. `build_analyze_chain(k, template_name)` — no source filter needed since KBRetriever always queries `kb_v2`. LLM: `ChatOpenAI(model=Qwen/Qwen2.5-14B-Instruct, temperature=0.1, max_tokens=4096)` via local vLLM server.
 
 **Prompt templates** (`lc_prompt.py`):
-- **basic**: Context + question → JSON answer. Optimal for cybersecurity domain.
-- **cot**: Chain-of-thought in `<scratchpad>`, JSON output after.
-- **few_shot**: 2 in-context examples (Reconnaissance + Credential Access).
+- **basic** (active): Context + question → JSON answer. Optimal for cybersecurity domain.
+- **cot** (defined, not active): Chain-of-thought in `<scratchpad>`, JSON output after.
+- **few_shot** (defined, not active): 2 in-context examples (Reconnaissance + Credential Access).
+
+Currently only `basic` is registered in the `PROMPTS` selector dict. `cot` and `few_shot` are defined but commented out.
 
 **Output extraction** (`service.py`): Try JSON parse → `<answer>{}</answer>` → ` ```json``` ` → regex `{...}` → raw text fallback.
 
@@ -182,7 +186,7 @@ No chunking — each JSONL entry is self-contained. Input: `data/kb/{port_profil
 
 **Tactic detection** (`response_actions.py`): Priority: explicit `label_tactic` from metadata → extract from KB docs → parse from LLM output → fallback "Reconnaissance".
 
-**Command generation**: Per-tactic templates with `{src_ip}`, `{dest_ip}`, `{dest_port}` substitution. Each command has: description, command, undo_command, severity_threshold, risk level, auto_executable flag.
+**Command generation**: Per-tactic templates with `{src_ip}`, `{dest_ip}`, `{dest_port}` substitution. Each command has: description, command, severity_threshold, risk level, auto_executable flag.
 
 **Execution modes**: `dry_run` (default, log only) or `execute` (subprocess.run, Linux only). Triggered when: auto_response enabled AND severity >= threshold (default: Critical).
 
@@ -194,7 +198,7 @@ No chunking — each JSONL entry is self-contained. Input: `data/kb/{port_profil
 
 **POST /analyze/stream**: Same request → SSE events: `contexts` (retrieved KB chunks) → `token` (incremental generation) → `done` (final parsed result with remediation).
 
-**GET /health**: Check Qdrant + Ollama reachability. **GET /version**: Git SHA, model info, params.
+**GET /health**: Check Qdrant + vLLM reachability. **GET /version**: Git SHA, model info, params.
 
 ---
 
@@ -235,11 +239,11 @@ No chunking — each JSONL entry is self-contained. Input: `data/kb/{port_profil
 |-------|-------------|
 | Qdrant | `qdrant_host=localhost`, `qdrant_port=6333`, `qdrant_collection=cyber_chunks`, `qdrant_timeout=60` |
 | Embedding | `embedding_model=BAAI/bge-base-en-v1.5` |
-| Ollama | `ollama_host=http://localhost:11434`, `ollama_num_ctx=5120` |
+| vLLM | `vllm_base_url=http://localhost:8001/v1`, `vllm_max_tokens=4096` |
 | Auto-response | `auto_response_enabled=False`, `auto_response_mode=dry_run`, `severity_threshold=Critical` |
-| Judge LLM | `deepseek_api_key`, `deepseek_model=deepseek-chat` |
+| Judge LLM | `deepseek_api_key`, `deepseek_model=deepseek-v4-flash` |
 
-**Pipeline** (`params.yaml`): `embedding.model_name`, `embedding.dim=768`, `retrieval.k=5`, `llm.model=qwen2.5:7b-instruct-q4_K_M`, `llm.temperature=0.1`, `llm.num_ctx=5120`.
+**Pipeline** (`params.yaml`): `embedding.model_name`, `embedding.dim=768`, `retrieval.k=6`, `llm.model=Qwen/Qwen2.5-14B-Instruct`, `llm.temperature=0.1`, `llm.num_ctx=5120`.
 
 **Precedence**: `.env` → environment variables → Settings class defaults.
 
@@ -334,7 +338,7 @@ project/
 |-------|-----------|
 | **IDS** | Suricata (detection, ET Open rules), Zeek (telemetry) |
 | **API** | FastAPI, Uvicorn, SSE |
-| **LLM** | LangChain + Ollama (qwen2.5:7b-instruct-q4_K_M) |
+| **LLM** | LangChain + vLLM (Qwen/Qwen2.5-14B-Instruct) |
 | **Vector DB** | Qdrant |
 | **Embeddings** | SentenceTransformer (BAAI/bge-base-en-v1.5, 768-dim) |
 | **Evaluation** | RAGAS (judge-based) |
@@ -351,7 +355,7 @@ project/
 ```bash
 pip install -r requirements.txt
 # Start Qdrant: docker run -p 6333:6333 qdrant/qdrant
-# Start Ollama: ollama pull qwen2.5:7b-instruct-q4_K_M
+# Start vLLM: vllm serve Qwen/Qwen2.5-14B-Instruct --port 8001
 python src/data_process/ingest_kb.py        # Ingest KB
 uvicorn src.api.main:app --reload --port 8000
 streamlit run demo/app.py                   # Optional UI
@@ -378,4 +382,4 @@ streamlit run demo/app.py                   # Optional UI
 
 ---
 
-**Version**: 3.1 | **Updated**: 2026-06-18 | **Maintainer**: Muscar1a
+**Version**: 3.2 | **Updated**: 2026-06-23 | **Maintainer**: Muscar1a

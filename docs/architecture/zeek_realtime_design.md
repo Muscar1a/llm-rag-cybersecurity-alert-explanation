@@ -63,7 +63,7 @@ Thiết kế mới: Suricata chuyên phát hiện (hàng nghìn signature từ E
                                              │
                             ┌────────────────▼────────────────┐
                             │        FastAPI RAG API          │
-                            │    Qdrant + Ollama (existing)   │
+                            │    Qdrant + vLLM (existing)     │
                             └────────────────┬────────────────┘
                                              │
                             ┌────────────────▼────────────────┐
@@ -146,288 +146,25 @@ Output: `conn.log` — mỗi dòng một JSON flow record gồm `conn_state`, `h
 
 ### 3.3 Suricata Watcher — `src/realtime/watcher_suricata.py`
 
-Tail `eve.json`, lọc chỉ `event_type == "alert"`, push vào Redis queue.
-
-```python
-import json, time, os, logging, redis
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [suricata-watcher] %(levelname)s %(message)s",
-)
-log = logging.getLogger("suricata-watcher")
-
-REDIS_HOST = os.getenv("REDIS_HOST", "redis")
-REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-LOG_PATH = os.getenv("SURICATA_EVE_LOG", "/var/log/suricata/eve.json")
-QUEUE = "suricata:alerts:raw"
-
-r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
-
-
-def wait_for_file(path: str, poll: float = 1.0):
-    log.info(f"Waiting for {path}...")
-    while not os.path.exists(path):
-        time.sleep(poll)
-    log.info(f"Found {path}, starting tail.")
-
-
-def tail(path: str, poll: float = 0.3):
-    with open(path, "r") as f:
-        f.seek(0, 2)
-        while True:
-            line = f.readline()
-            if not line:
-                try:
-                    if f.tell() > os.fstat(f.fileno()).st_size:
-                        log.warning("Log rotation detected, seeking to start.")
-                        f.seek(0)
-                except OSError:
-                    pass
-                time.sleep(poll)
-                continue
-
-            try:
-                event = json.loads(line.strip())
-            except json.JSONDecodeError:
-                continue
-
-            if event.get("event_type") != "alert":
-                continue
-
-            r.rpush(QUEUE, json.dumps(event))
-            sig = event.get("alert", {}).get("signature", "?")
-            log.info(f"Alert: {event.get('dest_ip')}:{event.get('dest_port')} | {sig}")
-
-
-if __name__ == "__main__":
-    wait_for_file(LOG_PATH)
-    tail(LOG_PATH)
-```
+Tail `eve.json`, lọc chỉ `event_type == "alert"`, push vào Redis queue. Hỗ trợ log rotation detection (seek lại đầu khi file bị truncate).
 
 ### 3.4 Zeek Watcher (Flow Indexer) — `src/realtime/watcher_zeek.py`
 
-Tail `conn.log`, index mỗi flow vào Redis với TTL 300s để consumer có thể lookup.
-
-```python
-import json, time, os, logging, redis
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [zeek-watcher] %(levelname)s %(message)s",
-)
-log = logging.getLogger("zeek-watcher")
-
-REDIS_HOST = os.getenv("REDIS_HOST", "redis")
-REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-LOG_PATH = os.getenv("ZEEK_CONN_LOG", "/opt/zeek/logs/current/conn.log")
-FLOW_TTL = int(os.getenv("FLOW_TTL", 300))
-
-r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
-
-
-def flow_key(row: dict) -> str:
-    proto = str(row.get("proto", "tcp")).lower()
-    src = row.get("id.orig_h", "")
-    sp = row.get("id.orig_p", 0)
-    dst = row.get("id.resp_h", "")
-    dp = row.get("id.resp_p", 0)
-    return f"zeek:flow:{proto}:{src}:{sp}:{dst}:{dp}"
-
-
-def wait_for_file(path: str, poll: float = 1.0):
-    log.info(f"Waiting for {path}...")
-    while not os.path.exists(path):
-        time.sleep(poll)
-    log.info(f"Found {path}, starting tail.")
-
-
-def tail(path: str, poll: float = 0.3):
-    with open(path, "r") as f:
-        f.seek(0, 2)
-        while True:
-            line = f.readline()
-            if not line:
-                try:
-                    if f.tell() > os.fstat(f.fileno()).st_size:
-                        log.warning("Log rotation detected, seeking to start.")
-                        f.seek(0)
-                except OSError:
-                    pass
-                time.sleep(poll)
-                continue
-
-            if line.startswith("#"):
-                continue
-
-            try:
-                row = json.loads(line.strip())
-            except json.JSONDecodeError:
-                continue
-
-            key = flow_key(row)
-            r.set(key, json.dumps(row), ex=FLOW_TTL)
-
-
-if __name__ == "__main__":
-    wait_for_file(LOG_PATH)
-    tail(LOG_PATH)
-```
+Tail `conn.log`, index mỗi flow vào Redis với TTL 300s (configurable via `FLOW_TTL` env var) để consumer có thể lookup. Key format: `zeek:flow:{proto}:{src_ip}:{src_port}:{dst_ip}:{dst_port}`. Hỗ trợ log rotation detection.
 
 ### 3.5 Consumer — `src/realtime/consumer.py`
 
-BLPOP Suricata alert → lookup Zeek flow → build combined text → POST RAG API → push result.
+BLPOP Suricata alert → lookup Zeek flow (5-tuple key) → build combined text via `build_combined_alert()` → POST `/analyze` → push result to `alerts:results`.
 
-Suricata `signature` and `severity` are sent via `AlertMetadata` so the RAG service can use them for tactic detection and severity assessment.
-
-```python
-import json, os, logging, redis, requests
-from src.realtime.alert_builder import build_combined_alert
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [consumer] %(levelname)s %(message)s",
-)
-log = logging.getLogger("consumer")
-
-REDIS_HOST = os.getenv("REDIS_HOST", "redis")
-REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-API_URL = os.getenv("API_URL", "http://host.docker.internal:8000/analyze")
-API_TIMEOUT = int(os.getenv("API_TIMEOUT", 60))
-
-SURICATA_QUEUE = "suricata:alerts:raw"
-RESULT_QUEUE = "alerts:results"
-MAX_RESULTS = 200
-
-r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
-
-
-def _flow_key(event: dict) -> str:
-    proto = str(event.get("proto", "TCP")).lower()
-    src = event.get("src_ip", "")
-    sp = event.get("src_port", 0)
-    dst = event.get("dest_ip", "")
-    dp = event.get("dest_port", 0)
-    return f"zeek:flow:{proto}:{src}:{sp}:{dst}:{dp}"
-
-
-def consume():
-    log.info("Consumer started, waiting for Suricata alerts...")
-
-    while True:
-        _, raw = r.blpop(SURICATA_QUEUE)
-        event = json.loads(raw)
-
-        sig = event.get("alert", {}).get("signature", "?")
-        dst = f"{event.get('dest_ip', '?')}:{event.get('dest_port', '?')}"
-        log.info(f"Processing: {dst} | {sig}")
-
-        key = _flow_key(event)
-        flow_raw = r.get(key)
-        zeek_flow = json.loads(flow_raw) if flow_raw else None
-
-        if zeek_flow:
-            log.info(f"  Zeek flow found: {key}")
-        else:
-            log.info(f"  No Zeek flow, using Suricata-only info.")
-
-        alert_text = build_combined_alert(event, zeek_flow)
-
-        payload = {
-            "alert_text": alert_text,
-            "k": 5,
-            "metadata": {
-                "src_ip":    event.get("src_ip", ""),
-                "dest_ip":   event.get("dest_ip", ""),
-                "dest_port": event.get("dest_port", 0),
-                "proto":     event.get("proto", ""),
-                "signature": sig,
-                "severity":  event.get("alert", {}).get("severity", 0),
-            },
-        }
-
-        try:
-            resp = requests.post(API_URL, json=payload, timeout=API_TIMEOUT)
-            resp.raise_for_status()
-            result = resp.json()
-            result["_meta"] = payload["metadata"]
-            result["_alert_text"] = alert_text
-
-            r.rpush(RESULT_QUEUE, json.dumps(result))
-            r.ltrim(RESULT_QUEUE, -MAX_RESULTS, -1)
-
-            severity = result.get("severity", "?")
-            desc = result.get("threat_description", "")[:80]
-            log.info(f"  → {severity} | {desc}")
-
-        except requests.exceptions.Timeout:
-            log.warning(f"API timeout for {dst}, skipping.")
-        except Exception as e:
-            log.error(f"API error: {e}")
-
-
-if __name__ == "__main__":
-    consume()
-```
+Suricata `signature` and `severity` are sent via `AlertMetadata` so the RAG service can use them for tactic detection and severity assessment. Results are capped at 200 entries (`LTRIM`). API timeout defaults to 60s — on timeout, alert is skipped and consumer continues.
 
 ### 3.6 Alert Builder (Combined) — `src/realtime/alert_builder.py`
 
 Ghép Suricata signature + Zeek telemetry thành alert text cho RAG.
 
-**Thiết kế:** Reuse `zeek_alert_builder.build_alert_text()` cho phần Zeek telemetry, đảm bảo output vẫn chứa `"port {N}"` và `"Connection state {X}:"` để KBRetriever regex match.
+**Thiết kế:** Reuse `zeek_alert_builder.build_alert_text()` cho phần Zeek telemetry, đảm bảo output vẫn chứa `"port {N}"`, `"Connection state {X}:"`, và `"Suricata alert: ... (severity N, {category})"` để KBRetriever regex match (port_profile, conn_state, suricata_category).
 
-```python
-from src.data_process.zeek_alert_builder import build_alert_text
-
-
-def build_combined_alert(suricata_event: dict, zeek_flow: dict | None) -> str:
-    """Build combined alert text: Suricata signature + Zeek telemetry.
-
-    Output format ensures KBRetriever regex compatibility:
-    - "port {N}" pattern for port_profile exact lookup
-    - "Connection state {X}:" pattern for conn_state exact lookup
-    """
-    parts: list[str] = []
-
-    # ── Suricata alert info ─────────────────────────────────
-    alert = suricata_event.get("alert", {})
-    sig = alert.get("signature", "Unknown alert")
-    sev = alert.get("severity", "?")
-    cat = alert.get("category", "")
-
-    header = f"Suricata alert: {sig} (severity {sev}"
-    if cat:
-        header += f", {cat}"
-    header += ")."
-    parts.append(header)
-
-    # ── Zeek telemetry (nếu có) ─────────────────────────────
-    if zeek_flow:
-        mapped = {
-            "src_ip_zeek":    zeek_flow.get("id.orig_h", ""),
-            "dest_ip_zeek":   zeek_flow.get("id.resp_h", ""),
-            "dest_port_zeek": zeek_flow.get("id.resp_p", 0),
-            "proto":          zeek_flow.get("proto", ""),
-            "conn_state":     zeek_flow.get("conn_state", ""),
-            "history":        zeek_flow.get("history", ""),
-            "duration":       zeek_flow.get("duration", 0),
-            "orig_bytes":     zeek_flow.get("orig_bytes", 0),
-            "resp_bytes":     zeek_flow.get("resp_bytes", 0),
-            "orig_pkts":      zeek_flow.get("orig_pkts", 0),
-            "resp_pkts":      zeek_flow.get("resp_pkts", 0),
-            "service":        zeek_flow.get("service", ""),
-        }
-        zeek_text = build_alert_text(mapped)
-        if zeek_text:
-            parts.append(zeek_text)
-    else:
-        # Fallback: basic info từ Suricata event (vẫn có "port {N}" cho retriever)
-        proto = suricata_event.get("proto", "TCP").upper()
-        dp = suricata_event.get("dest_port", 0)
-        parts.append(f"{proto} connection to port {dp}.")
-
-    return " ".join(parts)
-```
+Khi không có Zeek flow (graceful degradation), fallback chỉ ghi `"{PROTO} connection to port {dp}."`.
 
 **Ví dụ output CÓ Zeek telemetry:**
 
@@ -675,6 +412,7 @@ Suricata     Zeek     Watcher-S   Watcher-Z    Redis        Consumer      API/RA
 `KBRetriever` (`lc_vectorstore.py`) dùng regex extract từ alert text:
 - `\bport (\d+)\b` → port_profile exact lookup
 - `\bConnection state (\w+)[:\s]` → conn_state exact lookup
+- `Suricata alert: .+?\(severity \d+, (.+?)\)` → suricata_category exact lookup
 - Semantic search → traffic_pattern, tactic
 
 Alert builder output giữ nguyên format (reuse `build_alert_text()`), nên cả hai regex vẫn match.
@@ -791,28 +529,14 @@ project/
 
 ---
 
-## 12. Checklist triển khai
+## 12. Remaining work
 
-- [x] Tạo `suricata/suricata.yaml` (config + ET Open rules)
-- [x] Viết `src/realtime/watcher_suricata.py`
-- [x] Viết `src/realtime/watcher_zeek.py`
-- [x] Viết `src/realtime/alert_builder.py`
-- [x] Cập nhật `src/realtime/consumer.py`
-- [x] Tạo `Dockerfile.watcher-suricata`
-- [x] Tạo `Dockerfile.watcher-zeek`
-- [x] Cập nhật `Dockerfile.consumer`
-- [x] Cập nhật `docker-compose.yml` (+suricata, watcher-suricata, watcher-zeek)
-- [x] Adapt prompt (`lc_prompt.py`) cho Suricata + Zeek input
-- [x] Xóa dead code: `Dockerfile.watcher`, `suppressor.py`, `parse_et_rules.py`
-- [x] Fix `realtime.py` queue name (`alerts:results`)
-- [x] Fix `AlertMetadata` thêm `signature`, `severity`
-- [x] Bỏ unused `source` param khỏi chain/service/API
 - [ ] Chuẩn bị pcap demo (attack traffic triggers ET Open rules)
 - [ ] Test end-to-end: replay pcap → alert xuất hiện trên dashboard
 - [ ] Dry run demo flow
 
 ---
 
-**Document Version**: 3.1
-**Last Updated**: 2026-06-18
+**Document Version**: 3.2
+**Last Updated**: 2026-06-23
 **Architecture**: Suricata (detection) + Zeek (telemetry) → Redis → RAG
