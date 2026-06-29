@@ -68,13 +68,15 @@ Open `.env` and fill in the required API keys. At minimum, **one** of the follow
 ### 3. Start infrastructure
 
 ```powershell
-docker compose up -d qdrant redis mlflow
+docker compose up -d qdrant redis mlflow prometheus grafana
 ```
 
 Verify:
 ```powershell
 curl http://localhost:6333         # Qdrant → {"title":"qdrant"...}
 curl http://localhost:5000/health  # MLflow → 200 OK
+curl http://localhost:9090         # Prometheus
+curl http://localhost:3000         # Grafana (admin/admin)
 ```
 
 ### 4. Initialize DVC (first time only)
