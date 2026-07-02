@@ -146,6 +146,12 @@ def detect_tactic(
     raw_docs: list,
     llm_output: dict,
 ) -> str | None:
+    llm_tactic = (llm_output.get("tactic") or "").strip()
+    if llm_tactic and llm_tactic.lower() != "none":
+        normalized = llm_tactic.replace(" ", "_")
+        if normalized in TACTIC_TEMPLATES:
+            return normalized
+
     if label_tactic and label_tactic in TACTIC_TEMPLATES:
         return label_tactic
 

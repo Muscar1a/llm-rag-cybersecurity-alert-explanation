@@ -73,6 +73,7 @@ Output ONLY a single valid JSON object. No markdown fences, no prose before or a
 
 {{
   "threat_description": "1-2 sentences. Describe the observed behavior and its security meaning. Do NOT restate raw alert fields. Name the tactic ONLY if a tactic entry exists in Retrieved Knowledge.",
+  "tactic": "The ONE attack tactic confirmed by the evidence, or 'none'. Use the tactic entry's exact name from Retrieved Knowledge (e.g. 'Credential Access', 'Exfiltration'). Set 'none' if no tactic entry matches the observed behavior or the traffic appears benign.",
   "severity": "Low | Medium | High | Critical | Unknown",
   "rationale": "2-4 sentences. Each sentence MUST reference a specific entry from Retrieved Knowledge (e.g. 'the port_profile entry identifies ...', 'the tactic entry confirms ...'). Do not include claims unsupported by Retrieved Knowledge.",
   "mitigation_steps": ["step 1", "step 2", "..."]
@@ -105,6 +106,10 @@ Step 4 — Benign override:
 Severity ladder: Low < Medium < High < Critical (raises/lowers clamp at ends).
 
 Constraints:
+- "tactic" must be either 'none' or one of: Reconnaissance, Resource Development,
+  Initial Access, Execution, Persistence, Privilege Escalation, Defense Evasion,
+  Credential Access, Discovery, Lateral Movement, Collection, Command and Control,
+  Exfiltration, Impact.
 - "severity" must be exactly one of: Low, Medium, High, Critical, Unknown.
 - "mitigation_steps" must contain 2-5 actionable steps. Each step should mention
   a concrete action (e.g. "block source IP at perimeter firewall",
@@ -216,6 +221,7 @@ T1595 Active Scanning."""
 _EXAMPLE_1_OUTPUT = """\
 {{
   "threat_description": "A single SYN probe to TCP/443 was rejected by the server (conn_state REJ, RST sent in reply). No payload was exchanged and no session was established. Consistent with the Reconnaissance tactic — specifically a closed-port probe — but a single flow alone is not a confirmed scan.",
+  "tactic": "Reconnaissance",
   "severity": "Low",
   "rationale": "The conn_state entry explains REJ as 'port closed or firewall ACL drop', and notes that a single REJ in isolation is not malicious. The Reconnaissance tactic entry lists short zero-payload REJ probes as a representative network signature, but requires evidence across multiple destinations to confirm scanning — that evidence is not in this single-flow alert. No session was established (REJ) and no payload exchanged, so Low is appropriate.",
   "mitigation_steps": [
@@ -259,6 +265,7 @@ services with admin interfaces."""
 _EXAMPLE_2_OUTPUT = """\
 {{
   "threat_description": "A single completed session (SF) to GlassFish admin port (4848) with non-zero data transfer and a high byte ratio (18.85x server-dominant). Per the port_profile, this is a management interface where legitimate access is rare and typically internal. The Credential_Access tactic entry notes repeated short connections as a key indicator — this single flow alone does not confirm brute-force but warrants investigation.",
+  "tactic": "Credential Access",
   "severity": "Medium",
   "rationale": "The port_profile identifies 4848 as a sensitive admin interface, and the conn_state SF confirms a fully established session — one condition for High is met (sensitive service). However, the Credential_Access tactic entry requires 'repeated short connections' to confirm brute-force — only one flow is observed here, so the anomalous traffic pattern condition is not met. With only one of the two key conditions confirmed by retrieved context, Medium is appropriate.",
   "mitigation_steps": [

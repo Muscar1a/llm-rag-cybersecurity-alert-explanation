@@ -4,6 +4,7 @@ from langchain_core.callbacks import BaseCallbackHandler
 from .lc_chain import build_analyze_chain
 from .response_actions import ResponseActionEngine, detect_tactic, SEVERITY_RANK
 from .settings import settings
+from .severity import compute_severity
 
 def _get_llm_metrics():
     try:
@@ -57,21 +58,27 @@ def _normalize(data: dict) -> dict:
     return {
         "threat_description": str(data.get("threat_description", "")),
         "severity":           str(data.get("severity", "Unknown")),
+        "tactic":             str(data.get("tactic", "") or ""),
         "rationale":          str(data.get("rationale", "")),
         "mitigation_steps":   [str(s) for s in steps],
     }
 
 
-def _parse_output(raw: str) -> dict:
+def _parse_output(raw: str, alert_text: str) -> dict:
     try:
-        return _normalize(json.loads(_extract_json(raw)))
+        parsed = _normalize(json.loads(_extract_json(raw)))
     except Exception as e:
         return {
             "threat_description": raw,
             "severity":           "Unknown",
+            "tactic":             "",
             "rationale":          f"Could not parse model output: {e}",
             "mitigation_steps":   [],
         }
+    det_severity = compute_severity(alert_text, parsed.get("tactic"))
+    if det_severity:
+        parsed["severity"] = det_severity
+    return parsed
 
 
 def _doc_to_chunk(doc) -> dict:
@@ -154,7 +161,7 @@ class RagService:
                 full_answer += chunk["answer"]
                 yield {"type": "token", "token": chunk["answer"]}
 
-        parsed = _parse_output(full_answer)
+        parsed = _parse_output(full_answer, alert_text)
         commands, auto_triggered, auto_log = self._build_remediation(
             parsed, raw_docs, metadata, auto_response,
         )
@@ -195,7 +202,7 @@ class RagService:
             tok_counter.inc(completion_tokens)
 
         raw_docs = result.get("context", [])
-        parsed = _parse_output(result["answer"])
+        parsed = _parse_output(result["answer"], alert_text)
         commands, auto_triggered, auto_log = self._build_remediation(
             parsed, raw_docs, metadata, auto_response,
         )

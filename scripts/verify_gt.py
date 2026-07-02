@@ -1,5 +1,7 @@
 import json, re, sys
 
+from src.rag.severity import HIGH_RISK, MED_RISK, LADDER as ladder, BASE_SEVERITY
+
 # Load data
 with open('tests/alerts.json') as f:
     alerts = json.load(f)
@@ -35,11 +37,6 @@ if len(alerts) != len(gt):
 
 gt_by_id = {g['id']: g for g in gt}
 errors = []
-
-HIGH_RISK = {'exfiltration', 'command and control', 'impact', 'lateral movement'}
-MED_RISK = {'credential access', 'discovery', 'initial access', 'execution', 'persistence',
-            'privilege escalation', 'defense evasion', 'reconnaissance', 'resource development', 'collection'}
-ladder = ['low', 'medium', 'high', 'critical']
 
 action_map = {
     'critical': ('auto_isolate_host', 'Isolate source host from network, page on-call SOC, open P1 incident'),
@@ -130,8 +127,7 @@ for alert in alerts:
     # SEVERITY
     sev_match = re.search(r'severity (\d+)', alert['alert_text'])
     sev_num = int(sev_match.group(1))
-    sev_map_base = {1: 'critical', 2: 'high', 3: 'medium'}
-    base_sev = sev_map_base[sev_num]
+    base_sev = BASE_SEVERITY[sev_num]
 
     if tactic_norm in HIGH_RISK:
         tier = 'HIGH'

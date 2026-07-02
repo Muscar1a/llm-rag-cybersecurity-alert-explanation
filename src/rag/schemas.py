@@ -44,6 +44,7 @@ class RetrievedChunk(BaseModel):
 class AnalyzeResponse(BaseModel):
     threat_description: str
     severity: str
+    tactic: str = ""
     rationale: str
     mitigation_steps: list[str]
     retrieved_context_ids: list[str]

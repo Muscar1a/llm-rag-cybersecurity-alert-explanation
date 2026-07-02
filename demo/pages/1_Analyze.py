@@ -135,7 +135,9 @@ with tab_single:
                     elif event["type"] == "token":
                         streamed_text += event["token"]
                         result_box.markdown(
-                            f"*Generating analysis…*\n\n```\n{streamed_text}\n```"
+                            f"*Generating analysis… (raw model output — severity below "
+                            f"is provisional and will be recalculated deterministically "
+                            f"once generation finishes)*\n\n```\n{streamed_text}\n```"
                         )
                     elif event["type"] == "done":
                         st.session_state.single_result = {

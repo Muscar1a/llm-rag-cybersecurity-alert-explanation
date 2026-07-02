@@ -129,6 +129,7 @@ def run_template(
                 "latency_s": round(latency, 3),
                 "gt_severity": entry.get("severity"),
                 "llm_severity": rag_out.get("severity", "Unknown"),
+                "llm_tactic": rag_out.get("tactic", ""),
                 "remediation_commands": rag_out.get("remediation_commands", []),
             })
             state["next_idx"] = i + 1
